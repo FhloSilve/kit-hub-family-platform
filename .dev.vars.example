@@ -1,2 +1,6 @@
 # Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=replace-with-a-random-secret-at-least-32-characters
+# Comma-separated platform administrator email addresses.
+KIT_HUB_ADMIN_EMAILS=you@example.com
+# Fine-grained GitHub token with Actions: Read and write for this repository.
+GITHUB_RELEASE_TOKEN=replace-with-github-actions-token
