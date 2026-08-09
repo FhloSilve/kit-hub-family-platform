@@ -38,6 +38,7 @@ export interface AdminReleaseStatusResponse {
   deployedVersion: AppVersionResponse; latestRun: AdminReleaseRun | null;
 }
 export interface AdminReleaseDispatchResponse { accepted: boolean; message: string; }
+export interface AdminReleaseCancelResponse { cancelled: boolean; message: string; }
 
 export interface HouseholdMemberSummary {
   id: string; userId: string; name: string; email: string; role: HouseholdRole; joinedAt: string | null;
