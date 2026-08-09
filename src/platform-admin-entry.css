@@ -4,14 +4,14 @@
   position: fixed;
   z-index: 40;
   left: .75rem;
-  bottom: 8.2rem;
+  bottom: 9rem;
   width: calc(230px - 1.5rem);
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
   gap: .55rem;
-  min-height: 2.65rem;
+  min-height: 3.15rem;
   padding: 0 .9rem;
   border: 1px solid color-mix(in srgb, var(--entry-accent) 35%, transparent);
   border-radius: .9rem;
