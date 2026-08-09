@@ -1,4 +1,8 @@
 .platform-admin-entry {
+  position: fixed;
+  z-index: 40;
+  top: .72rem;
+  right: 7.7rem;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -20,4 +24,4 @@
 }
 .platform-admin-entry:hover { transform: translateY(-1px); box-shadow: 0 7px 20px rgba(25,72,95,.22); filter: brightness(1.04); }
 .platform-admin-entry svg { width: .95rem; height: .95rem; }
-@media (max-width: 640px) { .platform-admin-entry span { display:none; } .platform-admin-entry { width:2.25rem; padding:0; } }
+@media (max-width: 760px) { .platform-admin-entry { right: 5.2rem; width:2.25rem; padding:0; } .platform-admin-entry span { display:none; } }
