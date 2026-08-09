@@ -292,3 +292,25 @@ h1, h2, p { margin-top: 0; }
   .member-directory article { grid-template-columns: 40px minmax(0,1fr); }
   .member-directory .role-pill { grid-column: 2; justify-self: start; }
 }
+
+/* Milestone 2 navigation + task undo polish */
+.daily-glance > button { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 55px; padding: 5px 18px; border: 0; border-right: 1px solid var(--line); color: inherit; background: transparent; text-align: left; cursor: pointer; transition: background .16s ease, transform .16s ease; }
+.daily-glance > button:last-child { border-right: 0; }
+.daily-glance > button:hover { background: rgba(61,94,76,.045); }
+.daily-glance > button:active { transform: translateY(1px); }
+.daily-glance > button:focus-visible, .card-heading__link:focus-visible, .member-list > button:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; border-radius: 12px; }
+.card-heading__link { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+.card-heading__link:hover h2, .member-list > button:hover strong { color: var(--forest); }
+.member-list > button { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; align-items: center; width: 100%; padding: 7px 0; border: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
+.undo-toast { position: fixed; right: 24px; bottom: 24px; z-index: 120; display: flex; align-items: center; gap: 22px; min-width: 310px; max-width: min(430px, calc(100vw - 32px)); padding: 13px 14px 13px 17px; border: 1px solid rgba(255,255,255,.14); border-radius: 17px; color: #fff; background: rgba(43,76,61,.97); box-shadow: 0 18px 45px rgba(30,52,42,.25); }
+.undo-toast > span { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.undo-toast strong { font-size: 12px; }
+.undo-toast small { overflow: hidden; color: rgba(255,255,255,.72); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.undo-toast button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 0; border-radius: 10px; color: var(--forest-dark); background: #fff8eb; font-size: 10px; font-weight: 900; cursor: pointer; }
+.undo-toast button svg { width: 14px; height: 14px; }
+@media (max-width: 720px) {
+  .daily-glance > button { justify-content: flex-start; padding: 9px 12px; border-right: 0; }
+  .daily-glance > button:nth-child(odd) { border-right: 1px solid var(--line); }
+  .daily-glance > button:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .undo-toast { right: 16px; bottom: 84px; left: 16px; min-width: 0; }
+}

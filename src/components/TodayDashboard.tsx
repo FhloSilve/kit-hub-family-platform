@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import {
   Bell, CalendarDays, Check, CheckCircle2, ChevronDown, CircleUserRound, Clock3, Home,
   ListTodo, MapPin, MessageCircle, PawPrint, Plus, Search, Settings, ShoppingBasket,
-  Sparkles, SunMedium, UserRoundPlus, UsersRound, Utensils, X,
+  RotateCcw, Sparkles, SunMedium, UserRoundPlus, UsersRound, Utensils, X,
 } from "lucide-react";
 import type {
   BootstrapResponse, EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent,
@@ -62,8 +62,15 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [householdName, setHouseholdName] = useState(household?.name ?? "");
+  const [undoTask, setUndoTask] = useState<EverydayTask | null>(null);
   const canManageHousehold = household?.role === "owner" || household?.role === "admin";
   const firstName = bootstrap.user.name.split(" ")[0] || bootstrap.user.name;
+
+  useEffect(() => {
+    if (!undoTask) return;
+    const timer = window.setTimeout(() => setUndoTask(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [undoTask]);
 
   useEffect(() => {
     if (demo || !household) return;
@@ -115,9 +122,25 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
   async function toggleTask(task: EverydayTask) {
     const done = task.status !== "done";
     setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: done ? "done" : "todo" } : item) }));
+    if (done) setUndoTask(task);
+    else setUndoTask((current) => current?.id === task.id ? null : current);
     if (!demo) {
       try { await api.setTaskDone(household!.id, task.id, done); }
-      catch { setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? task : item) })); }
+      catch {
+        setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? task : item) }));
+        if (done) setUndoTask((current) => current?.id === task.id ? null : current);
+      }
+    }
+  }
+
+  async function undoCompletedTask() {
+    if (!undoTask) return;
+    const task = undoTask;
+    setUndoTask(null);
+    setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: "todo" } : item) }));
+    if (!demo) {
+      try { await api.setTaskDone(household!.id, task.id, false); }
+      catch { setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: "done" } : item) })); }
     }
   }
 
@@ -184,6 +207,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
 
       {quickAddOpen && <QuickAddModal onClose={() => setQuickAddOpen(false)} onChoose={openAdd} onMembers={() => { setQuickAddOpen(false); setView("members"); }} />}
       {addKind && <CreateModal kind={addKind} members={core.members} onClose={() => setAddKind(null)} onTask={createTask} onGrocery={createGrocery} onEvent={createEvent} />}
+      {undoTask && <div className="undo-toast" role="status"><span><strong>Task completed</strong><small>{undoTask.title}</small></span><button type="button" onClick={() => void undoCompletedTask()}><RotateCcw /> Undo</button></div>}
       {settingsOpen && household && <HouseholdSettingsModal currentName={householdName} onClose={() => setSettingsOpen(false)} onSave={async (name) => { if (demo) setHouseholdName(name.trim()); else setHouseholdName((await api.updateHousehold(household.id, { name })).name); }} />}
     </div>
   );
@@ -199,17 +223,17 @@ function TodayView({ greeting, firstName, dateLabel, tasks, groceries, events, m
   return <>
     <header className="today-heading"><div><span className="today-date"><SunMedium /> {dateLabel}</span><h1>{greeting}, {firstName}.</h1><p>Your household at a glance — now powered by the Everyday Core.</p></div><button className="button button--primary" type="button" onClick={onQuickAdd}><Plus /> Quick add</button></header>
     <section className="daily-glance" aria-label="At a glance">
-      <div><span className="glance-icon glance-icon--coral"><CalendarDays /></span><p><strong>{events.length}</strong><small>events today</small></p></div>
-      <div><span className="glance-icon glance-icon--gold"><ListTodo /></span><p><strong>{tasks.length}</strong><small>open tasks</small></p></div>
-      <div><span className="glance-icon glance-icon--mint"><ShoppingBasket /></span><p><strong>{groceries.length}</strong><small>grocery items</small></p></div>
-      <div><span className="glance-icon glance-icon--blue"><UsersRound /></span><p><strong>{members}</strong><small>household members</small></p></div>
+      <button type="button" onClick={() => onNavigate("calendar")} aria-label={`Open calendar, ${events.length} events today`}><span className="glance-icon glance-icon--coral"><CalendarDays /></span><p><strong>{events.length}</strong><small>events today</small></p></button>
+      <button type="button" onClick={() => onNavigate("tasks")} aria-label={`Open tasks, ${tasks.length} open`}><span className="glance-icon glance-icon--gold"><ListTodo /></span><p><strong>{tasks.length}</strong><small>open tasks</small></p></button>
+      <button type="button" onClick={() => onNavigate("groceries")} aria-label={`Open groceries, ${groceries.length} items`}><span className="glance-icon glance-icon--mint"><ShoppingBasket /></span><p><strong>{groceries.length}</strong><small>grocery items</small></p></button>
+      <button type="button" onClick={() => onNavigate("members")} aria-label={`Open household, ${members} members`}><span className="glance-icon glance-icon--blue"><UsersRound /></span><p><strong>{members}</strong><small>household members</small></p></button>
     </section>
     <div className="dashboard-grid">
       <section className="dashboard-card dashboard-card--schedule"><header className="card-heading"><div><span className="card-icon card-icon--coral"><CalendarDays /></span><div><h2>Next up</h2><p>Your household schedule</p></div></div><button type="button" onClick={() => onNavigate("calendar")}>View calendar</button></header>{loading ? <LoadingCard /> : events.length ? <EventList events={events.slice(0, 3)} /> : <EmptyState icon={CalendarDays} title="A quiet day so far" text="Add an event and it will appear here." />}</section>
       <section className="dashboard-card dashboard-card--tasks"><header className="card-heading"><div><span className="card-icon card-icon--gold"><ListTodo /></span><div><h2>Tasks</h2><p>Things to take care of</p></div></div><button type="button" onClick={() => onNavigate("tasks")}>View all</button></header>{loading ? <LoadingCard /> : tasks.length ? <div className="task-list">{tasks.slice(0, 4).map((task) => <TaskRow key={task.id} task={task} onToggle={onToggleTask} />)}</div> : <EmptyState icon={ListTodo} title="Nothing on the list" text="You are all caught up." />}</section>
       <section className="dashboard-card dashboard-card--grocery"><header className="card-heading"><div><span className="card-icon card-icon--mint"><ShoppingBasket /></span><div><h2>Groceries</h2><p>Current shopping list</p></div></div><button type="button" onClick={() => onNavigate("groceries")}>Open list</button></header>{groceries.length ? <><div className="progress-row"><span><strong>{groceries.length} items left</strong><small>Ready for the next shop</small></span></div><div className="grocery-tags">{groceries.slice(0, 3).map((item) => <span key={item.id}>{item.name}</span>)}{groceries.length > 3 && <span>+{groceries.length - 3}</span>}</div></> : <EmptyState compact icon={ShoppingBasket} title="The list is empty" text="Add the first grocery item." />}</section>
       <section className="dashboard-card dashboard-card--dinner"><div className="dinner-copy"><span className="eyebrow">MEAL PLANNING</span><h2>Connected groceries come first.</h2><p>Meals can build on the working grocery list in a later slice.</p><button type="button" disabled>Meals coming later <span>→</span></button></div><div className="dinner-illustration" aria-hidden="true"><span>🍝</span><i /><b /></div></section>
-      <section className="dashboard-card dashboard-card--status"><header className="card-heading"><div><span className="card-icon card-icon--blue"><CircleUserRound /></span><div><h2>Household</h2><p>{members} active {members === 1 ? "member" : "members"}</p></div></div><button type="button" onClick={() => onNavigate("members")}>View</button></header><div className="member-list"><div><span className="avatar avatar--fox">{firstName[0]?.toUpperCase()}</span><p><strong>{firstName}</strong><small><i className="status-dot status-dot--green" /> Signed in</small></p><time>Now</time></div></div></section>
+      <section className="dashboard-card dashboard-card--status"><header className="card-heading"><button className="card-heading__link" type="button" onClick={() => onNavigate("members")}><span className="card-icon card-icon--blue"><CircleUserRound /></span><div><h2>Household</h2><p>{members} active {members === 1 ? "member" : "members"}</p></div></button><button type="button" onClick={() => onNavigate("members")}>View</button></header><div className="member-list"><button type="button" onClick={() => onNavigate("members")}><span className="avatar avatar--fox">{firstName[0]?.toUpperCase()}</span><p><strong>{firstName}</strong><small><i className="status-dot status-dot--green" /> Signed in</small></p><time>Now</time></button></div></section>
       <section className="dashboard-card dashboard-card--house"><div className="house-preview" aria-hidden="true"><span className="house-preview__roof" /><span className="house-preview__wall" /><span className="house-preview__door" /><span className="house-preview__window" /><i /><b /></div><div><span className="eyebrow">YOUR DIGITAL HOME</span><h2>The useful rooms are opening.</h2><p>Calendar, tasks, groceries and household data now share the same live foundation.</p><button type="button" disabled>Explore mode stays Milestone 4</button></div></section>
     </div>
   </>;
