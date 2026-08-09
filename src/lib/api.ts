@@ -1,5 +1,5 @@
 import type {
-  AdminReleaseDispatchResponse, AdminReleaseStatusResponse, ApiErrorBody, BootstrapResponse,
+  AdminReleaseCancelResponse, AdminReleaseDispatchResponse, AdminReleaseStatusResponse, ApiErrorBody, BootstrapResponse,
   CreateEventInput, CreateGroceryItemInput, CreateHouseholdInput, CreateTaskInput,
   EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent, HouseholdSummary,
   UpdateHouseholdInput, UpdateHouseholdResponse,
@@ -40,4 +40,5 @@ export const api = {
   createEvent: (householdId: string, input: CreateEventInput) => request<HouseholdEvent>(householdUrl(householdId, "events"), { method: "POST", body: JSON.stringify(input) }),
   adminReleaseStatus: () => request<AdminReleaseStatusResponse>("/api/v1/admin/releases/status"),
   triggerAdminRelease: () => request<AdminReleaseDispatchResponse>("/api/v1/admin/releases", { method: "POST", body: JSON.stringify({}) }),
+  cancelAdminRelease: (runId: number) => request<AdminReleaseCancelResponse>(`/api/v1/admin/releases/${runId}/cancel`, { method: "POST", body: JSON.stringify({}) }),
 };
