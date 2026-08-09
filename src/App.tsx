@@ -5,7 +5,6 @@ import { AuthScreen } from "./components/AuthScreen";
 import { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 import { Brand } from "./components/Brand";
 import { HouseholdOnboarding } from "./components/HouseholdOnboarding";
-import { HouseholdOnboarding } from "./components/HouseholdOnboarding";
 import { TodayDashboard } from "./components/TodayDashboard";
 import { ApiError, api } from "./lib/api";
 import { authClient } from "./lib/auth-client";
