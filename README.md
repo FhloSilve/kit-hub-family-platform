@@ -1,85 +1,110 @@
-# Kit Hub: Family Organizer
+# Kit Hub: Family Platform
 
-Kit Hub is a private, shared home base for household calendars, tasks, groceries,
-notes, conversations, and everyday coordination.
+Your family's digital home: a warm, private household platform for shared plans, tasks, groceries, notes, communication, and the future interactive house.
 
-This repository contains the first full-stack foundation:
+## Current milestone
 
-- a responsive React interface for desktop and mobile;
-- email/password authentication through Better Auth;
-- a Cloudflare Worker API built with Hono;
-- a Cloudflare D1 schema for users, households, roles, tasks, groceries, events,
-  notes, channels, and messages;
-- working household onboarding, tasks, and grocery interactions;
-- privacy-ready visibility fields and owner/admin/member/child roles.
+Milestone 1 establishes the vertical foundation:
+
+- React 19 application and responsive Today shell
+- Cloudflare Worker API with versioned `/api/v1` routes
+- Better Auth email/password accounts and cookie sessions
+- D1 migration for identity, profiles, households, memberships, roles, permissions, invites, and audit records
+- Household onboarding with language and time-zone defaults
+- Development-only demo dashboard at `/?demo=1`
+- Mobile bottom navigation and accessible reduced-motion behavior
+- Server-enforced password strength with a readable account-creation meter
+- In-app update detection and one-click refresh when a new Worker version is live
+- TypeScript validation, unit tests, structured API errors, and request IDs
+
+Calendar, Tasks, Groceries, Notes, realtime, invitations, and the generated house are intentionally represented by safe empty/coming-soon states until their implementation milestones.
 
 ## Stack
 
-- React 19 + Vite
-- Cloudflare Workers Static Assets
-- Hono
+- React + Vite
+- Cloudflare Workers + Cloudflare Vite plugin
 - Cloudflare D1
-- Better Auth + Drizzle adapter
-- TypeScript
+- Better Auth
+- Hono
+- TypeScript + Vitest
 
 ## Local setup
 
 ```bash
 npm install
 cp .dev.vars.example .dev.vars
-# Replace BETTER_AUTH_SECRET with: openssl rand -base64 48
+# Replace BETTER_AUTH_SECRET with output from: openssl rand -base64 32
+npm run types
 npm run db:migrate:local
 npm run dev
 ```
 
-Open the local URL printed by Wrangler. The Worker serves the production Vite
-build and handles all `/api/*` routes.
-
-For front-end-only styling work, run `npm run dev:client` while the Worker is
-available on port `8787`.
-
-## Validation
+For a frontend-only design preview that does not require D1:
 
 ```bash
-npm run check
+npm run dev:ui
 ```
 
-This regenerates Cloudflare binding types, runs strict TypeScript checks, builds
-the client, and performs a Worker deployment dry run.
-
-## Database migrations
+## Quality checks
 
 ```bash
-npm run db:migrate:local
-npm run db:migrate:remote
+npm run typecheck
+npm test
+npm run build
+# Or run the complete suite:
+npm run ci
 ```
 
-Migrations are stored in `migrations/`. Apply them locally before development
-and remotely before deploying code that depends on a new schema.
+## Cloudflare connection checklist
 
-## Production configuration
+`wrangler.jsonc` binds production to the existing `kit-hub-db` database. Keep that database ID unchanged unless the application is intentionally moved to another D1 database.
 
-The Worker expects:
-
-- a D1 binding named `DB` connected to `kit-hub-db`;
-- a secret named `BETTER_AUTH_SECRET` containing at least 32 high-entropy
-  characters.
-
-Set the production secret without committing it:
+Confirm the production secret exists, apply pending migrations, and deploy:
 
 ```bash
-openssl rand -base64 48 | npx wrangler secret put BETTER_AUTH_SECRET
-```
-
-Then apply migrations and deploy:
-
-```bash
+npx wrangler secret list
 npm run db:migrate:remote
 npm run deploy
 ```
 
-## Current milestone
+For a release that applies pending D1 migrations before building and deploying:
 
-The dashboard and shared data foundation are ready. Calendar, notes, messages,
-invitations, room mapping, translation, and detailed permissions are represented
-in the architecture and will be expanded module by module.
+```bash
+npm run release
+```
+
+## Automatic deployments
+
+Cloudflare Workers Builds can deploy every pushed production change automatically. Connect the existing Worker once in **Cloudflare → Workers & Pages → kit-hub-family-platform → Settings → Builds → Connect** and select:
+
+- Repository: `FhloSilve/kit-hub-family-platform`
+- Production branch: `main`
+- Build command: `npm run ci`
+- Deploy command: `npm run deploy:ci`
+
+The Worker name in Cloudflare and `wrangler.jsonc` must both stay `kit-hub-family-platform`. Cloudflare stores the build token; do not add an API token to this repository.
+
+After this connection is active, pushing to `main` runs the checks and deploys the new Worker version. Kit Hub checks its version while open and shows **Update now** when that deployment is ready, so users do not need to close the browser.
+
+D1 migrations remain a deliberate release step through `npm run release`; Cloudflare's default Workers Builds token intentionally does not have D1-edit permission. This prevents database changes from running silently on every code push.
+
+Do not commit `.dev.vars`, production secrets, or Cloudflare credentials.
+
+## Repository map
+
+```text
+src/             React application and design system
+worker/          Worker API and Better Auth integration
+shared/          Contracts and validation shared by UI/API
+migrations/      Versioned D1 schema
+wrangler.jsonc   Cloudflare bindings and deployment config
+```
+
+## Architectural rules already enforced
+
+- The household is the tenant boundary.
+- Authorization is enforced by the Worker, never trusted to the client.
+- Owner/admin roles do not imply access to another adult's private content.
+- Secrets stay outside source control.
+- The everyday UI and future digital house will use the same APIs and data.
+- IDs use Web Crypto UUIDs; security-sensitive IDs never use `Math.random()`.

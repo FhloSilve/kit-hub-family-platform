@@ -1,2 +1,2 @@
-# Generate a value with: openssl rand -base64 48
-BETTER_AUTH_SECRET=replace-with-a-local-secret-at-least-32-characters-long
+# Generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET=replace-with-a-random-secret-at-least-32-characters
