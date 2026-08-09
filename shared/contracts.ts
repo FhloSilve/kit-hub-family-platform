@@ -11,7 +11,8 @@ export interface UpdateHouseholdResponse { id: string; name: string; }
 export interface ApiErrorBody { error: { code: string; message: string; requestId: string; details?: Record<string, string>; }; }
 export interface AppVersionResponse { id: string; tag: string | null; timestamp: string | null; }
 export interface AdminReleaseStep { name: string; status: string; conclusion: string | null; number: number; }
-export interface AdminReleaseRun { id: number; name: string; status: string; conclusion: string | null; headBranch: string; htmlUrl: string | null; createdAt: string | null; updatedAt: string | null; steps: AdminReleaseStep[]; }
+export interface AdminReleaseFailure { step: string; summary: string; excerpt: string | null; }
+export interface AdminReleaseRun { id: number; name: string; status: string; conclusion: string | null; headBranch: string; htmlUrl: string | null; createdAt: string | null; updatedAt: string | null; steps: AdminReleaseStep[]; failure: AdminReleaseFailure | null; }
 export interface AdminReleaseStatusResponse { releaseConfigured: boolean; repository: string | null; workflow: string | null; deployedVersion: AppVersionResponse; latestRun: AdminReleaseRun | null; }
 export interface AdminReleaseDispatchResponse { accepted: boolean; message: string; }
 export interface AdminReleaseCancelResponse { cancelled: boolean; message: string; }
