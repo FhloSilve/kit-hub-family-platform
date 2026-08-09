@@ -15,9 +15,20 @@ const isDemo = import.meta.env.DEV && new URLSearchParams(window.location.search
 const isAdminPath = window.location.pathname === "/admin" || window.location.pathname === "/admin/";
 
 export default function App() {
-  if (isAdminPath) return <><AdminConsole onBack={() => { window.location.href = "/"; }} /><AppUpdatePrompt /></>;
+  if (isAdminPath) return <AdminRoute />;
   if (isDemo) return <TodayDashboard bootstrap={demoBootstrap} demo onSignOut={async () => { window.history.replaceState({}, "", window.location.pathname); window.location.reload(); }} />;
   return <><ConnectedApp /><AppUpdatePrompt /></>;
+}
+
+function AdminRoute() {
+  const session = authClient.useSession();
+
+  if (session.isPending) return <LoadingScreen label="Checking your admin session…" />;
+  if (!session.data?.user) {
+    return <><AuthScreen onAuthenticated={session.refetch} /><AppUpdatePrompt /></>;
+  }
+
+  return <><AdminConsole onBack={() => { window.location.href = "/"; }} /><AppUpdatePrompt /></>;
 }
 
 function ConnectedApp() {
