@@ -9,14 +9,13 @@
     "run_worker_first": ["/api/*"]
   },
   "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "kit-hub-db",
-      "database_id": "04a1151f-ca27-4035-a19a-b73283b48983",
-      "preview_database_id": "kit-hub-local",
-      "migrations_dir": "./migrations"
-    }
-  ],
+  {
+    "binding": "DB",
+    "database_name": "kit-hub-db",
+    "database_id": "04a1151f-ca27-4035-a19a-b73283b48983",
+    "migrations_dir": "./migrations"
+  }
+],
   "durable_objects": {
     "bindings": [
       {
