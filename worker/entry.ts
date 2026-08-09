@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import coreApp, { HouseholdRealtime } from "./index";
-import { dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
+import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import type { AppBindings } from "./http";
 
 export { HouseholdRealtime };
@@ -17,6 +17,12 @@ app.post("/api/v1/admin/releases", async (c) => {
   const access = await requirePlatformAdmin(c);
   if (access.response) return access.response;
   return dispatchAdminRelease(c);
+});
+
+app.post("/api/v1/admin/releases/:runId/cancel", async (c) => {
+  const access = await requirePlatformAdmin(c);
+  if (access.response) return access.response;
+  return cancelAdminRelease(c, Number(c.req.param("runId")));
 });
 
 app.route("/", coreApp);
