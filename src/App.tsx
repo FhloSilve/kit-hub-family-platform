@@ -5,7 +5,7 @@ import { AuthScreen } from "./components/AuthScreen";
 import { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 import { Brand } from "./components/Brand";
 import { HouseholdOnboarding } from "./components/HouseholdOnboarding";
-import { PlatformAdminEntry } from "./components/PlatformAdminEntry";
+import { HouseholdOnboarding } from "./components/HouseholdOnboarding";
 import { TodayDashboard } from "./components/TodayDashboard";
 import { ApiError, api } from "./lib/api";
 import { authClient } from "./lib/auth-client";
@@ -40,6 +40,6 @@ function ConnectedApp() {
   if (bootstrapError && !bootstrap) return <main className="fatal-state"><Brand /><div><h1>We couldn&apos;t open Kit Hub.</h1><p>{bootstrapError.message}</p>{bootstrapError.requestId && <small className="request-reference">Reference: {bootstrapError.requestId}</small>}<div className="fatal-state__actions"><button className="button button--primary" type="button" onClick={() => setBootstrapAttempt((attempt) => attempt + 1)}>Try again</button><button className="button button--secondary" type="button" onClick={() => void signOut()}>Sign out</button></div></div></main>;
   if (!bootstrap) return <LoadingScreen label="Setting things up…" />;
   if (!bootstrap.activeHousehold) return <HouseholdOnboarding bootstrap={bootstrap} onCreated={handleHouseholdCreated} onSignOut={signOut} />;
-  return <><TodayDashboard bootstrap={bootstrap} onSignOut={signOut} /><PlatformAdminEntry /></>;
+  return <TodayDashboard bootstrap={bootstrap} onSignOut={signOut} />;
 }
 function LoadingScreen({ label }: { label: string }) { return <main className="loading-screen"><Brand /><span className="loading-orbit" aria-hidden="true"><i /></span><p>{label}</p></main>; }
