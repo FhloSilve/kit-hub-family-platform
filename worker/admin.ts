@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import type { AdminReleaseRun, AdminReleaseStatusResponse } from "../shared/contracts";
+import type { AdminReleaseRun, AdminReleaseStatusResponse, AdminReleaseStep } from "../shared/contracts";
 import { createAuth } from "./auth";
 import { apiError, type AppBindings } from "./http";
 
@@ -39,7 +39,16 @@ function githubHeaders(env: Env) {
   };
 }
 
-function mapRun(run: Record<string, unknown>): AdminReleaseRun {
+function mapStep(step: Record<string, unknown>): AdminReleaseStep {
+  return {
+    name: typeof step.name === "string" ? step.name : "Release step",
+    status: typeof step.status === "string" ? step.status : "unknown",
+    conclusion: typeof step.conclusion === "string" ? step.conclusion : null,
+    number: typeof step.number === "number" ? step.number : 0,
+  };
+}
+
+function mapRun(run: Record<string, unknown>, steps: AdminReleaseStep[] = []): AdminReleaseRun {
   return {
     id: Number(run.id),
     name: typeof run.name === "string" ? run.name : "Production release",
@@ -49,7 +58,15 @@ function mapRun(run: Record<string, unknown>): AdminReleaseRun {
     htmlUrl: typeof run.html_url === "string" ? run.html_url : null,
     createdAt: typeof run.created_at === "string" ? run.created_at : null,
     updatedAt: typeof run.updated_at === "string" ? run.updated_at : null,
+    steps,
   };
+}
+
+async function fetchRunSteps(env: Env, repository: string, runId: number) {
+  const response = await fetch(`${GITHUB_API}/repos/${repository}/actions/runs/${runId}/jobs?per_page=20`, { headers: githubHeaders(env) });
+  if (!response.ok) return [];
+  const body = (await response.json()) as { jobs?: Array<{ steps?: Record<string, unknown>[] }> };
+  return (body.jobs ?? []).flatMap((job) => job.steps ?? []).map(mapStep).sort((a, b) => a.number - b.number);
 }
 
 export async function fetchAdminReleaseStatus(c: Context<AppBindings>): Promise<AdminReleaseStatusResponse> {
@@ -69,7 +86,10 @@ export async function fetchAdminReleaseStatus(c: Context<AppBindings>): Promise<
   if (!response.ok) return base;
   const body = (await response.json()) as { workflow_runs?: Record<string, unknown>[] };
   const latest = body.workflow_runs?.[0];
-  return { ...base, latestRun: latest ? mapRun(latest) : null };
+  if (!latest) return base;
+  const runId = Number(latest.id);
+  const steps = Number.isFinite(runId) ? await fetchRunSteps(c.env, repository, runId) : [];
+  return { ...base, latestRun: mapRun(latest, steps) };
 }
 
 export async function dispatchAdminRelease(c: Context<AppBindings>) {
@@ -84,5 +104,5 @@ export async function dispatchAdminRelease(c: Context<AppBindings>) {
     body: JSON.stringify({ ref: "main", inputs: { source: "kit-hub-admin" } }),
   });
   if (!response.ok) return apiError(c, 500, "RELEASE_DISPATCH_FAILED", "GitHub did not accept the production release request.");
-  return c.json({ accepted: true, message: "GitHub accepted the release request. Kit Hub will show the workflow as soon as the run appears." }, 202);
+  return c.json({ accepted: true, message: "GitHub accepted the release request. Kit Hub will follow it through checks, migration, deploy, and verification." }, 202);
 }
