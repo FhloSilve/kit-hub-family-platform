@@ -60,7 +60,12 @@ export async function fetchAdminReleaseStatus(c: Context<AppBindings>): Promise<
     deployedVersion: { id: version.id, tag: version.tag ?? null, timestamp: version.timestamp ?? null }, latestRun: null,
   };
   if (!base.releaseConfigured) return base;
-  const response = await fetch(`${GITHUB_API}/repos/${c.env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(c.env.GITHUB_RELEASE_WORKFLOW)}/runs?branch=main&per_page=1`, { headers: githubHeaders(c.env) });
+
+  const repository = c.env.GITHUB_REPOSITORY;
+  const workflow = c.env.GITHUB_RELEASE_WORKFLOW;
+  if (!repository || !workflow) return base;
+
+  const response = await fetch(`${GITHUB_API}/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/runs?branch=main&per_page=1`, { headers: githubHeaders(c.env) });
   if (!response.ok) return base;
   const body = (await response.json()) as { workflow_runs?: Record<string, unknown>[] };
   const latest = body.workflow_runs?.[0];
@@ -69,7 +74,12 @@ export async function fetchAdminReleaseStatus(c: Context<AppBindings>): Promise<
 
 export async function dispatchAdminRelease(c: Context<AppBindings>) {
   if (!releaseConfigured(c.env)) return apiError(c, 409, "RELEASE_NOT_CONFIGURED", "The server-side GitHub release bridge has not been configured yet.");
-  const response = await fetch(`${GITHUB_API}/repos/${c.env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(c.env.GITHUB_RELEASE_WORKFLOW)}/dispatches`, {
+
+  const repository = c.env.GITHUB_REPOSITORY;
+  const workflow = c.env.GITHUB_RELEASE_WORKFLOW;
+  if (!repository || !workflow) return apiError(c, 409, "RELEASE_NOT_CONFIGURED", "The server-side GitHub release bridge has not been configured yet.");
+
+  const response = await fetch(`${GITHUB_API}/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, {
     method: "POST", headers: { ...githubHeaders(c.env), "content-type": "application/json" },
     body: JSON.stringify({ ref: "main", inputs: { source: "kit-hub-admin" } }),
   });
