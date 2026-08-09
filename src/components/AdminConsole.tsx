@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, CheckCircle2, CloudCog, ExternalLink, GitBranch, LoaderCircle, Palette, RefreshCw, Rocket, ShieldCheck, Square, TriangleAlert, X } from "lucide-react";
 import type { AdminReleaseRun, AdminReleaseStatusResponse } from "../../shared/contracts";
 import { ApiError, api } from "../lib/api";
@@ -22,7 +22,16 @@ export function AdminConsole({ onBack }: { onBack: () => void }) {
 
   async function refresh() { setError(null); try { setStatus(await api.adminReleaseStatus()); } catch (e) { setError(e instanceof ApiError ? e.message : "The release status could not be loaded."); } finally { setLoading(false); } }
   useEffect(() => { void refresh(); }, []); useEffect(() => { localStorage.setItem("kit-hub-admin-theme", theme); }, [theme]);
-  const trackedRun = useMemo(() => { const run = status?.latestRun ?? null; const start = releaseStart.current; if (!run || !start) return null; if (start.runId !== null && run.id === start.runId && waitingForRun) return null; const created = run.createdAt ? new Date(run.createdAt).getTime() : 0; return run.id !== start.runId || created >= start.requestedAt - 15000 ? run : null; }, [status?.latestRun?.id, status?.latestRun?.status, status?.latestRun?.conclusion, waitingForRun]);
+
+  const latestRun = status?.latestRun ?? null;
+  const start = releaseStart.current;
+  let trackedRun: AdminReleaseRun | null = null;
+  if (latestRun && start) {
+    const created = latestRun.createdAt ? new Date(latestRun.createdAt).getTime() : 0;
+    const isOldRunWhileWaiting = start.runId !== null && latestRun.id === start.runId && waitingForRun;
+    if (!isOldRunWhileWaiting && (latestRun.id !== start.runId || created >= start.requestedAt - 15000)) trackedRun = latestRun;
+  }
+
   useEffect(() => { if (!releaseStart.current) return; const timer = window.setInterval(() => void refresh(), 3000); return () => window.clearInterval(timer); }, [triggering, waitingForRun, trackedRun?.id, trackedRun?.status]);
   useEffect(() => { if (!trackedRun) return; setWaitingForRun(false); if (!isFinished(trackedRun)) return; setCompletion(trackedRun.conclusion === "cancelled" ? "cancelled" : isSuccessful(trackedRun) ? "success" : "failure"); releaseStart.current = null; setStopping(false); }, [trackedRun?.id, trackedRun?.status, trackedRun?.conclusion]);
 
@@ -31,9 +40,20 @@ export function AdminConsole({ onBack }: { onBack: () => void }) {
 
   const ready = Boolean(status?.releaseConfigured); const run = trackedRun ?? status?.latestRun ?? null; const releaseActive = Boolean(releaseStart.current) && (!trackedRun || !isFinished(trackedRun));
   const format = (value?: string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Not available";
-  const stages = [{ label: "Request", hint: "Send release to GitHub", match: ["checkout", "prepare"] }, { label: "Checks", hint: "Build and quality checks", match: ["check", "test", "type", "lint", "build"] }, { label: "Database", hint: "Apply D1 migrations", match: ["migration", "migrate", "d1"] }, { label: "Deploy", hint: "Publish the Worker", match: ["deploy", "wrangler"] }, { label: "Verify", hint: "Confirm live health", match: ["verify", "health"] }];
+  const stages = [{ label: "Request", hint: "Send release to GitHub", match: ["checkout", "prepare"] }, { label: "Checks", hint: "Build and quality checks", match: ["check", "install dependencies", "test", "type", "lint", "build"] }, { label: "Database", hint: "Apply D1 migrations", match: ["migration", "migrate", "d1"] }, { label: "Deploy", hint: "Publish the Worker", match: ["deploy", "wrangler"] }, { label: "Verify", hint: "Confirm live health", match: ["verify", "health"] }];
   const steps = trackedRun?.steps ?? [];
-  function stageState(index: number) { if (!releaseStart.current && !trackedRun) return "idle"; if (index === 0) return trackedRun ? "done" : "active"; const stage = stages[index]; if (!stage) return "idle"; const matching = steps.filter((step) => stage.match.some((term) => step.name.toLowerCase().includes(term))); if (matching.some((step) => step.conclusion && step.conclusion !== "success" && step.conclusion !== "skipped")) return "failed"; if (matching.some((step) => step.status === "in_progress")) return "active"; if (matching.length && matching.every((step) => step.status === "completed")) return "done"; if (trackedRun?.status === "completed" && trackedRun.conclusion === "success") return "done"; return "idle"; }
+  function stageState(index: number) {
+    if (!releaseStart.current && !trackedRun) return "idle";
+    if (index === 0) return trackedRun ? "done" : "active";
+    const stage = stages[index]; if (!stage) return "idle";
+    const matching = steps.filter((step) => stage.match.some((term) => step.name.toLowerCase().includes(term)));
+    if (matching.some((step) => step.conclusion && step.conclusion !== "success" && step.conclusion !== "skipped")) return "failed";
+    if (matching.some((step) => step.status === "in_progress")) return "active";
+    if (matching.length && matching.every((step) => step.status === "completed" && (step.conclusion === "success" || step.conclusion === "skipped"))) return "done";
+    if (trackedRun?.status === "completed" && trackedRun.conclusion === "success") return "done";
+    if (trackedRun && trackedRun.status !== "completed" && steps.length === 0 && index === 1) return "active";
+    return "idle";
+  }
 
   return <main className={`admin-page admin-theme-${theme}`}>
     <header className="admin-header"><button className="admin-back" onClick={onBack}><ArrowLeft /> Back to Kit Hub</button><div className="admin-title"><span><ShieldCheck /></span><div><small>KIT HUB ADMIN</small><h1>Release control room</h1><p>A separate operations space for Kit Hub itself.</p></div></div></header>
