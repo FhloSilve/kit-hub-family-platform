@@ -1,361 +1,51 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
-  Bell, CalendarDays, Check, CheckCircle2, ChevronDown, CircleUserRound, Clock3, Home,
-  ListTodo, MapPin, MessageCircle, PawPrint, Plus, Search, Settings, ShoppingBasket,
-  RotateCcw, Sparkles, SunMedium, UserRoundPlus, UsersRound, Utensils, X,
+  Bell, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight,
+  CircleUserRound, Clock3, Home, ListTodo, MapPin, MessageCircle, Palette, PawPrint,
+  Plus, Search, Settings, ShoppingBasket, RotateCcw, Sparkles, SunMedium,
+  UserRoundPlus, UsersRound, Utensils, X,
 } from "lucide-react";
-import type {
-  BootstrapResponse, EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent,
-} from "../../shared/contracts";
+import type { BootstrapResponse, EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent } from "../../shared/contracts";
 import { ApiError, api } from "../lib/api";
 import { Brand } from "./Brand";
 import { HouseholdSettingsModal } from "./HouseholdSettingsModal";
 
-interface TodayDashboardProps {
-  bootstrap: BootstrapResponse;
-  demo?: boolean;
-  onSignOut: () => Promise<void>;
-}
-
+interface TodayDashboardProps { bootstrap: BootstrapResponse; demo?: boolean; onSignOut: () => Promise<void>; }
 type ViewKey = "today" | "calendar" | "tasks" | "groceries" | "members";
 type AddKind = "task" | "grocery" | "event" | null;
 type EventRange = "today" | "tomorrow" | "week" | "month";
+type CalendarMode = "month" | "agenda";
+type CalendarTheme = "calm" | "paper" | "kawaii";
+const navItems = [{ key: "today" as const, label: "Home", icon: Home },{ key: "calendar" as const, label: "Calendar", icon: CalendarDays },{ key: "tasks" as const, label: "Tasks", icon: ListTodo },{ key: "groceries" as const, label: "Groceries", icon: ShoppingBasket },{ key: "members" as const, label: "Household", icon: UsersRound }];
+const demoCore: EverydayCoreResponse = { members:[{id:"m1",userId:"demo-user",name:"Louisa",email:"louisa@example.com",role:"owner",joinedAt:new Date().toISOString()}], tasks:[], groceries:[], events:[] };
 
-const navItems = [
-  { key: "today" as const, label: "Home", icon: Home },
-  { key: "calendar" as const, label: "Calendar", icon: CalendarDays },
-  { key: "tasks" as const, label: "Tasks", icon: ListTodo },
-  { key: "groceries" as const, label: "Groceries", icon: ShoppingBasket },
-  { key: "members" as const, label: "Household", icon: UsersRound },
-];
-
-const demoCore: EverydayCoreResponse = {
-  members: [
-    { id: "m1", userId: "demo-user", name: "Louisa", email: "louisa@example.com", role: "owner", joinedAt: new Date().toISOString() },
-    { id: "m2", userId: "demo-mona", name: "Mona", email: "mona@example.com", role: "adult", joinedAt: new Date().toISOString() },
-  ],
-  tasks: [
-    { id: "t1", title: "Put recycling outside", notes: null, status: "done", priority: "normal", dueAt: null, assigneeUserId: "demo-mona", assigneeName: "Mona", createdAt: new Date().toISOString() },
-    { id: "t2", title: "Give Lucy her medicine", notes: null, status: "todo", priority: "high", dueAt: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), assigneeUserId: null, assigneeName: null, createdAt: new Date().toISOString() },
-    { id: "t3", title: "Water the balcony plants", notes: null, status: "todo", priority: "normal", dueAt: null, assigneeUserId: null, assigneeName: null, createdAt: new Date().toISOString() },
-  ],
-  groceries: [
-    { id: "g1", name: "Milk", quantity: "2", checked: false, createdAt: new Date().toISOString() },
-    { id: "g2", name: "Cat food", quantity: "1 box", checked: false, createdAt: new Date().toISOString() },
-    { id: "g3", name: "Tomatoes", quantity: "6", checked: false, createdAt: new Date().toISOString() },
-    { id: "g4", name: "Pasta", quantity: "1", checked: true, createdAt: new Date().toISOString() },
-  ],
-  events: [
-    { id: "e1", title: "Vet appointment — Lucy", description: null, location: "Animal Care Brasschaat", startsAt: new Date(Date.now() + 45 * 60 * 1000).toISOString(), endsAt: null, allDay: false, createdAt: new Date().toISOString() },
-    { id: "e2", title: "Dinner at home", description: null, location: null, startsAt: new Date(new Date().setHours(19, 0, 0, 0)).toISOString(), endsAt: null, allDay: false, createdAt: new Date().toISOString() },
-  ],
-};
-
-export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDashboardProps) {
-  const household = bootstrap.activeHousehold;
-  const [view, setView] = useState<ViewKey>("today");
-  const [core, setCore] = useState<EverydayCoreResponse>(demo ? demoCore : { members: [], tasks: [], groceries: [], events: [] });
-  const [coreLoading, setCoreLoading] = useState(!demo);
-  const [coreError, setCoreError] = useState<string | null>(null);
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [addKind, setAddKind] = useState<AddKind>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [householdName, setHouseholdName] = useState(household?.name ?? "");
-  const [undoTask, setUndoTask] = useState<EverydayTask | null>(null);
-  const [eventRange, setEventRange] = useState<EventRange>("week");
-  const canManageHousehold = household?.role === "owner" || household?.role === "admin";
-  const firstName = bootstrap.user.name.split(" ")[0] || bootstrap.user.name;
-
-  useEffect(() => {
-    if (!undoTask) return;
-    const timer = window.setTimeout(() => setUndoTask(null), 8000);
-    return () => window.clearTimeout(timer);
-  }, [undoTask]);
-
-  useEffect(() => {
-    if (demo || !household) return;
-    let cancelled = false;
-    setCoreLoading(true);
-    api.everydayCore(household.id)
-      .then((data) => { if (!cancelled) { setCore(data); setCoreError(null); } })
-      .catch((error: unknown) => { if (!cancelled) setCoreError(error instanceof ApiError ? error.message : "Everyday data could not be loaded."); })
-      .finally(() => { if (!cancelled) setCoreLoading(false); });
-    return () => { cancelled = true; };
-  }, [demo, household?.id]);
-
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  }, []);
-  const dateLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(new Date());
-  const openTasks = core.tasks.filter((task) => task.status === "todo");
-  const openGroceries = core.groceries.filter((item) => !item.checked);
-  const dashboardEvents = useMemo(() => filterEventsByRange(core.events, eventRange), [core.events, eventRange]);
-
-  function openAdd(kind: Exclude<AddKind, null>) {
-    setQuickAddOpen(false);
-    setAddKind(kind);
-  }
-
-  async function createTask(input: { title: string; dueAt: string | null; priority: "low" | "normal" | "high"; assigneeUserId: string | null }) {
-    const created: EverydayTask = demo
-      ? { id: crypto.randomUUID(), title: input.title, notes: null, status: "todo", priority: input.priority, dueAt: input.dueAt, assigneeUserId: input.assigneeUserId, assigneeName: core.members.find((m) => m.userId === input.assigneeUserId)?.name ?? null, createdAt: new Date().toISOString() }
-      : await api.createTask(household!.id, input);
-    setCore((current) => ({ ...current, tasks: [created, ...current.tasks] }));
-  }
-
-  async function createGrocery(input: { name: string; quantity: string }) {
-    const created: GroceryItem = demo
-      ? { id: crypto.randomUUID(), name: input.name, quantity: input.quantity, checked: false, createdAt: new Date().toISOString() }
-      : await api.createGroceryItem(household!.id, input);
-    setCore((current) => ({ ...current, groceries: [created, ...current.groceries] }));
-  }
-
-  async function createEvent(input: { title: string; startsAt: string; location: string }) {
-    const created: HouseholdEvent = demo
-      ? { id: crypto.randomUUID(), title: input.title, description: null, location: input.location || null, startsAt: input.startsAt, endsAt: null, allDay: false, createdAt: new Date().toISOString() }
-      : await api.createEvent(household!.id, input);
-    setCore((current) => ({ ...current, events: [...current.events, created].sort((a, b) => a.startsAt.localeCompare(b.startsAt)) }));
-  }
-
-  async function toggleTask(task: EverydayTask) {
-    const done = task.status !== "done";
-    setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: done ? "done" : "todo" } : item) }));
-    if (done) setUndoTask(task);
-    else setUndoTask((current) => current?.id === task.id ? null : current);
-    if (!demo) {
-      try { await api.setTaskDone(household!.id, task.id, done); }
-      catch {
-        setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? task : item) }));
-        if (done) setUndoTask((current) => current?.id === task.id ? null : current);
-      }
-    }
-  }
-
-  async function undoCompletedTask() {
-    if (!undoTask) return;
-    const task = undoTask;
-    setUndoTask(null);
-    setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: "todo" } : item) }));
-    if (!demo) {
-      try { await api.setTaskDone(household!.id, task.id, false); }
-      catch { setCore((current) => ({ ...current, tasks: current.tasks.map((item) => item.id === task.id ? { ...item, status: "done" } : item) })); }
-    }
-  }
-
-  async function toggleGrocery(item: GroceryItem) {
-    const checked = !item.checked;
-    setCore((current) => ({ ...current, groceries: current.groceries.map((entry) => entry.id === item.id ? { ...entry, checked } : entry) }));
-    if (!demo) {
-      try { await api.setGroceryChecked(household!.id, item.id, checked); }
-      catch { setCore((current) => ({ ...current, groceries: current.groceries.map((entry) => entry.id === item.id ? item : entry) })); }
-    }
-  }
-
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <Brand />
-        <button className="household-switcher" type="button" onClick={() => setView("members")}>
-          <span className="household-switcher__avatar"><Home /></span>
-          <span><strong>{householdName}</strong><small>{core.members.length || household?.memberCount} members</small></span><ChevronDown />
-        </button>
-        <nav className="sidebar-nav" aria-label="Main navigation">
-          {navItems.map(({ key, label, icon: Icon }) => (
-            <button key={key} type="button" className={view === key ? "is-active" : ""} onClick={() => setView(key)}>
-              <Icon /><span>{label}</span>
-            </button>
-          ))}
-          <button type="button" disabled><MessageCircle /><span>Chat</span><small>Soon</small></button>
-        </nav>
-        <div className="sidebar__spacer" />
-        <button className="silvi-card" type="button" disabled><span><Sparkles /></span><div><strong>Ask Silvi</strong><small>Coming in a later milestone</small></div></button>
-        <button className="sidebar-settings" type="button" onClick={() => setSettingsOpen(true)} disabled={!canManageHousehold}><Settings /> Settings</button>
-      </aside>
-
-      <div className="app-main">
-        <header className="app-topbar">
-          <div className="mobile-brand"><Brand compact /></div>
-          <div className="topbar-search"><Search /><input aria-label="Search Kit Hub" placeholder="Search your home" disabled /><kbd>⌘ K</kbd></div>
-          <div className="topbar-actions">
-            {demo && <span className="demo-badge">Preview</span>}
-            <button className="icon-button" type="button" aria-label="Notifications" disabled><Bell /></button>
-            <div className="profile-menu">
-              <button className="profile-button" type="button" onClick={() => setProfileOpen((open) => !open)} aria-expanded={profileOpen}>
-                <span>{firstName.slice(0, 1).toUpperCase()}</span><div><strong>{firstName}</strong><small>{household?.role}</small></div><ChevronDown />
-              </button>
-              {profileOpen && <div className="profile-popover"><p><strong>{bootstrap.user.name}</strong><small>{bootstrap.user.email}</small></p><button type="button" onClick={() => void onSignOut()}>{demo ? "Leave preview" : "Sign out"}</button></div>}
-            </div>
-          </div>
-        </header>
-
-        <main className="today-page module-page">
-          {coreError && <div className="module-alert">{coreError}</div>}
-          {view === "today" && <TodayView greeting={greeting} firstName={firstName} dateLabel={dateLabel} tasks={openTasks} groceries={openGroceries} events={dashboardEvents} eventRange={eventRange} members={core.members.length} loading={coreLoading} onNavigate={setView} onQuickAdd={() => setQuickAddOpen(true)} onToggleTask={toggleTask} onEventRangeChange={setEventRange} />}
-          {view === "calendar" && <CalendarView events={core.events} loading={coreLoading} onAdd={() => openAdd("event")} />}
-          {view === "tasks" && <TasksView tasks={core.tasks} loading={coreLoading} onAdd={() => openAdd("task")} onToggle={toggleTask} />}
-          {view === "groceries" && <GroceriesView groceries={core.groceries} loading={coreLoading} onAdd={() => openAdd("grocery")} onToggle={toggleGrocery} />}
-          {view === "members" && <MembersView core={core} householdName={householdName} canManage={canManageHousehold} />}
-        </main>
-      </div>
-
-      <nav className="mobile-nav" aria-label="Mobile navigation">
-        {navItems.map(({ key, label, icon: Icon }) => <button key={key} type="button" className={view === key ? "is-active" : ""} onClick={() => setView(key)}><Icon /><span>{label === "Household" ? "House" : label}</span></button>)}
-      </nav>
-      <button className="mobile-quick-add" type="button" onClick={() => setQuickAddOpen(true)} aria-label="Quick add"><Plus /></button>
-
-      {quickAddOpen && <QuickAddModal onClose={() => setQuickAddOpen(false)} onChoose={openAdd} onMembers={() => { setQuickAddOpen(false); setView("members"); }} />}
-      {addKind && <CreateModal kind={addKind} members={core.members} onClose={() => setAddKind(null)} onTask={createTask} onGrocery={createGrocery} onEvent={createEvent} />}
-      {undoTask && <div className="undo-toast" role="status"><span><strong>Task completed</strong><small>{undoTask.title}</small></span><button type="button" onClick={() => void undoCompletedTask()}><RotateCcw /> Undo</button></div>}
-      {settingsOpen && household && <HouseholdSettingsModal currentName={householdName} onClose={() => setSettingsOpen(false)} onSave={async (name) => { if (demo) setHouseholdName(name.trim()); else setHouseholdName((await api.updateHousehold(household.id, { name })).name); }} />}
-    </div>
-  );
+export function TodayDashboard({ bootstrap, demo=false, onSignOut }: TodayDashboardProps) {
+ const household=bootstrap.activeHousehold; const [view,setView]=useState<ViewKey>("today"); const [core,setCore]=useState<EverydayCoreResponse>(demo?demoCore:{members:[],tasks:[],groceries:[],events:[]}); const [coreLoading,setCoreLoading]=useState(!demo); const [coreError,setCoreError]=useState<string|null>(null); const [quickAddOpen,setQuickAddOpen]=useState(false); const [addKind,setAddKind]=useState<AddKind>(null); const [eventDraftDate,setEventDraftDate]=useState<Date|null>(null); const [profileOpen,setProfileOpen]=useState(false); const [settingsOpen,setSettingsOpen]=useState(false); const [householdName,setHouseholdName]=useState(household?.name??""); const [undoTask,setUndoTask]=useState<EverydayTask|null>(null); const [eventRange,setEventRange]=useState<EventRange>("week"); const canManageHousehold=household?.role==="owner"||household?.role==="admin"; const firstName=bootstrap.user.name.split(" ")[0]||bootstrap.user.name;
+ useEffect(()=>{if(!undoTask)return;const timer=window.setTimeout(()=>setUndoTask(null),8000);return()=>window.clearTimeout(timer)},[undoTask]);
+ useEffect(()=>{if(demo||!household)return;let cancelled=false;setCoreLoading(true);api.everydayCore(household.id).then(data=>{if(!cancelled){setCore(data);setCoreError(null)}}).catch((error:unknown)=>{if(!cancelled)setCoreError(error instanceof ApiError?error.message:"Everyday data could not be loaded.")}).finally(()=>{if(!cancelled)setCoreLoading(false)});return()=>{cancelled=true}},[demo,household?.id]);
+ const greeting=useMemo(()=>{const h=new Date().getHours();return h<12?"Good morning":h<18?"Good afternoon":"Good evening"},[]); const dateLabel=new Intl.DateTimeFormat(undefined,{weekday:"long",day:"numeric",month:"long"}).format(new Date()); const openTasks=core.tasks.filter(t=>t.status==="todo"); const openGroceries=core.groceries.filter(i=>!i.checked); const dashboardEvents=useMemo(()=>filterEventsByRange(core.events,eventRange),[core.events,eventRange]);
+ function openAdd(kind:Exclude<AddKind,null>,date?:Date){setQuickAddOpen(false);setEventDraftDate(kind==="event"?(date??null):null);setAddKind(kind)}
+ async function createTask(input:{title:string;dueAt:string|null;priority:"low"|"normal"|"high";assigneeUserId:string|null}){const created:EverydayTask=demo?{id:crypto.randomUUID(),title:input.title,notes:null,status:"todo",priority:input.priority,dueAt:input.dueAt,assigneeUserId:input.assigneeUserId,assigneeName:core.members.find(m=>m.userId===input.assigneeUserId)?.name??null,createdAt:new Date().toISOString()}:await api.createTask(household!.id,input);setCore(c=>({...c,tasks:[created,...c.tasks]}))}
+ async function createGrocery(input:{name:string;quantity:string}){const created:GroceryItem=demo?{id:crypto.randomUUID(),name:input.name,quantity:input.quantity,checked:false,createdAt:new Date().toISOString()}:await api.createGroceryItem(household!.id,input);setCore(c=>({...c,groceries:[created,...c.groceries]}))}
+ async function createEvent(input:{title:string;startsAt:string;location:string}){const created:HouseholdEvent=demo?{id:crypto.randomUUID(),title:input.title,description:null,location:input.location||null,startsAt:input.startsAt,endsAt:null,allDay:false,createdAt:new Date().toISOString()}:await api.createEvent(household!.id,input);setCore(c=>({...c,events:[...c.events,created].sort((a,b)=>a.startsAt.localeCompare(b.startsAt))}))}
+ async function toggleTask(task:EverydayTask){const done=task.status!=="done";setCore(c=>({...c,tasks:c.tasks.map(i=>i.id===task.id?{...i,status:done?"done":"todo"}:i)}));if(done)setUndoTask(task);else setUndoTask(c=>c?.id===task.id?null:c);if(!demo)try{await api.setTaskDone(household!.id,task.id,done)}catch{setCore(c=>({...c,tasks:c.tasks.map(i=>i.id===task.id?task:i)}))}}
+ async function undoCompletedTask(){if(!undoTask)return;const task=undoTask;setUndoTask(null);setCore(c=>({...c,tasks:c.tasks.map(i=>i.id===task.id?{...i,status:"todo"}:i)}));if(!demo)try{await api.setTaskDone(household!.id,task.id,false)}catch{setCore(c=>({...c,tasks:c.tasks.map(i=>i.id===task.id?{...i,status:"done"}:i)}))}}
+ async function toggleGrocery(item:GroceryItem){const checked=!item.checked;setCore(c=>({...c,groceries:c.groceries.map(i=>i.id===item.id?{...i,checked}:i)}));if(!demo)try{await api.setGroceryChecked(household!.id,item.id,checked)}catch{setCore(c=>({...c,groceries:c.groceries.map(i=>i.id===item.id?item:i)}))}}
+ return <div className="app-shell"><aside className="sidebar"><Brand/><button className="household-switcher" type="button" onClick={()=>setView("members")}><span className="household-switcher__avatar"><Home/></span><span><strong>{householdName}</strong><small>{core.members.length||household?.memberCount} members</small></span><ChevronDown/></button><nav className="sidebar-nav">{navItems.map(({key,label,icon:Icon})=><button key={key} type="button" className={view===key?"is-active":""} onClick={()=>setView(key)}><Icon/><span>{label}</span></button>)}<button type="button" disabled><MessageCircle/><span>Chat</span><small>Soon</small></button></nav><div className="sidebar__spacer"/><button className="silvi-card" type="button" disabled><span><Sparkles/></span><div><strong>Ask Silvi</strong><small>Coming later</small></div></button><button className="sidebar-settings" type="button" onClick={()=>setSettingsOpen(true)} disabled={!canManageHousehold}><Settings/> Settings</button></aside><div className="app-main"><header className="app-topbar"><div className="mobile-brand"><Brand compact/></div><div className="topbar-search"><Search/><input aria-label="Search Kit Hub" placeholder="Search your home" disabled/><kbd>⌘ K</kbd></div><div className="topbar-actions"><button className="icon-button" type="button" disabled><Bell/></button><div className="profile-menu"><button className="profile-button" type="button" onClick={()=>setProfileOpen(o=>!o)}><span>{firstName[0]?.toUpperCase()}</span><div><strong>{firstName}</strong><small>{household?.role}</small></div><ChevronDown/></button>{profileOpen&&<div className="profile-popover"><p><strong>{bootstrap.user.name}</strong><small>{bootstrap.user.email}</small></p><button type="button" onClick={()=>void onSignOut()}>Sign out</button></div>}</div></div></header><main className="today-page module-page">{coreError&&<div className="module-alert">{coreError}</div>}{view==="today"&&<TodayView greeting={greeting} firstName={firstName} dateLabel={dateLabel} tasks={openTasks} groceries={openGroceries} events={dashboardEvents} eventRange={eventRange} members={core.members.length} loading={coreLoading} onNavigate={setView} onQuickAdd={()=>setQuickAddOpen(true)} onToggleTask={toggleTask} onEventRangeChange={setEventRange} onAddEvent={()=>openAdd("event")} onAddTask={()=>openAdd("task")} onAddGrocery={()=>openAdd("grocery")}/>} {view==="calendar"&&<CalendarView events={core.events} loading={coreLoading} onAdd={date=>openAdd("event",date)}/>} {view==="tasks"&&<TasksView tasks={core.tasks} loading={coreLoading} onAdd={()=>openAdd("task")} onToggle={toggleTask}/>} {view==="groceries"&&<GroceriesView groceries={core.groceries} loading={coreLoading} onAdd={()=>openAdd("grocery")} onToggle={toggleGrocery}/>} {view==="members"&&<MembersView core={core} householdName={householdName} canManage={canManageHousehold}/>}</main></div><nav className="mobile-nav">{navItems.map(({key,label,icon:Icon})=><button key={key} type="button" className={view===key?"is-active":""} onClick={()=>setView(key)}><Icon/><span>{label}</span></button>)}</nav><button className="mobile-quick-add" type="button" onClick={()=>setQuickAddOpen(true)}><Plus/></button>{quickAddOpen&&<QuickAddModal onClose={()=>setQuickAddOpen(false)} onChoose={openAdd} onMembers={()=>{setQuickAddOpen(false);setView("members")}}/>}{addKind&&<CreateModal kind={addKind} members={core.members} initialEventDate={eventDraftDate} onClose={()=>{setAddKind(null);setEventDraftDate(null)}} onTask={createTask} onGrocery={createGrocery} onEvent={createEvent}/>} {undoTask&&<div className="undo-toast"><span><strong>Task completed</strong><small>{undoTask.title}</small></span><button type="button" onClick={()=>void undoCompletedTask()}><RotateCcw/> Undo</button></div>} {settingsOpen&&household&&<HouseholdSettingsModal currentName={householdName} onClose={()=>setSettingsOpen(false)} onSave={async name=>{if(demo)setHouseholdName(name.trim());else setHouseholdName((await api.updateHousehold(household.id,{name})).name)}}/>}</div>
 }
-
-function filterEventsByRange(events: HouseholdEvent[], range: EventRange) {
-  const now = new Date();
-  const startToday = new Date(now);
-  startToday.setHours(0, 0, 0, 0);
-  const startTomorrow = new Date(startToday);
-  startTomorrow.setDate(startTomorrow.getDate() + 1);
-  const startDayAfterTomorrow = new Date(startTomorrow);
-  startDayAfterTomorrow.setDate(startDayAfterTomorrow.getDate() + 1);
-  const endWeek = new Date(startToday);
-  endWeek.setDate(endWeek.getDate() + 7);
-  const endMonth = new Date(startToday);
-  endMonth.setDate(endMonth.getDate() + 30);
-
-  const [start, end] = range === "today"
-    ? [startToday, startTomorrow]
-    : range === "tomorrow"
-      ? [startTomorrow, startDayAfterTomorrow]
-      : range === "week"
-        ? [startToday, endWeek]
-        : [startToday, endMonth];
-
-  return events
-    .filter((event) => {
-      const startsAt = new Date(event.startsAt);
-      return startsAt >= start && startsAt < end;
-    })
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-}
-
-function PageHeading({ eyebrow, title, text, action, onAction }: { eyebrow: string; title: string; text: string; action?: string; onAction?: () => void }) {
-  return <header className="today-heading module-heading"><div><span className="today-date">{eyebrow}</span><h1>{title}</h1><p>{text}</p></div>{action && <button className="button button--primary" type="button" onClick={onAction}><Plus /> {action}</button>}</header>;
-}
-
-function TodayView({ greeting, firstName, dateLabel, tasks, groceries, events, eventRange, members, loading, onNavigate, onQuickAdd, onToggleTask, onEventRangeChange }: {
-  greeting: string; firstName: string; dateLabel: string; tasks: EverydayTask[]; groceries: GroceryItem[]; events: HouseholdEvent[]; eventRange: EventRange; members: number; loading: boolean; onNavigate: (view: ViewKey) => void; onQuickAdd: () => void; onToggleTask: (task: EverydayTask) => void; onEventRangeChange: (range: EventRange) => void;
-}) {
-  const eventRangeLabel = eventRange === "today" ? "today" : eventRange === "tomorrow" ? "tomorrow" : eventRange === "week" ? "this week" : "this month";
-  const emptyTitle = eventRange === "today" ? "A quiet day so far" : eventRange === "tomorrow" ? "Nothing planned tomorrow" : eventRange === "week" ? "A quiet week ahead" : "A quiet month ahead";
-  return <>
-    <header className="today-heading"><div><span className="today-date"><SunMedium /> {dateLabel}</span><h1>{greeting}, {firstName}.</h1><p>Your household at a glance — what is coming up, what needs doing, and what the home needs next.</p></div><button className="button button--primary" type="button" onClick={onQuickAdd}><Plus /> Quick add</button></header>
-    <section className="daily-glance" aria-label="At a glance">
-      <button type="button" onClick={() => onNavigate("calendar")} aria-label={`Open calendar, ${events.length} events ${eventRangeLabel}`}><span className="glance-icon glance-icon--coral"><CalendarDays /></span><p><strong>{events.length}</strong><small>events {eventRangeLabel}</small></p></button>
-      <button type="button" onClick={() => onNavigate("tasks")} aria-label={`Open tasks, ${tasks.length} open`}><span className="glance-icon glance-icon--gold"><ListTodo /></span><p><strong>{tasks.length}</strong><small>open tasks</small></p></button>
-      <button type="button" onClick={() => onNavigate("groceries")} aria-label={`Open groceries, ${groceries.length} items`}><span className="glance-icon glance-icon--mint"><ShoppingBasket /></span><p><strong>{groceries.length}</strong><small>grocery items</small></p></button>
-      <button type="button" onClick={() => onNavigate("members")} aria-label={`Open household, ${members} members`}><span className="glance-icon glance-icon--blue"><UsersRound /></span><p><strong>{members}</strong><small>household members</small></p></button>
-    </section>
-    <div className="dashboard-grid">
-      <section className="dashboard-card dashboard-card--schedule">
-        <header className="card-heading"><div><span className="card-icon card-icon--coral"><CalendarDays /></span><div><h2>Upcoming</h2><p>Choose how far ahead you want to look</p></div></div><button type="button" onClick={() => onNavigate("calendar")}>View calendar</button></header>
-        <div role="group" aria-label="Upcoming event range" style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", margin: "0 0 1rem" }}>
-          {(["today", "tomorrow", "week", "month"] as EventRange[]).map((range) => <button key={range} type="button" className={eventRange === range ? "button button--primary" : "button button--secondary"} onClick={() => onEventRangeChange(range)} style={{ minHeight: 34, padding: "0.4rem 0.72rem", fontSize: "0.82rem" }}>{range === "today" ? "Today" : range === "tomorrow" ? "Tomorrow" : range === "week" ? "Week" : "Month"}</button>)}
-        </div>
-        {loading ? <LoadingCard /> : events.length ? <EventList events={events.slice(0, 5)} /> : <EmptyState icon={CalendarDays} title={emptyTitle} text="Add an event or switch the range to look further ahead." />}
-      </section>
-      <section className="dashboard-card dashboard-card--tasks"><header className="card-heading"><div><span className="card-icon card-icon--gold"><ListTodo /></span><div><h2>Tasks</h2><p>Things to take care of</p></div></div><button type="button" onClick={() => onNavigate("tasks")}>View all</button></header>{loading ? <LoadingCard /> : tasks.length ? <div className="task-list">{tasks.slice(0, 4).map((task) => <TaskRow key={task.id} task={task} onToggle={onToggleTask} />)}</div> : <EmptyState icon={ListTodo} title="Nothing on the list" text="You are all caught up." />}</section>
-      <section className="dashboard-card dashboard-card--grocery"><header className="card-heading"><div><span className="card-icon card-icon--mint"><ShoppingBasket /></span><div><h2>Groceries</h2><p>Current shopping list</p></div></div><button type="button" onClick={() => onNavigate("groceries")}>Open list</button></header>{groceries.length ? <><div className="progress-row"><span><strong>{groceries.length} items left</strong><small>Ready for the next shop</small></span></div><div className="grocery-tags">{groceries.slice(0, 3).map((item) => <span key={item.id}>{item.name}</span>)}{groceries.length > 3 && <span>+{groceries.length - 3}</span>}</div></> : <EmptyState compact icon={ShoppingBasket} title="The list is empty" text="Add the first grocery item." />}</section>
-      <section className="dashboard-card dashboard-card--dinner"><div className="dinner-copy"><span className="eyebrow">MEAL PLANNING</span><h2>Connected groceries come first.</h2><p>Meals can build on the working grocery list in a later slice.</p><button type="button" disabled>Meals coming later <span>→</span></button></div><div className="dinner-illustration" aria-hidden="true"><span>🍝</span><i /><b /></div></section>
-      <section className="dashboard-card dashboard-card--status"><header className="card-heading"><button className="card-heading__link" type="button" onClick={() => onNavigate("members")}><span className="card-icon card-icon--blue"><CircleUserRound /></span><div><h2>Household</h2><p>{members} active {members === 1 ? "member" : "members"}</p></div></button><button type="button" onClick={() => onNavigate("members")}>View</button></header><div className="member-list"><button type="button" onClick={() => onNavigate("members")}><span className="avatar avatar--fox">{firstName[0]?.toUpperCase()}</span><p><strong>{firstName}</strong><small><i className="status-dot status-dot--green" /> Signed in</small></p><time>Now</time></button></div></section>
-      <section className="dashboard-card dashboard-card--house"><div className="house-preview" aria-hidden="true"><span className="house-preview__roof" /><span className="house-preview__wall" /><span className="house-preview__door" /><span className="house-preview__window" /><i /><b /></div><div><span className="eyebrow">YOUR DIGITAL HOME</span><h2>The useful rooms are opening.</h2><p>Calendar, tasks, groceries and household data now share the same live foundation.</p><button type="button" disabled>Explore mode stays Milestone 4</button></div></section>
-    </div>
-  </>;
-}
-
-function CalendarView({ events, loading, onAdd }: { events: HouseholdEvent[]; loading: boolean; onAdd: () => void }) {
-  const grouped = useMemo(() => {
-    const map = new Map<string, HouseholdEvent[]>();
-    for (const event of events) {
-      const key = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(new Date(event.startsAt));
-      map.set(key, [...(map.get(key) ?? []), event]);
-    }
-    return [...map.entries()];
-  }, [events]);
-  return <><PageHeading eyebrow="CALENDAR" title="Shared time, without the clutter." text="Household events live in one calm timeline." action="Add event" onAction={onAdd} />
-    <section className="module-surface">{loading ? <LoadingCard /> : grouped.length ? grouped.map(([date, items]) => <div className="calendar-day" key={date}><h2>{date}</h2><EventList events={items} /></div>) : <EmptyState icon={CalendarDays} title="No events yet" text="Add the first household event." />}</section></>;
-}
-
-function TasksView({ tasks, loading, onAdd, onToggle }: { tasks: EverydayTask[]; loading: boolean; onAdd: () => void; onToggle: (task: EverydayTask) => void }) {
-  const open = tasks.filter((t) => t.status === "todo"); const done = tasks.filter((t) => t.status === "done");
-  return <><PageHeading eyebrow="TASKS" title="Keep the house moving." text={`${open.length} open ${open.length === 1 ? "task" : "tasks"}. Assign work, add due times, and tick things off.`} action="Add task" onAction={onAdd} />
-    <section className="module-surface">{loading ? <LoadingCard /> : <><div className="module-section-title"><h2>To do</h2><span>{open.length}</span></div>{open.length ? <div className="task-list module-list">{open.map((task) => <TaskRow key={task.id} task={task} onToggle={onToggle} />)}</div> : <EmptyState compact icon={CheckCircle2} title="All clear" text="No open tasks right now." />}{done.length > 0 && <><div className="module-section-title module-section-title--done"><h2>Done</h2><span>{done.length}</span></div><div className="task-list module-list">{done.map((task) => <TaskRow key={task.id} task={task} onToggle={onToggle} />)}</div></>}</>}</section></>;
-}
-
-function GroceriesView({ groceries, loading, onAdd, onToggle }: { groceries: GroceryItem[]; loading: boolean; onAdd: () => void; onToggle: (item: GroceryItem) => void }) {
-  const left = groceries.filter((item) => !item.checked); const done = groceries.filter((item) => item.checked);
-  return <><PageHeading eyebrow="GROCERIES" title="One list. Everyone contributes." text={`${left.length} ${left.length === 1 ? "item" : "items"} still to pick up.`} action="Add item" onAction={onAdd} />
-    <section className="module-surface">{loading ? <LoadingCard /> : groceries.length ? <div className="grocery-list">{[...left, ...done].map((item) => <button type="button" className={`grocery-row ${item.checked ? "is-checked" : ""}`} key={item.id} onClick={() => void onToggle(item)}><span className="grocery-check">{item.checked && <Check />}</span><span><strong>{item.name}</strong><small>Quantity: {item.quantity}</small></span></button>)}</div> : <EmptyState icon={ShoppingBasket} title="Your list is empty" text="Add milk, cat food, or whatever the house needs next." />}</section></>;
-}
-
-function MembersView({ core, householdName, canManage }: { core: EverydayCoreResponse; householdName: string; canManage: boolean }) {
-  return <><PageHeading eyebrow="HOUSEHOLD" title={householdName} text="The people who currently share this Kit Hub home." />
-    <section className="module-surface"><div className="member-directory">{core.members.map((member, index) => <article key={member.id}><span className={`avatar ${index % 2 ? "avatar--plum" : "avatar--fox"}`}>{member.name.slice(0, 1).toUpperCase()}</span><div><strong>{member.name}</strong><small>{member.email}</small></div><span className="role-pill">{member.role}</span></article>)}</div>{canManage && <div className="members-next"><UserRoundPlus /><div><strong>Invitations are the next member-management slice.</strong><p>The directory is live now; invite links, role changes, and child controls should be added together so permissions stay coherent.</p></div></div>}</section></>;
-}
-
-function EventList({ events }: { events: HouseholdEvent[] }) {
-  return <div className="timeline">{events.map((event) => <div className="timeline-item" key={event.id}><time>{event.allDay ? "ALL DAY" : new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date(event.startsAt))}</time><span /><div><small>{new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(event.startsAt)).toUpperCase()}</small><strong>{event.title}</strong>{event.location && <p><MapPin /> {event.location}</p>}</div></div>)}</div>;
-}
-
-function TaskRow({ task, onToggle }: { task: EverydayTask; onToggle: (task: EverydayTask) => void }) {
-  const meta = task.dueAt ? `Due ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(task.dueAt))}` : task.assigneeName ? `Assigned to ${task.assigneeName}` : "Anyone can claim";
-  return <div className={`task ${task.status === "done" ? "task--checked" : ""}`}><button type="button" aria-label={`${task.status === "done" ? "Reopen" : "Complete"}: ${task.title}`} onClick={() => void onToggle(task)}>{task.status === "done" && <Check />}</button><p><strong>{task.title}</strong><small>{task.priority === "high" && <Clock3 />} {meta}</small></p></div>;
-}
-
-function QuickAddModal({ onClose, onChoose, onMembers }: { onClose: () => void; onChoose: (kind: Exclude<AddKind, null>) => void; onMembers: () => void }) {
-  const actions = [
-    { label: "Grocery item", text: "Add to the shared list", icon: ShoppingBasket, color: "mint", run: () => onChoose("grocery") },
-    { label: "Task", text: "Create a household to-do", icon: CheckCircle2, color: "gold", run: () => onChoose("task") },
-    { label: "Event", text: "Put something on the calendar", icon: CalendarDays, color: "blue", run: () => onChoose("event") },
-    { label: "Household", text: "See everyone in this home", icon: UsersRound, color: "coral", run: onMembers },
-  ];
-  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="quick-add-modal" role="dialog" aria-modal="true" aria-labelledby="quick-add-title" onMouseDown={(e) => e.stopPropagation()}><header><div><span className="eyebrow">QUICK ADD</span><h2 id="quick-add-title">What&apos;s happening?</h2></div><button className="icon-button" type="button" onClick={onClose} aria-label="Close"><X /></button></header><div className="quick-action-grid">{actions.map(({ label, text, icon: Icon, color, run }) => <button type="button" key={label} onClick={run}><span className={`quick-action quick-action--${color}`}><Icon /></span><strong>{label}</strong><small>{text}</small></button>)}</div><p>Calendar, tasks and groceries save to your household immediately.</p></section></div>;
-}
-
-function CreateModal({ kind, members, onClose, onTask, onGrocery, onEvent }: {
-  kind: Exclude<AddKind, null>; members: EverydayCoreResponse["members"]; onClose: () => void;
-  onTask: (input: { title: string; dueAt: string | null; priority: "low" | "normal" | "high"; assigneeUserId: string | null }) => Promise<void>;
-  onGrocery: (input: { name: string; quantity: string }) => Promise<void>;
-  onEvent: (input: { title: string; startsAt: string; location: string }) => Promise<void>;
-}) {
-  const [saving, setSaving] = useState(false); const [error, setError] = useState<string | null>(null);
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setError(null); const data = new FormData(event.currentTarget);
-    try {
-      if (kind === "task") {
-        const rawDue = String(data.get("dueAt") ?? "");
-        await onTask({ title: String(data.get("title") ?? "").trim(), dueAt: rawDue ? new Date(rawDue).toISOString() : null, priority: String(data.get("priority") ?? "normal") as "low" | "normal" | "high", assigneeUserId: String(data.get("assigneeUserId") ?? "") || null });
-      } else if (kind === "grocery") {
-        await onGrocery({ name: String(data.get("name") ?? "").trim(), quantity: String(data.get("quantity") ?? "1").trim() || "1" });
-      } else {
-        const rawStart = String(data.get("startsAt") ?? "");
-        if (!rawStart) throw new Error("Choose when the event starts.");
-        await onEvent({ title: String(data.get("title") ?? "").trim(), startsAt: new Date(rawStart).toISOString(), location: String(data.get("location") ?? "").trim() });
-      }
-      onClose();
-    } catch (err) { setError(err instanceof Error ? err.message : "Could not save this item."); }
-    finally { setSaving(false); }
-  }
-  const title = kind === "task" ? "Add a task" : kind === "grocery" ? "Add a grocery item" : "Add an event";
-  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="create-modal" role="dialog" aria-modal="true" onMouseDown={(e) => e.stopPropagation()}><header><div><span className="eyebrow">EVERYDAY CORE</span><h2>{title}</h2></div><button className="icon-button" type="button" onClick={onClose} aria-label="Close"><X /></button></header><form onSubmit={submit}>
-    {kind === "grocery" ? <><label><span>Item</span><input name="name" required maxLength={120} autoFocus placeholder="e.g. Milk" /></label><label><span>Quantity</span><input name="quantity" maxLength={40} defaultValue="1" placeholder="e.g. 2 cartons" /></label></> : <><label><span>{kind === "event" ? "Event" : "Task"}</span><input name="title" required maxLength={160} autoFocus placeholder={kind === "event" ? "e.g. Dentist appointment" : "e.g. Put recycling outside"} /></label>{kind === "task" ? <div className="create-modal__row"><label><span>Due</span><input name="dueAt" type="datetime-local" /></label><label><span>Priority</span><select name="priority" defaultValue="normal"><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option></select></label><label><span>Assign to</span><select name="assigneeUserId" defaultValue=""><option value="">Anyone</option>{members.map((m) => <option key={m.userId} value={m.userId}>{m.name}</option>)}</select></label></div> : <><label><span>Starts</span><input name="startsAt" type="datetime-local" required /></label><label><span>Location</span><input name="location" maxLength={180} placeholder="Optional" /></label></>}</>}
-    {error && <p className="form-error">{error}</p>}<div className="create-modal__actions"><button className="button button--secondary" type="button" onClick={onClose}>Cancel</button><button className="button button--primary" type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</button></div>
-  </form></section></div>;
-}
-
-function LoadingCard() { return <div className="module-loading"><span className="loading-orbit" aria-hidden="true"><i /></span><p>Loading your household…</p></div>; }
-function EmptyState({ icon: Icon, title, text, compact = false }: { icon: typeof CalendarDays; title: string; text: string; compact?: boolean }) { return <div className={`empty-state ${compact ? "empty-state--compact" : ""}`}><span><Icon /></span><div><strong>{title}</strong><p>{text}</p></div></div>; }
+function filterEventsByRange(events:HouseholdEvent[],range:EventRange){const today=startOfDay(new Date()),tomorrow=addDays(today,1),after=addDays(today,2),week=addDays(today,7),month=addDays(today,30);const [start,end]=range==="today"?[today,tomorrow]:range==="tomorrow"?[tomorrow,after]:range==="week"?[today,week]:[today,month];return events.filter(e=>{const d=new Date(e.startsAt);return d>=start&&d<end}).sort((a,b)=>a.startsAt.localeCompare(b.startsAt))}
+function PageHeading({eyebrow,title,text,action,onAction}:{eyebrow:string;title:string;text:string;action?:string;onAction?:()=>void}){return <header className="today-heading module-heading"><div><span className="today-date">{eyebrow}</span><h1>{title}</h1><p>{text}</p></div>{action&&<button className="button button--primary" type="button" onClick={onAction}><Plus/> {action}</button>}</header>}
+function TodayView(p:{greeting:string;firstName:string;dateLabel:string;tasks:EverydayTask[];groceries:GroceryItem[];events:HouseholdEvent[];eventRange:EventRange;members:number;loading:boolean;onNavigate:(v:ViewKey)=>void;onQuickAdd:()=>void;onToggleTask:(t:EverydayTask)=>void;onEventRangeChange:(r:EventRange)=>void;onAddEvent:()=>void;onAddTask:()=>void;onAddGrocery:()=>void}){const empty=p.eventRange==="today"?"A quiet day so far":p.eventRange==="tomorrow"?"Nothing planned tomorrow":p.eventRange==="week"?"A quiet week ahead":"A quiet month ahead";return <><header className="today-heading"><div><span className="today-date"><SunMedium/> {p.dateLabel}</span><h1>{p.greeting}, {p.firstName}.</h1><p>Your household at a glance.</p></div><button className="button button--primary" type="button" onClick={p.onQuickAdd}><Plus/> Quick add</button></header><section className="daily-glance"><button onClick={()=>p.onNavigate("calendar")}><span className="glance-icon glance-icon--coral"><CalendarDays/></span><p><strong>{p.events.length}</strong><small>events</small></p></button><button onClick={()=>p.onNavigate("tasks")}><span className="glance-icon glance-icon--gold"><ListTodo/></span><p><strong>{p.tasks.length}</strong><small>open tasks</small></p></button><button onClick={()=>p.onNavigate("groceries")}><span className="glance-icon glance-icon--mint"><ShoppingBasket/></span><p><strong>{p.groceries.length}</strong><small>grocery items</small></p></button><button onClick={()=>p.onNavigate("members")}><span className="glance-icon glance-icon--blue"><UsersRound/></span><p><strong>{p.members}</strong><small>members</small></p></button></section><div className="dashboard-grid"><section className="dashboard-card dashboard-card--schedule"><header className="card-heading"><div><span className="card-icon card-icon--coral"><CalendarDays/></span><div><h2>Upcoming</h2><p>Choose how far ahead you want to look</p></div></div><button onClick={()=>p.onNavigate("calendar")}>View calendar</button></header><div className="dashboard-range-tabs">{(["today","tomorrow","week","month"] as EventRange[]).map(r=><button key={r} className={p.eventRange===r?"is-active":""} onClick={()=>p.onEventRangeChange(r)}>{labelRange(r)}</button>)}</div>{p.loading?<LoadingCard/>:p.events.length?<EventList events={p.events}/>:<EmptyState icon={CalendarDays} title={empty} text="Click here to add an event." actionLabel="Add event" onClick={p.onAddEvent}/>}</section><section className="dashboard-card dashboard-card--tasks"><header className="card-heading"><div><span className="card-icon card-icon--gold"><ListTodo/></span><div><h2>Tasks</h2></div></div><button onClick={()=>p.onNavigate("tasks")}>View all</button></header>{p.tasks.length?<div className="task-list">{p.tasks.slice(0,4).map(t=><TaskRow key={t.id} task={t} onToggle={p.onToggleTask}/>)}</div>:<EmptyState icon={ListTodo} title="Nothing on the list" text="Click here to add a task." actionLabel="Add task" onClick={p.onAddTask}/>}</section><section className="dashboard-card dashboard-card--grocery"><header className="card-heading"><div><span className="card-icon card-icon--mint"><ShoppingBasket/></span><div><h2>Groceries</h2></div></div><button onClick={()=>p.onNavigate("groceries")}>Open list</button></header>{p.groceries.length?<div className="grocery-tags">{p.groceries.slice(0,3).map(i=><span key={i.id}>{i.name}</span>)}</div>:<EmptyState compact icon={ShoppingBasket} title="The list is empty" text="Click here to add the first grocery item." actionLabel="Add grocery" onClick={p.onAddGrocery}/>}</section></div></>}
+function CalendarView({events,loading,onAdd}:{events:HouseholdEvent[];loading:boolean;onAdd:(d?:Date)=>void}){const [mode,setMode]=useState<CalendarMode>("month"),[anchor,setAnchor]=useState(()=>startOfDay(new Date())),[theme,setTheme]=useState<CalendarTheme>(()=>(localStorage.getItem("kit-calendar-theme") as CalendarTheme)||"calm");useEffect(()=>localStorage.setItem("kit-calendar-theme",theme),[theme]);const days=useMemo(()=>monthGrid(anchor),[anchor]);const period=new Intl.DateTimeFormat(undefined,{month:"long",year:"numeric"}).format(anchor);return <div className={`kit-calendar kit-calendar--${theme}`}><PageHeading eyebrow="CALENDAR" title="Shared time, without the clutter." text="Choose a calm, paper or kawaii calendar style." action="Add event" onAction={()=>onAdd(anchor)}/><section className="kit-calendar__controls"><div className="kit-calendar__range">{(["today","tomorrow","week","month"] as EventRange[]).map(r=><button key={r} onClick={()=>{const t=startOfDay(new Date());setAnchor(r==="tomorrow"?addDays(t,1):t);setMode(r==="month"?"month":"agenda")}}>{labelRange(r)}</button>)}</div><div className="kit-calendar__period"><button onClick={()=>setAnchor(addMonths(anchor,-1))}><ChevronLeft/></button><strong>{period}</strong><button onClick={()=>setAnchor(addMonths(anchor,1))}><ChevronRight/></button><button onClick={()=>setAnchor(startOfDay(new Date()))}>Today</button><button className={mode==="month"?"is-active":""} onClick={()=>setMode("month")}>Month</button><button className={mode==="agenda"?"is-active":""} onClick={()=>setMode("agenda")}>Agenda</button></div><label className="kit-calendar__theme"><span><Palette/> Style</span><select value={theme} onChange={e=>setTheme(e.target.value as CalendarTheme)}><option value="calm">Calm</option><option value="paper">Paper</option><option value="kawaii">Kawaii</option></select></label></section>{loading?<section className="module-surface"><LoadingCard/></section>:mode==="month"?<MonthCalendar anchor={anchor} days={days} events={events} onAdd={onAdd}/>:<section className="module-surface kit-agenda">{events.length?<EventList events={events}/>:<EmptyState icon={CalendarDays} title="No events here yet" text="Click this space to add an event." actionLabel="Add event" onClick={()=>onAdd(anchor)}/>}</section>}</div>}
+function MonthCalendar({anchor,days,events,onAdd}:{anchor:Date;days:Date[];events:HouseholdEvent[];onAdd:(d:Date)=>void}){const names=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];return <section className="kit-month"><div className="kit-month__weekdays">{names.map(n=><span key={n}>{n}</span>)}</div><div className="kit-month__grid">{days.map(d=>{const es=events.filter(e=>sameDay(new Date(e.startsAt),d));return <button key={d.toISOString()} className={`kit-day ${d.getMonth()!==anchor.getMonth()?"is-outside":""} ${sameDay(d,new Date())?"is-today":""}`} onClick={()=>onAdd(d)}><span className="kit-day__number">{d.getDate()}</span><div className="kit-day__events">{es.slice(0,3).map(e=><EventChip key={e.id} event={e}/>)}</div>{!es.length&&d.getMonth()===anchor.getMonth()&&<span className="kit-day__add"><Plus/> add</span>}</button>})}</div></section>}
+function EventChip({event}:{event:HouseholdEvent}){const Icon=eventIcon(event);return <span className="kit-event-chip"><Icon/><strong>{event.title}</strong></span>} function eventIcon(e:HouseholdEvent){const t=e.title.toLowerCase();if(/vet|pet|cat|dog/.test(t))return PawPrint;if(/dinner|lunch|meal/.test(t))return Utensils;return CalendarDays}
+function TasksView({tasks,loading,onAdd,onToggle}:{tasks:EverydayTask[];loading:boolean;onAdd:()=>void;onToggle:(t:EverydayTask)=>void}){const open=tasks.filter(t=>t.status==="todo"),done=tasks.filter(t=>t.status==="done");return <><PageHeading eyebrow="TASKS" title="Keep the house moving." text={`${open.length} open tasks.`} action="Add task" onAction={onAdd}/><section className="module-surface">{loading?<LoadingCard/>:<><div className="module-section-title"><h2>To do</h2><span>{open.length}</span></div>{open.length?<div className="task-list module-list">{open.map(t=><TaskRow key={t.id} task={t} onToggle={onToggle}/>)}</div>:<EmptyState compact icon={CheckCircle2} title="All clear" text="Click here to add a task." actionLabel="Add task" onClick={onAdd}/>}<div className="module-section-title module-section-title--done"><h2>Done</h2><span>{done.length}</span></div>{done.length?<div className="task-list module-list">{done.map(t=><TaskRow key={t.id} task={t} onToggle={onToggle}/>)}</div>:<p className="module-muted">Completed tasks will collect here.</p>}</>}</section></>}
+function GroceriesView({groceries,loading,onAdd,onToggle}:{groceries:GroceryItem[];loading:boolean;onAdd:()=>void;onToggle:(i:GroceryItem)=>void}){return <><PageHeading eyebrow="GROCERIES" title="One list. Everyone contributes." text={`${groceries.filter(i=>!i.checked).length} items still to pick up.`} action="Add item" onAction={onAdd}/><section className="module-surface">{loading?<LoadingCard/>:groceries.length?<div className="grocery-list">{groceries.map(i=><button className={`grocery-row ${i.checked?"is-checked":""}`} key={i.id} onClick={()=>void onToggle(i)}><span className="grocery-check">{i.checked&&<Check/>}</span><span><strong>{i.name}</strong><small>Quantity: {i.quantity}</small></span></button>)}</div>:<EmptyState icon={ShoppingBasket} title="Your list is empty" text="Click here to add the first item." actionLabel="Add grocery" onClick={onAdd}/>}</section></>}
+function MembersView({core,householdName,canManage}:{core:EverydayCoreResponse;householdName:string;canManage:boolean}){return <><PageHeading eyebrow="HOUSEHOLD" title={householdName} text="The people who share this home."/><section className="module-surface"><div className="member-directory">{core.members.map((m,i)=><article key={m.id}><span className={`avatar ${i%2?"avatar--plum":"avatar--fox"}`}>{m.name[0]}</span><div><strong>{m.name}</strong><small>{m.email}</small></div><span className="role-pill">{m.role}</span></article>)}</div>{canManage&&<div className="members-next"><UserRoundPlus/><div><strong>Member management continues in a later slice.</strong></div></div>}</section></>}
+function EventList({events}:{events:HouseholdEvent[]}){return <div className="timeline">{events.map(e=><div className="timeline-item" key={e.id}><time>{e.allDay?"ALL DAY":new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit"}).format(new Date(e.startsAt))}</time><span/><div><small>{new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric"}).format(new Date(e.startsAt)).toUpperCase()}</small><strong>{e.title}</strong>{e.location&&<p><MapPin/> {e.location}</p>}</div></div>)}</div>}
+function TaskRow({task,onToggle}:{task:EverydayTask;onToggle:(t:EverydayTask)=>void}){return <div className={`task ${task.status==="done"?"task--checked":""}`}><button onClick={()=>void onToggle(task)}>{task.status==="done"&&<Check/>}</button><p><strong>{task.title}</strong><small>{task.priority==="high"&&<Clock3/>} {task.assigneeName??"Anyone can claim"}</small></p></div>}
+function QuickAddModal({onClose,onChoose,onMembers}:{onClose:()=>void;onChoose:(k:Exclude<AddKind,null>)=>void;onMembers:()=>void}){return <div className="modal-backdrop" onMouseDown={onClose}><section className="quick-add-modal" onMouseDown={e=>e.stopPropagation()}><header><div><span className="eyebrow">QUICK ADD</span><h2>What&apos;s happening?</h2></div><button className="icon-button" onClick={onClose}><X/></button></header><div className="quick-action-grid"><button onClick={()=>onChoose("grocery")}><ShoppingBasket/><strong>Grocery item</strong></button><button onClick={()=>onChoose("task")}><CheckCircle2/><strong>Task</strong></button><button onClick={()=>onChoose("event")}><CalendarDays/><strong>Event</strong></button><button onClick={onMembers}><UsersRound/><strong>Household</strong></button></div></section></div>}
+function CreateModal({kind,members,initialEventDate,onClose,onTask,onGrocery,onEvent}:{kind:Exclude<AddKind,null>;members:EverydayCoreResponse["members"];initialEventDate:Date|null;onClose:()=>void;onTask:(i:{title:string;dueAt:string|null;priority:"low"|"normal"|"high";assigneeUserId:string|null})=>Promise<void>;onGrocery:(i:{name:string;quantity:string})=>Promise<void>;onEvent:(i:{title:string;startsAt:string;location:string})=>Promise<void>}){const [saving,setSaving]=useState(false),[error,setError]=useState<string|null>(null);async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setSaving(true);setError(null);const d=new FormData(e.currentTarget);try{if(kind==="task"){const raw=String(d.get("dueAt")??"");await onTask({title:String(d.get("title")??"").trim(),dueAt:raw?new Date(raw).toISOString():null,priority:String(d.get("priority")??"normal") as "low"|"normal"|"high",assigneeUserId:String(d.get("assigneeUserId")??"")||null})}else if(kind==="grocery")await onGrocery({name:String(d.get("name")??"").trim(),quantity:String(d.get("quantity")??"1")});else{const raw=String(d.get("startsAt")??"");await onEvent({title:String(d.get("title")??"").trim(),startsAt:new Date(raw).toISOString(),location:String(d.get("location")??"")})}onClose()}catch(err){setError(err instanceof Error?err.message:"Could not save") }finally{setSaving(false)}}const def=initialEventDate?toLocalInputValue(new Date(initialEventDate.getFullYear(),initialEventDate.getMonth(),initialEventDate.getDate(),9)):undefined;return <div className="modal-backdrop" onMouseDown={onClose}><section className="create-modal" onMouseDown={e=>e.stopPropagation()}><header><h2>Add {kind}</h2><button onClick={onClose}><X/></button></header><form onSubmit={submit}>{kind==="grocery"?<><label><span>Item</span><input name="name" required autoFocus/></label><label><span>Quantity</span><input name="quantity" defaultValue="1"/></label></>:<><label><span>{kind==="event"?"Event":"Task"}</span><input name="title" required autoFocus/></label>{kind==="task"?<><label><span>Due</span><input name="dueAt" type="datetime-local"/></label><label><span>Priority</span><select name="priority"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option></select></label><label><span>Assign to</span><select name="assigneeUserId"><option value="">Anyone</option>{members.map(m=><option key={m.userId} value={m.userId}>{m.name}</option>)}</select></label></>:<><label><span>Starts</span><input name="startsAt" type="datetime-local" required defaultValue={def}/></label><label><span>Location</span><input name="location"/></label></>}</>}{error&&<p className="form-error">{error}</p>}<div className="create-modal__actions"><button type="button" onClick={onClose}>Cancel</button><button type="submit" disabled={saving}>{saving?"Saving…":"Save"}</button></div></form></section></div>}
+function EmptyState({icon:Icon,title,text,compact=false,onClick,actionLabel}:{icon:typeof CalendarDays;title:string;text:string;compact?:boolean;onClick?:()=>void;actionLabel?:string}){const c=<><span><Icon/></span><div><strong>{title}</strong><p>{text}</p>{onClick&&<em><Plus/> {actionLabel??"Add"}</em>}</div></>;return onClick?<button className={`empty-state empty-state--clickable ${compact?"empty-state--compact":""}`} onClick={onClick}>{c}</button>:<div className={`empty-state ${compact?"empty-state--compact":""}`}>{c}</div>}
+function LoadingCard(){return <div className="module-loading"><span className="loading-orbit"><i/></span><p>Loading your household…</p></div>} function startOfDay(d:Date){const n=new Date(d);n.setHours(0,0,0,0);return n} function addDays(d:Date,a:number){const n=new Date(d);n.setDate(n.getDate()+a);return n} function addMonths(d:Date,a:number){return new Date(d.getFullYear(),d.getMonth()+a,1)} function sameDay(a:Date,b:Date){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()} function labelRange(r:EventRange){return r==="today"?"Today":r==="tomorrow"?"Tomorrow":r==="week"?"Week":"Month"} function monthGrid(a:Date){const f=new Date(a.getFullYear(),a.getMonth(),1);const s=addDays(f,-f.getDay());return Array.from({length:42},(_,i)=>addDays(s,i))} function toLocalInputValue(d:Date){const p=(n:number)=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`}
