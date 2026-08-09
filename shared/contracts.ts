@@ -51,3 +51,72 @@ export interface AppVersionResponse {
   tag: string | null;
   timestamp: string | null;
 }
+
+export interface HouseholdMemberSummary {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: HouseholdRole;
+  joinedAt: string | null;
+}
+
+export interface EverydayTask {
+  id: string;
+  title: string;
+  notes: string | null;
+  status: "todo" | "done";
+  priority: "low" | "normal" | "high";
+  dueAt: string | null;
+  assigneeUserId: string | null;
+  assigneeName: string | null;
+  createdAt: string;
+}
+
+export interface GroceryItem {
+  id: string;
+  name: string;
+  quantity: string;
+  checked: boolean;
+  createdAt: string;
+}
+
+export interface HouseholdEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  allDay: boolean;
+  createdAt: string;
+}
+
+export interface EverydayCoreResponse {
+  members: HouseholdMemberSummary[];
+  tasks: EverydayTask[];
+  groceries: GroceryItem[];
+  events: HouseholdEvent[];
+}
+
+export interface CreateTaskInput {
+  title: string;
+  notes?: string;
+  priority?: "low" | "normal" | "high";
+  dueAt?: string | null;
+  assigneeUserId?: string | null;
+}
+
+export interface CreateGroceryItemInput {
+  name: string;
+  quantity?: string;
+}
+
+export interface CreateEventInput {
+  title: string;
+  description?: string;
+  location?: string;
+  startsAt: string;
+  endsAt?: string | null;
+  allDay?: boolean;
+}

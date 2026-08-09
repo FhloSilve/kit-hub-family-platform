@@ -4,10 +4,13 @@ Your family's digital home: a warm, private household platform for shared plans,
 
 ## Current milestone
 
-Milestone 1 establishes the vertical foundation:
+Milestone 2 builds the Everyday Core on the Milestone 1 foundation:
 
-- React 19 application and responsive Today shell
-- Cloudflare Worker API with versioned `/api/v1` routes
+- Functional Today, Calendar, Tasks, Groceries, and Household views
+- Quick Add forms for tasks, grocery items, and calendar events
+- Task completion/reopen and grocery checked/unchecked interactions
+- Live household member directory from memberships
+- Cloudflare Worker API with household-scoped `/api/v1` Everyday Core routes
 - Better Auth email/password accounts and cookie sessions
 - D1 migration for identity, profiles, households, memberships, roles, permissions, invites, and audit records
 - Household onboarding with language and time-zone defaults
@@ -17,7 +20,7 @@ Milestone 1 establishes the vertical foundation:
 - In-app update detection and one-click refresh when a new Worker version is live
 - TypeScript validation, unit tests, structured API errors, and request IDs
 
-Calendar, Tasks, Groceries, Notes, realtime, invitations, and the generated house are intentionally represented by safe empty/coming-soon states until their implementation milestones.
+Chat, Notes, realtime, household invitations/role editing, meal planning, and the generated house remain intentionally deferred. Calendar, Tasks, Groceries, and the household member directory are active in Milestone 2.
 
 ## Stack
 

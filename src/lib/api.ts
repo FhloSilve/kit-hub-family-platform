@@ -1,7 +1,14 @@
 import type {
   ApiErrorBody,
   BootstrapResponse,
+  CreateEventInput,
+  CreateGroceryItemInput,
   CreateHouseholdInput,
+  CreateTaskInput,
+  EverydayCoreResponse,
+  EverydayTask,
+  GroceryItem,
+  HouseholdEvent,
   HouseholdSummary,
   UpdateHouseholdInput,
   UpdateHouseholdResponse,
@@ -54,6 +61,10 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
+function householdUrl(householdId: string, path: string) {
+  return `/api/v1/households/${encodeURIComponent(householdId)}/${path}`;
+}
+
 export const api = {
   bootstrap: () => request<BootstrapResponse>("/api/v1/bootstrap"),
   createHousehold: (input: CreateHouseholdInput) =>
@@ -66,4 +77,21 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(input),
     }),
+  everydayCore: (householdId: string) => request<EverydayCoreResponse>(householdUrl(householdId, "everyday")),
+  createTask: (householdId: string, input: CreateTaskInput) =>
+    request<EverydayTask>(householdUrl(householdId, "tasks"), { method: "POST", body: JSON.stringify(input) }),
+  setTaskDone: (householdId: string, taskId: string, done: boolean) =>
+    request<EverydayTask>(householdUrl(householdId, `tasks/${encodeURIComponent(taskId)}`), {
+      method: "PATCH",
+      body: JSON.stringify({ status: done ? "done" : "todo" }),
+    }),
+  createGroceryItem: (householdId: string, input: CreateGroceryItemInput) =>
+    request<GroceryItem>(householdUrl(householdId, "groceries"), { method: "POST", body: JSON.stringify(input) }),
+  setGroceryChecked: (householdId: string, itemId: string, checked: boolean) =>
+    request<GroceryItem>(householdUrl(householdId, `groceries/${encodeURIComponent(itemId)}`), {
+      method: "PATCH",
+      body: JSON.stringify({ checked }),
+    }),
+  createEvent: (householdId: string, input: CreateEventInput) =>
+    request<HouseholdEvent>(householdUrl(householdId, "events"), { method: "POST", body: JSON.stringify(input) }),
 };
