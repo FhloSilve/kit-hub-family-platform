@@ -1,30 +1,40 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Sparkles, X } from "lucide-react";
-import type { AppVersionResponse } from "../../shared/contracts";
 
 const CHECK_INTERVAL_MS = 60_000;
+const BUILD_META_NAME = "kit-hub-build";
+
+function getLoadedBuildId() {
+  return document.querySelector<HTMLMetaElement>(`meta[name="${BUILD_META_NAME}"]`)?.content ?? null;
+}
+
+function getBuildIdFromHtml(html: string) {
+  const documentCopy = new DOMParser().parseFromString(html, "text/html");
+  return documentCopy.querySelector<HTMLMetaElement>(`meta[name="${BUILD_META_NAME}"]`)?.content ?? null;
+}
 
 export function AppUpdatePrompt() {
-  const loadedVersion = useRef<string | null>(null);
-  const [availableVersion, setAvailableVersion] = useState<AppVersionResponse | null>(null);
-  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
+  const [availableBuild, setAvailableBuild] = useState<string | null>(null);
+  const [dismissedBuild, setDismissedBuild] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const checkForUpdate = useCallback(async () => {
+    const loadedBuild = getLoadedBuildId();
+    if (!loadedBuild) return;
+
     try {
-      const response = await fetch(`/api/version?check=${Date.now()}`, {
+      const response = await fetch(`/?build-check=${Date.now()}`, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: { accept: "application/json" },
+        headers: { accept: "text/html" },
       });
       if (!response.ok) return;
 
-      const version = (await response.json()) as AppVersionResponse;
-      if (!loadedVersion.current) {
-        loadedVersion.current = version.id;
-        return;
-      }
-      if (version.id !== loadedVersion.current) setAvailableVersion(version);
+      const currentBuild = getBuildIdFromHtml(await response.text());
+      if (!currentBuild) return;
+
+      if (currentBuild !== loadedBuild) setAvailableBuild(currentBuild);
+      else setAvailableBuild(null);
     } catch {
       // Update checks are intentionally silent while offline.
     }
@@ -47,7 +57,7 @@ export function AppUpdatePrompt() {
     };
   }, [checkForUpdate]);
 
-  if (!availableVersion || availableVersion.id === dismissedVersion) return null;
+  if (!availableBuild || availableBuild === dismissedBuild) return null;
 
   function updateNow() {
     setUpdating(true);
@@ -68,7 +78,7 @@ export function AppUpdatePrompt() {
       <button
         className="update-prompt__dismiss"
         type="button"
-        onClick={() => setDismissedVersion(availableVersion.id)}
+        onClick={() => setDismissedBuild(availableBuild)}
         aria-label="Update later"
       >
         <X />
