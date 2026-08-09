@@ -1,0 +1,40 @@
+.platform-admin-entry {
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr) 1rem;
+  align-items: center;
+  gap: .7rem;
+  margin: .55rem .7rem .25rem;
+  padding: .75rem;
+  border: 1px solid rgba(118, 82, 116, .18);
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(118, 82, 116, .09), rgba(255, 255, 255, .5));
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.platform-admin-entry:hover {
+  transform: translateY(-1px);
+  border-color: rgba(118, 82, 116, .34);
+  background: linear-gradient(135deg, rgba(118, 82, 116, .14), rgba(255, 255, 255, .65));
+}
+
+.platform-admin-entry__icon {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: .8rem;
+  background: rgba(118, 82, 116, .14);
+}
+
+.platform-admin-entry__icon svg { width: 1.15rem; height: 1.15rem; }
+.platform-admin-entry__copy { min-width: 0; display: flex; flex-direction: column; gap: .05rem; }
+.platform-admin-entry__copy small { font-size: .58rem; font-weight: 800; letter-spacing: .13em; color: #765274; }
+.platform-admin-entry__copy strong { font-size: .82rem; }
+.platform-admin-entry__copy span { font-size: .68rem; opacity: .62; }
+.platform-admin-entry__chevron { width: .95rem; height: .95rem; opacity: .45; }
+
+@media (max-width: 760px) {
+  .platform-admin-entry { display: none; }
+}
