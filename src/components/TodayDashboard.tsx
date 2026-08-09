@@ -20,9 +20,10 @@ interface TodayDashboardProps {
 
 type ViewKey = "today" | "calendar" | "tasks" | "groceries" | "members";
 type AddKind = "task" | "grocery" | "event" | null;
+type EventRange = "today" | "tomorrow" | "week" | "month";
 
 const navItems = [
-  { key: "today" as const, label: "Today", icon: Home },
+  { key: "today" as const, label: "Home", icon: Home },
   { key: "calendar" as const, label: "Calendar", icon: CalendarDays },
   { key: "tasks" as const, label: "Tasks", icon: ListTodo },
   { key: "groceries" as const, label: "Groceries", icon: ShoppingBasket },
@@ -63,6 +64,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [householdName, setHouseholdName] = useState(household?.name ?? "");
   const [undoTask, setUndoTask] = useState<EverydayTask | null>(null);
+  const [eventRange, setEventRange] = useState<EventRange>("week");
   const canManageHousehold = household?.role === "owner" || household?.role === "admin";
   const firstName = bootstrap.user.name.split(" ")[0] || bootstrap.user.name;
 
@@ -90,8 +92,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
   const dateLabel = new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   const openTasks = core.tasks.filter((task) => task.status === "todo");
   const openGroceries = core.groceries.filter((item) => !item.checked);
-  const todayKey = new Date().toDateString();
-  const todayEvents = core.events.filter((event) => new Date(event.startsAt).toDateString() === todayKey);
+  const dashboardEvents = useMemo(() => filterEventsByRange(core.events, eventRange), [core.events, eventRange]);
 
   function openAdd(kind: Exclude<AddKind, null>) {
     setQuickAddOpen(false);
@@ -192,7 +193,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
 
         <main className="today-page module-page">
           {coreError && <div className="module-alert">{coreError}</div>}
-          {view === "today" && <TodayView greeting={greeting} firstName={firstName} dateLabel={dateLabel} tasks={openTasks} groceries={openGroceries} events={todayEvents} members={core.members.length} loading={coreLoading} onNavigate={setView} onQuickAdd={() => setQuickAddOpen(true)} onToggleTask={toggleTask} />}
+          {view === "today" && <TodayView greeting={greeting} firstName={firstName} dateLabel={dateLabel} tasks={openTasks} groceries={openGroceries} events={dashboardEvents} eventRange={eventRange} members={core.members.length} loading={coreLoading} onNavigate={setView} onQuickAdd={() => setQuickAddOpen(true)} onToggleTask={toggleTask} onEventRangeChange={setEventRange} />}
           {view === "calendar" && <CalendarView events={core.events} loading={coreLoading} onAdd={() => openAdd("event")} />}
           {view === "tasks" && <TasksView tasks={core.tasks} loading={coreLoading} onAdd={() => openAdd("task")} onToggle={toggleTask} />}
           {view === "groceries" && <GroceriesView groceries={core.groceries} loading={coreLoading} onAdd={() => openAdd("grocery")} onToggle={toggleGrocery} />}
@@ -201,7 +202,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
       </div>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
-        {navItems.map(({ key, label, icon: Icon }) => <button key={key} type="button" className={view === key ? "is-active" : ""} onClick={() => setView(key)}><Icon /><span>{label === "Household" ? "Home" : label}</span></button>)}
+        {navItems.map(({ key, label, icon: Icon }) => <button key={key} type="button" className={view === key ? "is-active" : ""} onClick={() => setView(key)}><Icon /><span>{label === "Household" ? "House" : label}</span></button>)}
       </nav>
       <button className="mobile-quick-add" type="button" onClick={() => setQuickAddOpen(true)} aria-label="Quick add"><Plus /></button>
 
@@ -213,23 +214,60 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: TodayDash
   );
 }
 
+function filterEventsByRange(events: HouseholdEvent[], range: EventRange) {
+  const now = new Date();
+  const startToday = new Date(now);
+  startToday.setHours(0, 0, 0, 0);
+  const startTomorrow = new Date(startToday);
+  startTomorrow.setDate(startTomorrow.getDate() + 1);
+  const startDayAfterTomorrow = new Date(startTomorrow);
+  startDayAfterTomorrow.setDate(startDayAfterTomorrow.getDate() + 1);
+  const endWeek = new Date(startToday);
+  endWeek.setDate(endWeek.getDate() + 7);
+  const endMonth = new Date(startToday);
+  endMonth.setDate(endMonth.getDate() + 30);
+
+  const [start, end] = range === "today"
+    ? [startToday, startTomorrow]
+    : range === "tomorrow"
+      ? [startTomorrow, startDayAfterTomorrow]
+      : range === "week"
+        ? [startToday, endWeek]
+        : [startToday, endMonth];
+
+  return events
+    .filter((event) => {
+      const startsAt = new Date(event.startsAt);
+      return startsAt >= start && startsAt < end;
+    })
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+}
+
 function PageHeading({ eyebrow, title, text, action, onAction }: { eyebrow: string; title: string; text: string; action?: string; onAction?: () => void }) {
   return <header className="today-heading module-heading"><div><span className="today-date">{eyebrow}</span><h1>{title}</h1><p>{text}</p></div>{action && <button className="button button--primary" type="button" onClick={onAction}><Plus /> {action}</button>}</header>;
 }
 
-function TodayView({ greeting, firstName, dateLabel, tasks, groceries, events, members, loading, onNavigate, onQuickAdd, onToggleTask }: {
-  greeting: string; firstName: string; dateLabel: string; tasks: EverydayTask[]; groceries: GroceryItem[]; events: HouseholdEvent[]; members: number; loading: boolean; onNavigate: (view: ViewKey) => void; onQuickAdd: () => void; onToggleTask: (task: EverydayTask) => void;
+function TodayView({ greeting, firstName, dateLabel, tasks, groceries, events, eventRange, members, loading, onNavigate, onQuickAdd, onToggleTask, onEventRangeChange }: {
+  greeting: string; firstName: string; dateLabel: string; tasks: EverydayTask[]; groceries: GroceryItem[]; events: HouseholdEvent[]; eventRange: EventRange; members: number; loading: boolean; onNavigate: (view: ViewKey) => void; onQuickAdd: () => void; onToggleTask: (task: EverydayTask) => void; onEventRangeChange: (range: EventRange) => void;
 }) {
+  const eventRangeLabel = eventRange === "today" ? "today" : eventRange === "tomorrow" ? "tomorrow" : eventRange === "week" ? "this week" : "this month";
+  const emptyTitle = eventRange === "today" ? "A quiet day so far" : eventRange === "tomorrow" ? "Nothing planned tomorrow" : eventRange === "week" ? "A quiet week ahead" : "A quiet month ahead";
   return <>
-    <header className="today-heading"><div><span className="today-date"><SunMedium /> {dateLabel}</span><h1>{greeting}, {firstName}.</h1><p>Your household at a glance — now powered by the Everyday Core.</p></div><button className="button button--primary" type="button" onClick={onQuickAdd}><Plus /> Quick add</button></header>
+    <header className="today-heading"><div><span className="today-date"><SunMedium /> {dateLabel}</span><h1>{greeting}, {firstName}.</h1><p>Your household at a glance — what is coming up, what needs doing, and what the home needs next.</p></div><button className="button button--primary" type="button" onClick={onQuickAdd}><Plus /> Quick add</button></header>
     <section className="daily-glance" aria-label="At a glance">
-      <button type="button" onClick={() => onNavigate("calendar")} aria-label={`Open calendar, ${events.length} events today`}><span className="glance-icon glance-icon--coral"><CalendarDays /></span><p><strong>{events.length}</strong><small>events today</small></p></button>
+      <button type="button" onClick={() => onNavigate("calendar")} aria-label={`Open calendar, ${events.length} events ${eventRangeLabel}`}><span className="glance-icon glance-icon--coral"><CalendarDays /></span><p><strong>{events.length}</strong><small>events {eventRangeLabel}</small></p></button>
       <button type="button" onClick={() => onNavigate("tasks")} aria-label={`Open tasks, ${tasks.length} open`}><span className="glance-icon glance-icon--gold"><ListTodo /></span><p><strong>{tasks.length}</strong><small>open tasks</small></p></button>
       <button type="button" onClick={() => onNavigate("groceries")} aria-label={`Open groceries, ${groceries.length} items`}><span className="glance-icon glance-icon--mint"><ShoppingBasket /></span><p><strong>{groceries.length}</strong><small>grocery items</small></p></button>
       <button type="button" onClick={() => onNavigate("members")} aria-label={`Open household, ${members} members`}><span className="glance-icon glance-icon--blue"><UsersRound /></span><p><strong>{members}</strong><small>household members</small></p></button>
     </section>
     <div className="dashboard-grid">
-      <section className="dashboard-card dashboard-card--schedule"><header className="card-heading"><div><span className="card-icon card-icon--coral"><CalendarDays /></span><div><h2>Next up</h2><p>Your household schedule</p></div></div><button type="button" onClick={() => onNavigate("calendar")}>View calendar</button></header>{loading ? <LoadingCard /> : events.length ? <EventList events={events.slice(0, 3)} /> : <EmptyState icon={CalendarDays} title="A quiet day so far" text="Add an event and it will appear here." />}</section>
+      <section className="dashboard-card dashboard-card--schedule">
+        <header className="card-heading"><div><span className="card-icon card-icon--coral"><CalendarDays /></span><div><h2>Upcoming</h2><p>Choose how far ahead you want to look</p></div></div><button type="button" onClick={() => onNavigate("calendar")}>View calendar</button></header>
+        <div role="group" aria-label="Upcoming event range" style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", margin: "0 0 1rem" }}>
+          {(["today", "tomorrow", "week", "month"] as EventRange[]).map((range) => <button key={range} type="button" className={eventRange === range ? "button button--primary" : "button button--secondary"} onClick={() => onEventRangeChange(range)} style={{ minHeight: 34, padding: "0.4rem 0.72rem", fontSize: "0.82rem" }}>{range === "today" ? "Today" : range === "tomorrow" ? "Tomorrow" : range === "week" ? "Week" : "Month"}</button>)}
+        </div>
+        {loading ? <LoadingCard /> : events.length ? <EventList events={events.slice(0, 5)} /> : <EmptyState icon={CalendarDays} title={emptyTitle} text="Add an event or switch the range to look further ahead." />}
+      </section>
       <section className="dashboard-card dashboard-card--tasks"><header className="card-heading"><div><span className="card-icon card-icon--gold"><ListTodo /></span><div><h2>Tasks</h2><p>Things to take care of</p></div></div><button type="button" onClick={() => onNavigate("tasks")}>View all</button></header>{loading ? <LoadingCard /> : tasks.length ? <div className="task-list">{tasks.slice(0, 4).map((task) => <TaskRow key={task.id} task={task} onToggle={onToggleTask} />)}</div> : <EmptyState icon={ListTodo} title="Nothing on the list" text="You are all caught up." />}</section>
       <section className="dashboard-card dashboard-card--grocery"><header className="card-heading"><div><span className="card-icon card-icon--mint"><ShoppingBasket /></span><div><h2>Groceries</h2><p>Current shopping list</p></div></div><button type="button" onClick={() => onNavigate("groceries")}>Open list</button></header>{groceries.length ? <><div className="progress-row"><span><strong>{groceries.length} items left</strong><small>Ready for the next shop</small></span></div><div className="grocery-tags">{groceries.slice(0, 3).map((item) => <span key={item.id}>{item.name}</span>)}{groceries.length > 3 && <span>+{groceries.length - 3}</span>}</div></> : <EmptyState compact icon={ShoppingBasket} title="The list is empty" text="Add the first grocery item." />}</section>
       <section className="dashboard-card dashboard-card--dinner"><div className="dinner-copy"><span className="eyebrow">MEAL PLANNING</span><h2>Connected groceries come first.</h2><p>Meals can build on the working grocery list in a later slice.</p><button type="button" disabled>Meals coming later <span>→</span></button></div><div className="dinner-illustration" aria-hidden="true"><span>🍝</span><i /><b /></div></section>
