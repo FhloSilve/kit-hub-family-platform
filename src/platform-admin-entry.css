@@ -4,7 +4,7 @@
   position: fixed;
   z-index: 40;
   top: 1rem;
-  right: 12.5rem;
+  right: 15rem;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -30,5 +30,5 @@
 .platform-admin-entry--ocean { --entry-accent: #19485f; --entry-accent-2: #326b70; }
 .platform-admin-entry:hover { transform: translateY(-1px); box-shadow: 0 7px 20px color-mix(in srgb, var(--entry-accent) 28%, transparent); filter: brightness(1.04); }
 .platform-admin-entry svg { width: .95rem; height: .95rem; }
-@media (max-width: 900px) { .platform-admin-entry { right: 10.75rem; } }
-@media (max-width: 760px) { .platform-admin-entry { right: 5.4rem; top: 1rem; width: 2.25rem; padding: 0; } .platform-admin-entry span { display: none; } }
+@media (max-width: 900px) { .platform-admin-entry { right: 12.75rem; } }
+@media (max-width: 760px) { .platform-admin-entry { right: 6.2rem; top: 1rem; width: 2.25rem; padding: 0; } .platform-admin-entry span { display: none; } }
