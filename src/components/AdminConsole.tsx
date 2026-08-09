@@ -90,6 +90,7 @@ export function AdminConsole({ onBack }: { onBack: () => void }) {
     if (!releaseStart.current && !trackedRun) return "idle";
     if (index === 0) return trackedRun ? "done" : "active";
     const stage = stages[index];
+    if (!stage) return "idle";
     const matching = steps.filter((step) => stage.match.some((term) => step.name.toLowerCase().includes(term)));
     if (matching.some((step) => step.conclusion && step.conclusion !== "success" && step.conclusion !== "skipped")) return "failed";
     if (matching.some((step) => step.status === "in_progress")) return "active";
