@@ -1,44 +1,19 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "kit-hub-family-platform",
-  "main": "worker/index.ts",
+  "main": "worker/entry.ts",
   "compatibility_date": "2026-08-08",
   "compatibility_flags": ["nodejs_compat"],
-  "assets": {
-    "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
-  },
-  "d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "kit-hub-db",
-    "database_id": "04a1151f-ca27-4035-a19a-b73283b48983",
-    "migrations_dir": "./migrations"
-  }
-],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "HOUSEHOLD_REALTIME",
-        "class_name": "HouseholdRealtime"
-      }
-    ]
-  },
-  "version_metadata": {
-    "binding": "CF_VERSION_METADATA"
-  },
-  "exports": {
-    "HouseholdRealtime": {
-      "type": "durable-object",
-      "storage": "sqlite"
-    }
-  },
+  "assets": { "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
+  "d1_databases": [{ "binding": "DB", "database_name": "kit-hub-db", "database_id": "04a1151f-ca27-4035-a19a-b73283b48983", "migrations_dir": "./migrations" }],
+  "durable_objects": { "bindings": [{ "name": "HOUSEHOLD_REALTIME", "class_name": "HouseholdRealtime" }] },
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "exports": { "HouseholdRealtime": { "type": "durable-object", "storage": "sqlite" } },
   "vars": {
     "APP_ENV": "production",
-    "BETTER_AUTH_URL": "https://kit-hub-family-platform.scarletsilverfox.workers.dev"
+    "BETTER_AUTH_URL": "https://kit-hub-family-platform.scarletsilverfox.workers.dev",
+    "GITHUB_REPOSITORY": "FhloSilve/kit-hub-family-platform",
+    "GITHUB_RELEASE_WORKFLOW": "production-release.yml"
   },
-  "observability": {
-    "enabled": true,
-    "head_sampling_rate": 1
-  }
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
 }
