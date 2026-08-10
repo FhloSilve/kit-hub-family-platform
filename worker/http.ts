@@ -1,8 +1,14 @@
 import type { Context } from "hono";
 import type { ApiErrorBody } from "../shared/contracts";
 
+type WorkersAiBinding = {
+  run(model: string, input: Record<string, unknown>): Promise<unknown>;
+};
+
 export type AppBindings = {
-  Bindings: Env;
+  Bindings: Env & {
+    AI: WorkersAiBinding;
+  };
   Variables: {
     requestId: string;
   };
