@@ -1,86 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { Activity, BellRing, Megaphone, MessageCircle, Pin, PinOff, Send, Sparkles } from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
+import { Activity,BellRing,ChevronLeft,Heart,Megaphone,MessageCircle,MessagesSquare,Pin,PinOff,Send,Sparkles } from "lucide-react";
 import type { FormEvent } from "react";
-import type { HouseholdCommunicationResponse } from "../../shared/contracts";
-import { ApiError, api } from "../lib/api";
+import type { DirectMessagesResponse,HouseholdCommunicationResponse,HouseholdMessage } from "../../shared/contracts";
+import { ApiError,api } from "../lib/api";
 import "../family-hub.css";
-
-interface Props {
-  householdId: string;
-  userId: string;
-  householdName: string;
-  data: HouseholdCommunicationResponse;
-  loading: boolean;
-  demo?: boolean;
-  onChange: (data: HouseholdCommunicationResponse) => void;
-}
-
-type Tab = "chat" | "announcements" | "activity";
-
-export function FamilyHubView({ householdId, userId, householdName, data, loading, demo = false, onChange }: Props) {
-  const [tab, setTab] = useState<Tab>("chat");
-  const [message, setMessage] = useState("");
-  const [announcementOpen, setAnnouncementOpen] = useState(false);
-  const [announcementTitle, setAnnouncementTitle] = useState("");
-  const [announcementBody, setAnnouncementBody] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const messages = useMemo(() => [...data.messages].reverse(), [data.messages]);
-  const pinned = data.announcements.filter((item) => item.pinned);
-
-  useEffect(() => {
-    if (tab !== "chat" || !data.unreadCount || demo) return;
-    void api.markHouseholdMessagesRead(householdId).then(() => onChange({ ...data, unreadCount: 0 })).catch(() => undefined);
-  }, [tab, data.unreadCount, demo, householdId]);
-
-  async function send(event: FormEvent) {
-    event.preventDefault(); const body = message.trim(); if (!body || saving || !data.canSend) return;
-    setSaving(true); setError(null);
-    try {
-      if (demo) { setMessage(""); return; }
-      const created = await api.sendHouseholdMessage(householdId, { body });
-      onChange({ ...data, messages: [created, ...data.messages] }); setMessage("");
-    } catch (caught) { setError(caught instanceof ApiError ? caught.message : "The message could not be sent."); }
-    finally { setSaving(false); }
-  }
-
-  async function postAnnouncement(event: FormEvent) {
-    event.preventDefault(); if (saving || !data.canAnnounce) return;
-    setSaving(true); setError(null);
-    try {
-      if (demo) { setAnnouncementOpen(false); return; }
-      const created = await api.createHouseholdAnnouncement(householdId, { title: announcementTitle.trim(), body: announcementBody.trim() });
-      onChange({ ...data, announcements: [created, ...data.announcements] }); setAnnouncementTitle(""); setAnnouncementBody(""); setAnnouncementOpen(false);
-    } catch (caught) { setError(caught instanceof ApiError ? caught.message : "The announcement could not be posted."); }
-    finally { setSaving(false); }
-  }
-
-  async function togglePin(id: string, value: boolean) {
-    onChange({ ...data, announcements: data.announcements.map((item) => item.id === id ? { ...item, pinned: value } : item) });
-    if (!demo) try { await api.setHouseholdAnnouncementPinned(householdId, id, value); } catch { onChange(data); }
-  }
-
-  return <div className="family-hub">
-    <header className="module-heading family-hub__heading">
-      <div><span className="today-date">Family Hub</span><h1>Stay close, without the noise.</h1><p>Messages, household announcements and the little updates that keep {householdName} moving together.</p></div>
-      {data.canAnnounce && <button className="button button--primary" onClick={() => setAnnouncementOpen(true)}><Megaphone /> New announcement</button>}
-    </header>
-
-    {pinned.length > 0 && <section className="family-hub__pinned"><div className="family-hub__section-label"><Pin /> Pinned for everyone</div><div className="family-hub__pinned-grid">{pinned.slice(0, 3).map((item) => <article key={item.id}><span><Megaphone /></span><div><strong>{item.title}</strong><p>{item.body}</p><small>{item.createdByName}</small></div></article>)}</div></section>}
-    {error && <div className="module-alert">{error}</div>}
-
-    <div className="family-hub__tabs" role="tablist">
-      <button className={tab === "chat" ? "is-active" : ""} onClick={() => setTab("chat")}><MessageCircle /> Chat {data.unreadCount > 0 && <b>{data.unreadCount > 99 ? "99+" : data.unreadCount}</b>}</button>
-      <button className={tab === "announcements" ? "is-active" : ""} onClick={() => setTab("announcements")}><Megaphone /> Announcements {pinned.length > 0 && <small>{pinned.length}</small>}</button>
-      <button className={tab === "activity" ? "is-active" : ""} onClick={() => setTab("activity")}><Activity /> Activity</button>
-    </div>
-
-    {loading ? <section className="module-card family-hub__loading">Opening the Family Hub…</section> : tab === "chat" ? <section className="family-hub__chat module-card">
-      <div className="family-hub__chat-top"><div><MessageCircle /><span><strong>Household chat</strong><small>A shared room for everyone at home.</small></span></div><span className="family-hub__calm"><Sparkles /> Calm by design</span></div>
-      <div className="family-hub__messages">{messages.length ? messages.map((item) => <article key={item.id} className={item.authorUserId === userId ? "is-mine" : ""}><span className="family-hub__avatar">{item.authorName.slice(0,1).toUpperCase()}</span><div><header><strong>{item.authorUserId === userId ? "You" : item.authorName}</strong><time>{new Date(item.createdAt).toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"})}</time></header><p>{item.body}</p></div></article>) : <div className="family-hub__empty"><MessageCircle /><strong>Start the family conversation.</strong><p>A quick hello, a reminder, or something funny from the day can live here.</p></div>}</div>
-      {data.canSend ? <form className="family-hub__composer" onSubmit={send}><textarea value={message} maxLength={1000} rows={2} onChange={(event) => setMessage(event.target.value)} placeholder="Write to the household…" /><div><small>{message.length}/1000</small><button className="button button--primary" disabled={!message.trim() || saving}><Send /> Send</button></div></form> : <div className="family-hub__readonly">You can read this household chat, but your role cannot send messages.</div>}
-    </section> : tab === "announcements" ? <section className="family-hub__announcements">{data.announcements.length ? data.announcements.map((item) => <article key={item.id} className={`module-card ${item.pinned ? "is-pinned" : ""}`}><div className="family-hub__announcement-icon"><Megaphone /></div><div><header><span>{item.pinned && <b><Pin /> Pinned</b>}<strong>{item.title}</strong></span>{data.canAnnounce && <button onClick={() => void togglePin(item.id, !item.pinned)} aria-label={item.pinned ? "Unpin announcement" : "Pin announcement"}>{item.pinned ? <PinOff /> : <Pin />}</button>}</header><p>{item.body}</p><small>Posted by {item.createdByName} · {new Date(item.createdAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}</small></div></article>) : <div className="module-card family-hub__empty"><Megaphone /><strong>No household announcements yet.</strong><p>Important family-wide messages can be pinned here so they do not disappear in chat.</p></div>}</section> : <section className="family-hub__activity module-card"><div className="family-hub__activity-head"><Activity /><div><strong>Around the house</strong><small>A simple history of shared household updates.</small></div></div>{data.activity.length ? <div className="family-hub__timeline">{data.activity.map((item) => <article key={item.id}><span><BellRing /></span><div><strong>{item.summary}</strong><small>{new Date(item.createdAt).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</small></div></article>)}</div> : <div className="family-hub__empty"><Activity /><strong>It is quiet here for now.</strong><p>Shared activity will appear as the household starts using Family Hub.</p></div>}</section>}
-
-    {announcementOpen && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAnnouncementOpen(false); }}><form className="modal-card family-hub__announcement-modal" onSubmit={postAnnouncement}><span className="today-date">Household announcement</span><h2>Pin something everyone should see.</h2><label>Title<input autoFocus value={announcementTitle} maxLength={120} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder="School closes early Friday" /></label><label>Message<textarea rows={5} value={announcementBody} maxLength={1200} onChange={(event) => setAnnouncementBody(event.target.value)} placeholder="Add the details here…" /></label><div className="modal-actions"><button type="button" className="button" onClick={() => setAnnouncementOpen(false)}>Cancel</button><button className="button button--primary" disabled={!announcementTitle.trim() || !announcementBody.trim() || saving}><Pin /> Post & pin</button></div></form></div>}
-  </div>;
-}
+interface Props{householdId:string;userId:string;householdName:string;data:HouseholdCommunicationResponse;loading:boolean;demo?:boolean;onChange:(data:HouseholdCommunicationResponse)=>void}
+type Tab="chat"|"direct"|"announcements"|"activity";const emojis=["👍","❤️","😂","🎉","👀"];
+export function FamilyHubView({householdId,userId,householdName,data,loading,demo=false,onChange}:Props){const[tab,setTab]=useState<Tab>("chat"),[message,setMessage]=useState(""),[peerId,setPeerId]=useState<string|null>(null),[direct,setDirect]=useState<DirectMessagesResponse|null>(null),[directLoading,setDirectLoading]=useState(false),[announcementOpen,setAnnouncementOpen]=useState(false),[announcementTitle,setAnnouncementTitle]=useState(""),[announcementBody,setAnnouncementBody]=useState(""),[saving,setSaving]=useState(false),[error,setError]=useState<string|null>(null);const messages=useMemo(()=>[...data.messages].reverse(),[data.messages]),pinned=data.announcements.filter(x=>x.pinned);
+useEffect(()=>{if(tab!=="chat"||!data.unreadCount||demo)return;void api.markHouseholdMessagesRead(householdId).then(()=>onChange({...data,unreadCount:0})).catch(()=>undefined)},[tab,data.unreadCount,demo,householdId]);
+async function openDirect(id:string){setTab("direct");setPeerId(id);setDirectLoading(true);setError(null);try{if(demo){setDirect({messages:[],peer:{userId:id,name:data.directConversations.find(x=>x.userId===id)?.name||"Family member",role:data.directConversations.find(x=>x.userId===id)?.role||"adult"},canSend:true})}else{const result=await api.directMessages(householdId,id);setDirect(result);await api.markDirectMessagesRead(householdId,id)}const unread=data.directConversations.find(x=>x.userId===id)?.unreadCount||0;onChange({...data,directUnreadCount:Math.max(0,data.directUnreadCount-unread),directConversations:data.directConversations.map(x=>x.userId===id?{...x,unreadCount:0}:x)})}catch(e){setError(e instanceof Error?e.message:"Could not open this conversation.")}finally{setDirectLoading(false)}}
+async function send(event:FormEvent){event.preventDefault();const body=message.trim();if(!body||saving||!data.canSend)return;setSaving(true);setError(null);try{if(tab==="direct"&&peerId){if(demo){setMessage("");return}const created=await api.sendDirectMessage(householdId,peerId,{body});setDirect(c=>c?{...c,messages:[...c.messages,created]}:c);onChange({...data,directConversations:data.directConversations.map(x=>x.userId===peerId?{...x,lastMessage:body,lastMessageAt:created.createdAt}:x)});setMessage("")}else{if(demo){setMessage("");return}const created=await api.sendHouseholdMessage(householdId,{body});onChange({...data,messages:[created,...data.messages]});setMessage("")}}catch(e){setError(e instanceof ApiError?e.message:"The message could not be sent.")}finally{setSaving(false)}}
+async function react(item:HouseholdMessage,emoji:string){const existing=item.reactions?.find(x=>x.emoji===emoji),active=!existing?.reactedByMe;const reactions=[...(item.reactions||[])];const index=reactions.findIndex(x=>x.emoji===emoji);if(index>=0){const old=reactions[index];reactions[index]={...old,count:Math.max(0,old.count+(active?1:-1)),reactedByMe:active};if(!reactions[index].count)reactions.splice(index,1)}else reactions.push({emoji,count:1,reactedByMe:true});onChange({...data,messages:data.messages.map(x=>x.id===item.id?{...x,reactions}:x)});if(!demo)try{await api.setHouseholdMessageReaction(householdId,item.id,emoji,active)}catch{onChange(data)}}
+async function postAnnouncement(event:FormEvent){event.preventDefault();if(saving||!data.canAnnounce)return;setSaving(true);try{if(!demo){const created=await api.createHouseholdAnnouncement(householdId,{title:announcementTitle.trim(),body:announcementBody.trim()});onChange({...data,announcements:[created,...data.announcements]})}setAnnouncementTitle("");setAnnouncementBody("");setAnnouncementOpen(false)}catch(e){setError(e instanceof Error?e.message:"Could not post announcement.")}finally{setSaving(false)}}
+async function togglePin(id:string,value:boolean){onChange({...data,announcements:data.announcements.map(x=>x.id===id?{...x,pinned:value}:x)});if(!demo)try{await api.setHouseholdAnnouncementPinned(householdId,id,value)}catch{onChange(data)}}
+const MessageList=({items,directMode=false}:{items:HouseholdMessage[];directMode?:boolean})=><div className="family-hub__messages">{items.length?items.map(item=><article key={item.id} className={item.authorUserId===userId?"is-mine":""}><span className="family-hub__avatar">{item.authorName.slice(0,1).toUpperCase()}</span><div><header><strong>{item.authorUserId===userId?"You":item.authorName}</strong><time>{new Date(item.createdAt).toLocaleString(undefined,{weekday:"short",hour:"2-digit",minute:"2-digit"})}</time></header><p>{item.body}</p>{!directMode&&<div className="family-hub__reactions">{emojis.map(emoji=>{const r=item.reactions?.find(x=>x.emoji===emoji);return <button key={emoji} className={r?.reactedByMe?"is-active":""} onClick={()=>void react(item,emoji)}>{emoji}{r&&r.count>0?<small>{r.count}</small>:null}</button>})}</div>}</div></article>):<div className="family-hub__empty"><MessageCircle/><strong>No messages yet.</strong><p>Start with a hello, a reminder, or something from the day.</p></div>}</div>;
+return <div className="family-hub"><header className="module-heading family-hub__heading"><div><span className="today-date">Family Hub</span><h1>Stay close, without the noise.</h1><p>Household chat, private conversations, announcements and shared updates for {householdName}.</p></div>{data.canAnnounce&&<button className="button button--primary" onClick={()=>setAnnouncementOpen(true)}><Megaphone/> New announcement</button>}</header>{pinned.length>0&&<section className="family-hub__pinned"><div className="family-hub__section-label"><Pin/> Pinned for everyone</div><div className="family-hub__pinned-grid">{pinned.slice(0,3).map(x=><article key={x.id}><span><Megaphone/></span><div><strong>{x.title}</strong><p>{x.body}</p><small>{x.createdByName}</small></div></article>)}</div></section>}{error&&<div className="module-alert">{error}</div>}<div className="family-hub__tabs"><button className={tab==="chat"?"is-active":""} onClick={()=>setTab("chat")}><MessageCircle/> Household {data.unreadCount>0&&<b>{data.unreadCount}</b>}</button><button className={tab==="direct"?"is-active":""} onClick={()=>setTab("direct")}><MessagesSquare/> Direct messages {data.directUnreadCount>0&&<b>{data.directUnreadCount}</b>}</button><button className={tab==="announcements"?"is-active":""} onClick={()=>setTab("announcements")}><Megaphone/> Announcements</button><button className={tab==="activity"?"is-active":""} onClick={()=>setTab("activity")}><Activity/> Activity</button></div>
+{loading?<section className="module-card family-hub__loading">Opening the Family Hub…</section>:tab==="chat"?<section className="family-hub__chat module-card"><div className="family-hub__chat-top"><div><MessageCircle/><span><strong>Household chat</strong><small>A shared room for everyone at home.</small></span></div><span className="family-hub__calm"><Sparkles/> Calm by design</span></div><MessageList items={messages}/>{data.canSend&&<Composer message={message} setMessage={setMessage} saving={saving} onSubmit={send} placeholder="Write to the household…"/>}</section>:tab==="direct"?<section className="family-hub__direct">{peerId?<div className="module-card family-hub__chat"><div className="family-hub__chat-top"><div><button className="family-hub__back" onClick={()=>{setPeerId(null);setDirect(null)}}><ChevronLeft/></button><span><strong>{direct?.peer.name||"Private conversation"}</strong><small>Only you and this household member can see these messages.</small></span></div></div>{directLoading?<div className="family-hub__loading">Opening conversation…</div>:<MessageList directMode items={(direct?.messages||[]).map(x=>({id:x.id,body:x.body,authorUserId:x.senderUserId,authorName:x.senderName,createdAt:x.createdAt,editedAt:null}))}/>} {direct?.canSend&&<Composer message={message} setMessage={setMessage} saving={saving} onSubmit={send} placeholder={`Message ${direct.peer.name} privately…`}/>}</div>:<div className="family-hub__people module-card"><header><MessagesSquare/><div><strong>Direct messages</strong><small>Private one-to-one conversations inside your household.</small></div></header>{data.directConversations.length?data.directConversations.map(x=><button key={x.userId} onClick={()=>void openDirect(x.userId)}><span className="family-hub__avatar">{x.name.slice(0,1).toUpperCase()}</span><div><strong>{x.name}</strong><small>{x.lastMessage||`${x.role} · Start a conversation`}</small></div>{x.unreadCount>0&&<b>{x.unreadCount}</b>}</button>):<div className="family-hub__empty"><Heart/><strong>No one else is here yet.</strong><p>Direct messages become available when another household member joins.</p></div>}</div>}</section>:tab==="announcements"?<section className="family-hub__announcements">{data.announcements.length?data.announcements.map(x=><article key={x.id} className={`module-card ${x.pinned?"is-pinned":""}`}><div className="family-hub__announcement-icon"><Megaphone/></div><div><header><span>{x.pinned&&<b><Pin/> Pinned</b>}<strong>{x.title}</strong></span>{data.canAnnounce&&<button onClick={()=>void togglePin(x.id,!x.pinned)}>{x.pinned?<PinOff/>:<Pin/>}</button>}</header><p>{x.body}</p><small>Posted by {x.createdByName}</small></div></article>):<div className="module-card family-hub__empty"><Megaphone/><strong>No announcements yet.</strong></div>}</section>:<section className="family-hub__activity module-card"><div className="family-hub__activity-head"><Activity/><div><strong>Around the house</strong><small>Shared household updates.</small></div></div>{data.activity.length?<div className="family-hub__timeline">{data.activity.map(x=><article key={x.id}><span><BellRing/></span><div><strong>{x.summary}</strong><small>{new Date(x.createdAt).toLocaleString()}</small></div></article>)}</div>:<div className="family-hub__empty"><Activity/><strong>It is quiet here for now.</strong></div>}</section>}
+{announcementOpen&&<div className="modal-backdrop"><form className="modal-card family-hub__announcement-modal" onSubmit={postAnnouncement}><span className="today-date">Household announcement</span><h2>Pin something everyone should see.</h2><label>Title<input autoFocus value={announcementTitle} onChange={e=>setAnnouncementTitle(e.target.value)}/></label><label>Message<textarea rows={5} value={announcementBody} onChange={e=>setAnnouncementBody(e.target.value)}/></label><div className="modal-actions"><button type="button" className="button" onClick={()=>setAnnouncementOpen(false)}>Cancel</button><button className="button button--primary" disabled={!announcementTitle.trim()||!announcementBody.trim()||saving}><Pin/> Post & pin</button></div></form></div>}</div>}
+function Composer({message,setMessage,saving,onSubmit,placeholder}:{message:string;setMessage:(x:string)=>void;saving:boolean;onSubmit:(e:FormEvent)=>void;placeholder:string}){return <form className="family-hub__composer" onSubmit={onSubmit}><textarea value={message} maxLength={1000} rows={2} onChange={e=>setMessage(e.target.value)} placeholder={placeholder}/><div><small>{message.length}/1000</small><button className="button button--primary" disabled={!message.trim()||saving}><Send/> Send</button></div></form>}
