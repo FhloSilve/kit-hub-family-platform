@@ -6,6 +6,7 @@ import "./calendar-m3.css";
 import "./milestone3-v2.css";
 import "./theme-v2.css";
 import "./meals.css";
+import "./dashboard-widgets.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
