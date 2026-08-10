@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { languageNames, normalizeLanguage, type KitLanguage } from "../lib/i18n";
+import "../content-translation.css";
 
 const targets=[
  ".family-hub__messages article>div",
