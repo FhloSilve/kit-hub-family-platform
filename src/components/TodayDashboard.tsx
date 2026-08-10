@@ -11,6 +11,7 @@ import {
   CalendarDays,
   Check,
   ChevronDown,
+  CookingPot,
   EyeOff,
   GripVertical,
   Home,
@@ -37,20 +38,22 @@ import type {
   HouseholdEvent,
   HouseholdFocus,
   HouseholdHomeResponse,
+  MealPlannerResponse,
   EventRecurrence,
   EventType,
 } from "../../shared/contracts";
 import { ApiError, api } from "../lib/api";
 import { Brand } from "./Brand";
 import { HouseholdSettingsModal } from "./HouseholdSettingsModal";
+import { MealsView } from "./MealsView";
 interface Props {
   bootstrap: BootstrapResponse;
   demo?: boolean;
   onSignOut: () => Promise<void>;
 }
-type View = "today" | "calendar" | "tasks" | "groceries" | "members";
+type View = "today" | "calendar" | "tasks" | "groceries" | "meals" | "members";
 type AddKind = "task" | "grocery" | "event" | null;
-type CardId = "events" | "tasks" | "groceries" | "note" | "focus" | "occasions";
+type CardId = "events" | "tasks" | "groceries" | "meals" | "note" | "focus" | "occasions";
 type CardSize = "small" | "medium" | "wide" | "full";
 type CardSetting = { id: CardId; size: CardSize; hidden: boolean };
 const nav = [
@@ -58,6 +61,7 @@ const nav = [
   { key: "calendar" as View, label: "Calendar", Icon: CalendarDays },
   { key: "tasks" as View, label: "Tasks / To-do", Icon: ListTodo },
   { key: "groceries" as View, label: "Groceries", Icon: ShoppingBasket },
+  { key: "meals" as View, label: "Meals", Icon: CookingPot },
   { key: "members" as View, label: "Household", Icon: UsersRound },
 ];
 const themes = [
@@ -91,6 +95,17 @@ const emptyHome: HouseholdHomeResponse = {
   focus: null,
   canManage: false,
 };
+const emptyMeals: MealPlannerResponse = { plans: [], recipes: [], suggestions: [], dietaryNotes: null, canManage: false };
+function localDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+const demoMeals: MealPlannerResponse = {
+  plans: [{ id: "demo-dinner", mealDate: localDateKey(), mealType: "dinner", title: "Garden pasta", recipeId: "demo-recipe", recipeName: "Garden pasta", cookUserId: "demo-user", cookName: "Louisa", notes: "With a crunchy green salad", reminderMinutes: 60, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+  recipes: [{ id: "demo-recipe", name: "Garden pasta", description: "A colourful weeknight favourite", ingredients: [{ name: "Pasta", quantity: "500 g" }, { name: "Cherry tomatoes", quantity: "2 boxes" }, { name: "Basil", quantity: "1 bunch" }], instructions: "Cook the pasta, fold through the vegetables, and finish with basil.", favorite: true, createdBy: "demo-user", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+  suggestions: [{ id: "demo-suggestion", title: "Homemade pizza", notes: "Everyone chooses a topping", mealType: "dinner", suggestedByUserId: "demo-user", suggestedByName: "Louisa", votes: 3, votedByMe: true, createdAt: new Date().toISOString() }],
+  dietaryNotes: "Keep one portion dairy-free.",
+  canManage: true,
+};
 const demoHome: HouseholdHomeResponse = {
   notes: [
     {
@@ -112,12 +127,13 @@ const demoHome: HouseholdHomeResponse = {
   canManage: true,
 };
 const defaults: CardSetting[] = (
-  ["events", "tasks", "groceries", "note", "focus", "occasions"] as CardId[]
+  ["events", "tasks", "groceries", "meals", "note", "focus", "occasions"] as CardId[]
 ).map((id) => ({ id, size: "small", hidden: false }));
 const names: Record<CardId, string> = {
   events: "Upcoming Events",
   tasks: "Tasks / To-do",
   groceries: "Groceries",
+  meals: "Tonight's dinner",
   note: "Family note",
   focus: "Household focus",
   occasions: "Special occasions",
@@ -156,6 +172,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
     [home, setHome] = useState<HouseholdHomeResponse>(
       demo ? demoHome : emptyHome,
     ),
+    [meals, setMeals] = useState<MealPlannerResponse>(demo ? demoMeals : emptyMeals),
     [loading, setLoading] = useState(!demo),
     [error, setError] = useState<string | null>(null),
     [add, setAdd] = useState<AddKind>(null),
@@ -173,6 +190,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
   useEffect(() => {
     if (demo) {
       setHome(demoHome);
+      setMeals(demoMeals);
       setLoading(false);
       return;
     }
@@ -181,11 +199,13 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
     Promise.all([
       api.everydayCore(household.id),
       api.householdHome(household.id),
+      api.meals(household.id),
     ])
-      .then(([everyday, householdHome]) => {
+      .then(([everyday, householdHome, mealPlanner]) => {
         if (!dead) {
           setCore(everyday);
           setHome(householdHome);
+          setMeals(mealPlanner);
           setError(null);
         }
       })
@@ -361,6 +381,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
               groceries={openGroceries}
               events={upcoming}
               home={home}
+              meals={meals}
               setHome={setHome}
               householdId={household.id}
               demo={demo}
@@ -392,6 +413,17 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
               events={core.events}
               loading={loading}
               onAdd={() => setAdd("event")}
+            />
+          )}{" "}
+          {view === "meals" && (
+            <MealsView
+              data={meals}
+              members={core.members}
+              loading={loading}
+              householdId={household.id}
+              demo={demo}
+              onChange={setMeals}
+              onGroceriesAdded={(items) => setCore((current) => ({ ...current, groceries: [...items, ...current.groceries] }))}
             />
           )}{" "}
           {view === "members" && (
@@ -489,6 +521,7 @@ function HomeView({
   groceries,
   events,
   home,
+  meals,
   setHome,
   householdId,
   demo,
@@ -502,6 +535,7 @@ function HomeView({
   groceries: GroceryItem[];
   events: HouseholdEvent[];
   home: HouseholdHomeResponse;
+  meals: MealPlannerResponse;
   setHome: Dispatch<SetStateAction<HouseholdHomeResponse>>;
   householdId: string;
   demo: boolean;
@@ -544,6 +578,8 @@ function HomeView({
   const special = events.filter(
     (e) => e.eventType === "birthday" || e.eventType === "holiday",
   );
+  const todayKey = localDateKey();
+  const tonight = meals.plans.find((plan) => plan.mealDate === todayKey && plan.mealType === "dinner") ?? null;
 
   async function saveNote(body: string) {
     setHomeError(null);
@@ -661,6 +697,13 @@ function HomeView({
           />
         )}
       </>
+    ),
+    meals: (
+      <div className="dashboard-meal-card">
+        <header><span><CookingPot /></span><div><small>Tonight&apos;s dinner</small><h2>{tonight?.title || "Nothing planned yet"}</h2></div></header>
+        {tonight ? <div className="dashboard-meal-details">{tonight.cookName && <span>Cook: {tonight.cookName}</span>}{tonight.notes && <p>{tonight.notes}</p>}</div> : <p>Choose dinner, assign the cook, and keep the household in sync.</p>}
+        <button onClick={() => onView("meals")}>{tonight ? "Open meal planner" : "Plan tonight's dinner"} <span>→</span></button>
+      </div>
     ),
     note: (
       <>
@@ -876,7 +919,7 @@ function HomeView({
           .map((x) => (
             <section
               key={x.id}
-              className={`dashboard-card dashboard-custom-card dashboard-size--${x.size} ${x.id === "note" ? "home-note-card" : ""} ${x.id === "focus" ? "home-focus-card" : ""} ${x.id === "occasions" ? "home-occasion-card" : ""}`}
+              className={`dashboard-card dashboard-custom-card dashboard-size--${x.size} ${x.id === "note" ? "home-note-card" : ""} ${x.id === "focus" ? "home-focus-card" : ""} ${x.id === "meals" ? "home-meal-card" : ""} ${x.id === "occasions" ? "home-occasion-card" : ""}`}
               draggable={editing}
               onDragStart={() => setDragged(x.id)}
               onDragOver={(e: DragEvent<HTMLElement>) =>

@@ -31,3 +31,33 @@ export interface HouseholdFocus { title: string; details: string | null; updated
 export interface HouseholdHomeResponse { notes: FamilyNote[]; focus: HouseholdFocus | null; canManage: boolean; }
 export interface SaveFamilyNoteInput { body: string; }
 export interface SaveHouseholdFocusInput { title: string; details?: string; }
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export interface MealIngredient { name: string; quantity: string; }
+export interface MealRecipe {
+  id: string; name: string; description: string | null; ingredients: MealIngredient[];
+  instructions: string | null; favorite: boolean; createdBy: string; createdAt: string; updatedAt: string;
+}
+export interface MealPlan {
+  id: string; mealDate: string; mealType: MealType; title: string; recipeId: string | null;
+  recipeName: string | null; cookUserId: string | null; cookName: string | null;
+  notes: string | null; reminderMinutes: number | null; createdAt: string; updatedAt: string;
+}
+export interface MealSuggestion {
+  id: string; title: string; notes: string | null; mealType: MealType;
+  suggestedByUserId: string; suggestedByName: string; votes: number; votedByMe: boolean; createdAt: string;
+}
+export interface MealPlannerResponse {
+  plans: MealPlan[]; recipes: MealRecipe[]; suggestions: MealSuggestion[];
+  dietaryNotes: string | null; canManage: boolean;
+}
+export interface SaveMealPlanInput {
+  mealDate: string; mealType: MealType; title: string; recipeId?: string | null;
+  cookUserId?: string | null; notes?: string; reminderMinutes?: number | null;
+}
+export interface SaveMealRecipeInput {
+  name: string; description?: string; ingredients: MealIngredient[]; instructions?: string; favorite?: boolean;
+}
+export interface SaveMealSuggestionInput { title: string; notes?: string; mealType?: MealType; }
+export interface SaveMealSettingsInput { dietaryNotes: string; }
+export interface AddRecipeIngredientsResponse { items: GroceryItem[]; addedCount: number; }

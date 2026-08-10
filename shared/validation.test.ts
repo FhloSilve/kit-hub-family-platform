@@ -4,6 +4,10 @@ import {
   validateCreateHousehold,
   validateFamilyNote,
   validateHouseholdFocus,
+  validateMealPlan,
+  validateMealRecipe,
+  validateMealSettings,
+  validateMealSuggestion,
   validateUpdateHousehold,
 } from "./validation";
 
@@ -96,5 +100,24 @@ describe("validateHouseholdFocus", () => {
     expect(
       validateHouseholdFocus({ title: "x".repeat(81), details: "" }).ok,
     ).toBe(false);
+  });
+});
+
+describe("meal planning validation", () => {
+  it("accepts a complete dinner plan", () => {
+    expect(validateMealPlan({ mealDate: "2026-08-10", mealType: "dinner", title: "Veggie pasta", cookUserId: "user-1", reminderMinutes: 60 })).toMatchObject({ ok: true, value: { title: "Veggie pasta", mealType: "dinner" } });
+  });
+
+  it("rejects impossible dates and invalid reminders", () => {
+    expect(validateMealPlan({ mealDate: "2026-02-30", mealType: "dinner", title: "Soup", reminderMinutes: -1 }).ok).toBe(false);
+  });
+
+  it("normalizes recipe ingredients", () => {
+    expect(validateMealRecipe({ name: " Tacos ", ingredients: [{ name: " Tortillas ", quantity: " 8 " }], description: "" })).toMatchObject({ ok: true, value: { name: "Tacos", ingredients: [{ name: "Tortillas", quantity: "8" }] } });
+  });
+
+  it("validates suggestions and dietary notes", () => {
+    expect(validateMealSuggestion({ title: " Curry night ", mealType: "dinner" }).ok).toBe(true);
+    expect(validateMealSettings({ dietaryNotes: "x".repeat(1001) }).ok).toBe(false);
   });
 });

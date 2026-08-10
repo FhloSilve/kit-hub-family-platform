@@ -2,7 +2,9 @@ import type {
   AdminReleaseCancelResponse, AdminReleaseDispatchResponse, AdminReleaseStatusResponse, ApiErrorBody, BootstrapResponse,
   CreateEventInput, CreateGroceryItemInput, CreateHouseholdInput, CreateTaskInput,
   EverydayCoreResponse, EverydayTask, FamilyNote, GroceryItem, HouseholdEvent, HouseholdFocus, HouseholdHomeResponse, HouseholdSummary,
-  SaveFamilyNoteInput, SaveHouseholdFocusInput, UpdateHouseholdInput, UpdateHouseholdResponse,
+  AddRecipeIngredientsResponse, MealPlan, MealPlannerResponse, MealRecipe, MealSuggestion,
+  SaveFamilyNoteInput, SaveHouseholdFocusInput, SaveMealPlanInput, SaveMealRecipeInput, SaveMealSettingsInput, SaveMealSuggestionInput,
+  UpdateHouseholdInput, UpdateHouseholdResponse,
 } from "../../shared/contracts";
 export class ApiError extends Error { code:string; details?:Record<string,string>; requestId?:string; constructor(body:ApiErrorBody,requestId?:string){super(body.error.message);this.name="ApiError";this.code=body.error.code;this.details=body.error.details;this.requestId=body.error.requestId??requestId;} }
 async function request<T>(url:string,init?:RequestInit):Promise<T>{const response=await fetch(url,{credentials:"include",...init,headers:{"content-type":"application/json",...init?.headers}});if(!response.ok){const requestId=response.headers.get("x-request-id")??undefined;try{const body=(await response.json()) as ApiErrorBody;throw new ApiError(body,requestId)}catch(error){if(error instanceof ApiError)throw error;throw new ApiError({error:{code:"UNEXPECTED_RESPONSE",message:"Kit Hub returned an unexpected response. Please try again.",requestId:requestId??"unavailable"}},requestId)}}return(await response.json()) as T}
@@ -23,6 +25,16 @@ export const api={
  updateFamilyNote:(householdId:string,noteId:string,input:SaveFamilyNoteInput)=>request<FamilyNote>(householdUrl(householdId,`notes/${encodeURIComponent(noteId)}`),{method:"PATCH",body:JSON.stringify(input)}),
  deleteFamilyNote:(householdId:string,noteId:string)=>request<{deleted:boolean}>(householdUrl(householdId,`notes/${encodeURIComponent(noteId)}`),{method:"DELETE"}),
  saveHouseholdFocus:(householdId:string,input:SaveHouseholdFocusInput)=>request<HouseholdFocus>(householdUrl(householdId,"focus"),{method:"PUT",body:JSON.stringify(input)}),
+ meals:(householdId:string)=>request<MealPlannerResponse>(householdUrl(householdId,"meals")),
+ saveMealPlan:(householdId:string,input:SaveMealPlanInput)=>request<MealPlan>(householdUrl(householdId,"meals/plans"),{method:"POST",body:JSON.stringify(input)}),
+ deleteMealPlan:(householdId:string,planId:string)=>request<{deleted:boolean}>(householdUrl(householdId,`meals/plans/${encodeURIComponent(planId)}`),{method:"DELETE"}),
+ createMealRecipe:(householdId:string,input:SaveMealRecipeInput)=>request<MealRecipe>(householdUrl(householdId,"meals/recipes"),{method:"POST",body:JSON.stringify(input)}),
+ updateMealRecipe:(householdId:string,recipeId:string,input:SaveMealRecipeInput)=>request<MealRecipe>(householdUrl(householdId,`meals/recipes/${encodeURIComponent(recipeId)}`),{method:"PUT",body:JSON.stringify(input)}),
+ setMealRecipeFavorite:(householdId:string,recipeId:string,favorite:boolean)=>request<MealRecipe>(householdUrl(householdId,`meals/recipes/${encodeURIComponent(recipeId)}/favorite`),{method:"PATCH",body:JSON.stringify({favorite})}),
+ addRecipeIngredientsToGroceries:(householdId:string,recipeId:string)=>request<AddRecipeIngredientsResponse>(householdUrl(householdId,`meals/recipes/${encodeURIComponent(recipeId)}/groceries`),{method:"POST",body:JSON.stringify({})}),
+ createMealSuggestion:(householdId:string,input:SaveMealSuggestionInput)=>request<MealSuggestion>(householdUrl(householdId,"meals/suggestions"),{method:"POST",body:JSON.stringify(input)}),
+ setMealSuggestionVote:(householdId:string,suggestionId:string,voted:boolean)=>request<{voted:boolean;votes:number}>(householdUrl(householdId,`meals/suggestions/${encodeURIComponent(suggestionId)}/vote`),{method:"PUT",body:JSON.stringify({voted})}),
+ saveMealSettings:(householdId:string,input:SaveMealSettingsInput)=>request<{dietaryNotes:string|null}>(householdUrl(householdId,"meals/settings"),{method:"PUT",body:JSON.stringify(input)}),
  adminReleaseStatus:()=>request<AdminReleaseStatusResponse>("/api/v1/admin/releases/status"),
  triggerAdminRelease:()=>request<AdminReleaseDispatchResponse>("/api/v1/admin/releases",{method:"POST",body:JSON.stringify({})}),
  cancelAdminRelease:(runId:number)=>request<AdminReleaseCancelResponse>(`/api/v1/admin/releases/${runId}/cancel`,{method:"POST",body:JSON.stringify({})}),
