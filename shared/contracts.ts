@@ -26,3 +26,8 @@ export interface EverydayCoreResponse { members: HouseholdMemberSummary[]; tasks
 export interface CreateTaskInput { title: string; notes?: string; priority?: "low" | "normal" | "high"; dueAt?: string | null; assigneeUserId?: string | null; }
 export interface CreateGroceryItemInput { name: string; quantity?: string; important?: boolean; }
 export interface CreateEventInput { title: string; description?: string; location?: string; startsAt: string; endsAt?: string | null; allDay?: boolean; eventType?: EventType; recurrence?: EventRecurrence; reminderMinutes?: number | null; }
+export interface FamilyNote { id: string; body: string; authorUserId: string; authorName: string; createdAt: string; updatedAt: string; }
+export interface HouseholdFocus { title: string; details: string | null; updatedByUserId: string; updatedByName: string; updatedAt: string; }
+export interface HouseholdHomeResponse { notes: FamilyNote[]; focus: HouseholdFocus | null; canManage: boolean; }
+export interface SaveFamilyNoteInput { body: string; }
+export interface SaveHouseholdFocusInput { title: string; details?: string; }
