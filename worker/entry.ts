@@ -4,6 +4,7 @@ import everydayV2 from "./everyday-v2";
 import familyHome from "./family-home";
 import meals from "./meals";
 import communication from "./communication";
+import chatMedia from "./chat-media";
 import familyTools from "./family-tools";
 import feedback from "./feedback";
 import releaseState from "./release-state";
@@ -18,6 +19,7 @@ app.post("/api/v1/admin/releases/:runId/cancel", async (c) => { const access = a
 app.route("/", releaseState);
 app.route("/", feedback);
 app.route("/", familyTools);
+app.route("/", chatMedia);
 app.route("/", communication);
 app.route("/", familyHome);
 app.route("/", meals);
