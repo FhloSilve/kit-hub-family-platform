@@ -4,6 +4,7 @@ import { Bell, CalendarDays, Check, ChevronDown, CookingPot, Home, ListTodo, Mes
 import type { BootstrapResponse, EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent, HouseholdHomeResponse, MealPlannerResponse, HouseholdCommunicationResponse, EventRecurrence, EventType } from "../../shared/contracts";
 import { ApiError, api } from "../lib/api";
 import { Brand } from "./Brand";
+import { CalendarV2View } from "./CalendarV2View";
 import { DashboardWidgets } from "./DashboardWidgets";
 import { FamilyHubView } from "./FamilyHubView";
 import { HouseholdSettingsModal } from "./HouseholdSettingsModal";
@@ -123,7 +124,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
         {view === "today" && <DashboardWidgets first={first} userId={bootstrap.user.id} householdId={household.id} tasks={openTasks} groceries={openGroceries} events={upcoming} home={home} meals={meals} setHome={setHome} demo={demo} onView={(next) => setView(next)} onAdd={setAdd} onToggleTask={toggleTask} />}
         {view === "tasks" && <TasksView tasks={core.tasks} loading={loading} onAdd={() => setAdd("task")} onToggle={toggleTask} />}
         {view === "groceries" && <GroceriesView items={core.groceries} loading={loading} onAdd={() => setAdd("grocery")} onToggle={toggleGrocery} onImportant={toggleImportant} />}
-        {view === "calendar" && <CalendarView events={core.events} loading={loading} onAdd={() => setAdd("event")} />}
+        {view === "calendar" && <CalendarV2View events={core.events} loading={loading} onAdd={() => setAdd("event")} />}
         {view === "meals" && <MealsView data={meals} members={core.members} loading={loading} householdId={household.id} demo={demo} onChange={setMeals} onGroceriesAdded={(items) => setCore((current) => ({ ...current, groceries: [...items, ...current.groceries] }))} />}
         {view === "family" && <FamilyHubView householdId={household.id} userId={bootstrap.user.id} householdName={householdName} data={communication} loading={loading} demo={demo} onChange={setCommunication} />}
         {view === "members" && <MembersView core={core} householdName={householdName} />}
@@ -157,10 +158,6 @@ function GroceriesView({ items, loading, onAdd, onToggle, onImportant }: { items
 }
 function EventList({ events }: { events: HouseholdEvent[] }) {
   return <div className="event-list">{events.map((event) => <article key={event.id} className={`event-row event-type--${event.eventType || "event"}`}><span><strong>{new Date(event.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</strong><small>{event.allDay ? "All day" : new Date(event.startsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</small></span><div><strong>{event.title}</strong><small>{event.eventType}{event.recurrence && event.recurrence !== "none" ? ` · repeats ${event.recurrence}` : ""}</small></div></article>)}</div>;
-}
-function CalendarView({ events, loading, onAdd }: { events: HouseholdEvent[]; loading: boolean; onAdd: () => void }) {
-  const grouped = events.reduce<Record<string, HouseholdEvent[]>>((groups, event) => { const key = new Date(event.startsAt).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }); (groups[key] ??= []).push(event); return groups; }, {});
-  return <><Heading title="Calendar V2" text="Events, birthdays, happenings, reminders and repeating plans in one place." action="Add event" onAction={onAdd} />{loading ? <p>Loading…</p> : <section className="calendar-v2-agenda">{Object.entries(grouped).map(([day, dayEvents]) => <div className="agenda-day" key={day}><h3>{day}</h3><EventList events={dayEvents} /></div>)}{!events.length && <Empty text="Your calendar is wide open." action="Add event" onClick={onAdd} />}</section>}</>;
 }
 function MembersView({ core, householdName }: { core: EverydayCoreResponse; householdName: string }) {
   return <><Heading title={householdName} text="The people who make this place home." /><section className="module-card member-grid">{core.members.map((member) => <article key={member.id}><span>{member.name[0]?.toUpperCase()}</span><div><strong>{member.name}</strong><small>{member.email} · {member.role}</small></div></article>)}</section></>;
