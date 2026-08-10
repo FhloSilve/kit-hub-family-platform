@@ -5,12 +5,14 @@ import "../content-translation.css";
 const targets=[
  ".family-hub__messages article>div",
  ".family-hub__announcements article>div:last-child",
+ ".family-hub__pinned-grid article>div",
  ".family-note-list article",
  ".household-focus-content",
  ".task-row>div",
  ".calendar-v2-agenda-event>div:last-child",
  ".calendar-v2-event",
  ".dashboard-meal-details",
+ ".meal-slot.is-planned",
  ".meal-recipe-list article>div",
  ".meal-suggestion-list article>div",
  ".meal-dietary-card>div",
@@ -20,7 +22,7 @@ const owned=new WeakSet<Element>();
 
 function contentText(element:Element){
  const clone=element.cloneNode(true) as HTMLElement;
- clone.querySelectorAll(".kit-content-translate,.temporary-translation,.temporary-translation-control,button,small,time").forEach(node=>node.remove());
+ clone.querySelectorAll(".kit-content-translate,.temporary-translation,.temporary-translation-control,button,small,time,em").forEach(node=>node.remove());
  return (clone.textContent||"").replace(/\s+/g," ").trim().slice(0,5000);
 }
 
@@ -29,7 +31,10 @@ export function ContentTranslationEnhancer({householdId}:{householdId:string}){
   let queued=false;
   function enhance(){
    queued=false;
-   if(localStorage.getItem("kit-hub-offer-translations")==="0")return;
+   if(localStorage.getItem("kit-hub-offer-translations")==="0"){
+    document.querySelectorAll(".kit-content-translate").forEach(node=>node.remove());
+    return;
+   }
    const targetLanguage=normalizeLanguage(localStorage.getItem("kit-hub-language"));
    for(const selector of targets)for(const element of Array.from(document.querySelectorAll<HTMLElement>(selector))){
     if(owned.has(element)||element.closest("[data-no-content-translation]"))continue;
