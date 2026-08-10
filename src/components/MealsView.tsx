@@ -15,6 +15,7 @@ import {
   Star,
   ThumbsUp,
   Utensils,
+  UsersRound,
   X,
 } from "lucide-react";
 import type {
@@ -157,6 +158,15 @@ export function MealsView({ data, members, loading, householdId, demo, onChange,
       </header>
 
       {message && <div className="meal-message"><ShoppingBasket /><span>{message}</span><button aria-label="Dismiss message" onClick={() => setMessage(null)}><X /></button></div>}
+
+      <section className="meal-sharing-card" aria-label="Meal sharing and permissions">
+        <span><UsersRound /></span>
+        <div>
+          <small>Shared household planner</small>
+          <strong>{data.canManage ? "You can add, edit, and remove meals." : "You can view meals, suggest ideas, and vote."}</strong>
+          <p>Everyone in this household can see the meal plan. Owners, admins, adults, and teens can manage it by default; individual permissions can change that.</p>
+        </div>
+      </section>
 
       <section className="meal-dietary-card">
         <span><Heart /></span>

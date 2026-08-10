@@ -1169,9 +1169,11 @@ function CardHead({ title, onClick }: { title: string; onClick: () => void }) {
 function Empty({ text, onClick }: { text: string; onClick: () => void }) {
   return (
     <button className="empty-state empty-state--clickable" onClick={onClick}>
-      <Plus />
-      <strong>{text}</strong>
-      <span>Add something</span>
+      <span className="empty-state__icon"><ListTodo /></span>
+      <span className="empty-state__content">
+        <strong>{text}</strong>
+        <span className="empty-state__action"><Plus /> Add a task</span>
+      </span>
     </button>
   );
 }
