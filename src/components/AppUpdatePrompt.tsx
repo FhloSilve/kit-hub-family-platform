@@ -1,37 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw, Sparkles, X } from "lucide-react";
-import type { AppVersionResponse } from "../../shared/contracts";
 
 const CHECK_INTERVAL_MS = 60_000;
+type ReleaseStateResponse = { releaseId: string | null; releasedAt: string | null };
 
 export function AppUpdatePrompt() {
-  const baselineVersion = useRef<string | null>(null);
-  const [availableVersion, setAvailableVersion] = useState<string | null>(null);
-  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
+  const baselineRelease = useRef<string | null | undefined>(undefined);
+  const [availableRelease, setAvailableRelease] = useState<string | null>(null);
+  const [dismissedRelease, setDismissedRelease] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const checkForUpdate = useCallback(async () => {
     try {
-      const response = await fetch(`/api/version?check=${Date.now()}`, {
+      const response = await fetch(`/api/release-state?check=${Date.now()}`, {
         cache: "no-store",
         credentials: "same-origin",
         headers: { accept: "application/json" },
       });
       if (!response.ok) return;
-      const current = (await response.json()) as AppVersionResponse;
-      if (!current.id) return;
+      const current = (await response.json()) as ReleaseStateResponse;
 
-      // The first successful check establishes the version this open browser tab
-      // is currently associated with. A banner is only shown when the deployed
-      // Cloudflare Worker version changes after that point.
-      if (!baselineVersion.current) {
-        baselineVersion.current = current.id;
-        setAvailableVersion(null);
+      // The first successful check establishes the last fully verified Admin
+      // Release Center release seen by this open tab. Git pushes, Worker deploys,
+      // failed releases and cancelled releases do not change this marker.
+      if (baselineRelease.current === undefined) {
+        baselineRelease.current = current.releaseId;
+        setAvailableRelease(null);
         return;
       }
 
-      if (current.id !== baselineVersion.current) setAvailableVersion(current.id);
-      else setAvailableVersion(null);
+      if (current.releaseId && current.releaseId !== baselineRelease.current) setAvailableRelease(current.releaseId);
+      else setAvailableRelease(null);
     } catch {
       // Update checks stay silent while offline or during a transient deploy.
     }
@@ -54,7 +53,7 @@ export function AppUpdatePrompt() {
     };
   }, [checkForUpdate]);
 
-  if (!availableVersion || availableVersion === dismissedVersion) return null;
+  if (!availableRelease || availableRelease === dismissedRelease) return null;
 
   function updateNow() {
     setUpdating(true);
@@ -63,8 +62,8 @@ export function AppUpdatePrompt() {
 
   return <aside className="update-prompt" role="status" aria-live="polite">
     <span className="update-prompt__icon"><Sparkles /></span>
-    <div><strong>A fresh Kit Hub update is ready</strong><small>A new production version was deployed. Update without signing out.</small></div>
+    <div><strong>A fresh Kit Hub update is ready</strong><small>A production release finished successfully. Update without signing out.</small></div>
     <button className="button update-prompt__action" type="button" onClick={updateNow} disabled={updating}><RefreshCw className={updating ? "is-spinning" : ""} />{updating ? "Updating…" : "Update now"}</button>
-    <button className="update-prompt__dismiss" type="button" onClick={() => setDismissedVersion(availableVersion)} aria-label="Update later"><X /></button>
+    <button className="update-prompt__dismiss" type="button" onClick={() => setDismissedRelease(availableRelease)} aria-label="Update later"><X /></button>
   </aside>;
 }
