@@ -46,7 +46,7 @@ export interface HouseholdAnnouncement { id:string;title:string;body:string;pinn
 export interface HouseholdActivityItem { id:string;kind:string;summary:string;actorUserId:string|null;actorName:string|null;createdAt:string; }
 export interface DirectConversation { userId:string;name:string;role:HouseholdRole;lastMessage:string|null;lastMessageAt:string|null;unreadCount:number; }
 export interface DirectMessage { id:string;senderUserId:string;senderName:string;recipientUserId:string;recipientName:string;body:string;createdAt:string; }
-export interface HouseholdCommunicationResponse { messages:HouseholdMessage[];announcements:HouseholdAnnouncement[];activity:HouseholdActivityItem[];directConversations:DirectConversation[];unreadCount:number;directUnreadCount:number;canSend:boolean;canAnnounce:boolean; }
+export interface HouseholdCommunicationResponse { messages:HouseholdMessage[];announcements:HouseholdAnnouncement[];activity:HouseholdActivityItem[];directConversations?:DirectConversation[];unreadCount:number;directUnreadCount?:number;canSend:boolean;canAnnounce:boolean; }
 export interface DirectMessagesResponse { messages:DirectMessage[];peer:{userId:string;name:string;role:HouseholdRole};canSend:boolean; }
 export interface CreateHouseholdMessageInput { body:string; }
 export interface CreateHouseholdAnnouncementInput { title:string;body:string; }
