@@ -1,0 +1,6 @@
+import { Hono } from "hono";
+import type { AppBindings } from "./http";
+import { apiError } from "./http";
+const app=new Hono<AppBindings>();
+app.get("/api/v1/media/gifs/search",async c=>{const query=(c.req.query("q")||"").trim().slice(0,80);if(!query)return c.json({items:[]});const key=(c.env as unknown as {GIPHY_API_KEY?:string}).GIPHY_API_KEY;if(!key)return apiError(c,422,"gif_search_not_configured","GIF search needs a GIPHY API key in production. You can still paste a direct GIF link.");try{const endpoint=`https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=18&rating=g&lang=en`;const response=await fetch(endpoint);if(!response.ok)throw new Error("provider failed");const body=await response.json() as {data?:Array<{id:string;title?:string;images?:{fixed_width_small?:{url?:string};fixed_width?:{url?:string};original?:{url?:string}}}>};return c.json({items:(body.data||[]).flatMap(item=>{const url=item.images?.original?.url||item.images?.fixed_width?.url;const previewUrl=item.images?.fixed_width_small?.url||item.images?.fixed_width?.url||url;return url&&previewUrl?[{id:item.id,url,previewUrl,title:item.title||"GIF"}]:[]})})}catch{return apiError(c,500,"gif_search_failed","GIF search is temporarily unavailable. You can still paste a direct GIF link.")}});
+export default app;
