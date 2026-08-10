@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Bell, CalendarDays, Check, ChevronDown, CookingPot, Home, ListTodo, Palette, Plus, Search, Settings, ShoppingBasket, Sparkles, Star, UsersRound, X } from "lucide-react";
-import type { BootstrapResponse, EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent, HouseholdHomeResponse, MealPlannerResponse, EventRecurrence, EventType } from "../../shared/contracts";
+import { Bell, CalendarDays, Check, ChevronDown, CookingPot, Home, ListTodo, MessageCircle, Palette, Plus, Search, Settings, ShoppingBasket, Sparkles, Star, UsersRound, X } from "lucide-react";
+import type { BootstrapResponse, EverydayCoreResponse, EverydayTask, GroceryItem, HouseholdEvent, HouseholdHomeResponse, MealPlannerResponse, HouseholdCommunicationResponse, EventRecurrence, EventType } from "../../shared/contracts";
 import { ApiError, api } from "../lib/api";
 import { Brand } from "./Brand";
 import { DashboardWidgets } from "./DashboardWidgets";
+import { FamilyHubView } from "./FamilyHubView";
 import { HouseholdSettingsModal } from "./HouseholdSettingsModal";
 import { MealsView } from "./MealsView";
 
 interface Props { bootstrap: BootstrapResponse; demo?: boolean; onSignOut: () => Promise<void>; }
-type View = "today" | "calendar" | "tasks" | "groceries" | "meals" | "members";
+type View = "today" | "calendar" | "tasks" | "groceries" | "meals" | "family" | "members";
 type AddKind = "task" | "grocery" | "event" | null;
 
 const nav = [
@@ -18,6 +19,7 @@ const nav = [
   { key: "tasks" as View, label: "Tasks / To-do", Icon: ListTodo },
   { key: "groceries" as View, label: "Groceries", Icon: ShoppingBasket },
   { key: "meals" as View, label: "Meals", Icon: CookingPot },
+  { key: "family" as View, label: "Family Hub", Icon: MessageCircle },
   { key: "members" as View, label: "Household", Icon: UsersRound },
 ];
 const themes = ["meadow", "coastal", "urban", "seashell", "rose", "sapphire", "lapis", "amethyst"] as const;
@@ -25,6 +27,7 @@ const themeNames: Record<string, string> = { meadow: "Kit Hub Meadow", coastal: 
 const empty: EverydayCoreResponse = { members: [], tasks: [], groceries: [], events: [] };
 const emptyHome: HouseholdHomeResponse = { notes: [], focus: null, canManage: false };
 const emptyMeals: MealPlannerResponse = { plans: [], recipes: [], suggestions: [], dietaryNotes: null, canManage: false };
+const emptyCommunication: HouseholdCommunicationResponse = { messages: [], announcements: [], activity: [], unreadCount: 0, canSend: false, canAnnounce: false };
 
 export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
   const household = bootstrap.activeHousehold!;
@@ -32,11 +35,13 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
   const [core, setCore] = useState<EverydayCoreResponse>(empty);
   const [home, setHome] = useState<HouseholdHomeResponse>(emptyHome);
   const [meals, setMeals] = useState<MealPlannerResponse>(emptyMeals);
+  const [communication, setCommunication] = useState<HouseholdCommunicationResponse>(emptyCommunication);
   const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState<string | null>(null);
   const [add, setAdd] = useState<AddKind>(null);
   const [settings, setSettings] = useState(false);
   const [profile, setProfile] = useState(false);
+  const [notifications, setNotifications] = useState(false);
   const [householdName, setHouseholdName] = useState(household.name);
   const [theme, setTheme] = useState(() => localStorage.getItem("kit-hub-theme") || household.theme || "meadow");
 
@@ -49,12 +54,13 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
     if (demo) { setLoading(false); return; }
     let dead = false;
     setLoading(true);
-    Promise.all([api.everydayCore(household.id), api.householdHome(household.id), api.meals(household.id)])
-      .then(([everyday, householdHome, mealPlanner]) => {
+    Promise.all([api.everydayCore(household.id), api.householdHome(household.id), api.meals(household.id), api.communication(household.id)])
+      .then(([everyday, householdHome, mealPlanner, familyCommunication]) => {
         if (dead) return;
         setCore(everyday);
         setHome(householdHome);
         setMeals(mealPlanner);
+        setCommunication(familyCommunication);
         setError(null);
       })
       .catch((caught: unknown) => {
@@ -68,6 +74,7 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
   const openTasks = core.tasks.filter((task) => task.status === "todo");
   const openGroceries = core.groceries.filter((item) => !item.checked);
   const upcoming = useMemo(() => core.events.filter((event) => new Date(event.startsAt) >= new Date(new Date().setHours(0, 0, 0, 0))).slice(0, 6), [core.events]);
+  const notificationItems = communication.messages.filter((item) => item.authorUserId !== bootstrap.user.id).slice(0, Math.max(communication.unreadCount, 3));
 
   async function toggleTask(task: EverydayTask) {
     const done = task.status !== "done";
@@ -84,12 +91,16 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
     setCore((current) => ({ ...current, groceries: current.groceries.map((candidate) => candidate.id === item.id ? { ...candidate, important } : candidate) }));
     if (!demo) try { await api.setGroceryImportant(household.id, item.id, important); } catch { setCore((current) => ({ ...current, groceries: current.groceries.map((candidate) => candidate.id === item.id ? item : candidate) })); }
   }
+  async function openFamilyHub() {
+    setNotifications(false); setView("family");
+    if (communication.unreadCount && !demo) try { await api.markHouseholdMessagesRead(household.id); setCommunication((current) => ({ ...current, unreadCount: 0 })); } catch { /* keep unread badge */ }
+  }
 
   return <div className="app-shell">
     <aside className="sidebar">
       <Brand />
       <button className="household-switcher" onClick={() => setView("members")}><span className="household-switcher__avatar"><Home /></span><span><strong>{householdName}</strong><small>{core.members.length || household.memberCount} members</small></span><ChevronDown /></button>
-      <nav className="sidebar-nav">{nav.map(({ key, label, Icon }) => <button key={key} className={view === key ? "is-active" : ""} onClick={() => setView(key)}><Icon /><span>{label}</span></button>)}</nav>
+      <nav className="sidebar-nav">{nav.map(({ key, label, Icon }) => <button key={key} className={view === key ? "is-active" : ""} onClick={() => key === "family" ? void openFamilyHub() : setView(key)}><Icon /><span>{label}</span>{key === "family" && communication.unreadCount > 0 && <b className="nav-unread">{communication.unreadCount > 99 ? "99+" : communication.unreadCount}</b>}</button>)}</nav>
       <div className="sidebar__spacer" />
       <button className="silvi-card" disabled><span><Sparkles /></span><div><strong>Ask Silvi</strong><small>Coming later</small></div></button>
       <button className="sidebar-settings" onClick={() => setSettings(true)}><Settings /> Settings</button>
@@ -102,23 +113,24 @@ export function TodayDashboard({ bootstrap, demo = false, onSignOut }: Props) {
         <div className="topbar-actions">
           <button className="mobile-search-button icon-button" aria-label="Search your home" disabled><Search /></button>
           <label className="site-theme-picker"><Palette /><select aria-label="Site theme" value={theme} onChange={(event) => setTheme(event.target.value)}>{themes.map((item) => <option key={item} value={item}>{themeNames[item]}</option>)}</select></label>
-          <button className="icon-button" aria-label="Notifications" disabled><Bell /></button>
+          <div className="profile-menu"><button className="icon-button notification-button" aria-label="Notifications" onClick={() => setNotifications((value) => !value)}><Bell />{communication.unreadCount > 0 && <b className="notification-dot">{communication.unreadCount > 9 ? "9+" : communication.unreadCount}</b>}</button>{notifications && <div className="notification-popover"><header><strong>Household notifications</strong><button onClick={() => void openFamilyHub()}>Open Family Hub</button></header>{notificationItems.length ? notificationItems.map((item) => <article key={item.id}><span><MessageCircle /></span><div><strong>{item.authorName}: {item.body.length > 65 ? `${item.body.slice(0, 65)}…` : item.body}</strong><small>{new Date(item.createdAt).toLocaleString()}</small></div></article>) : <div className="notification-popover__empty">You are all caught up.</div>}</div>}</div>
           <div className="profile-menu"><button className="profile-button" onClick={() => setProfile((value) => !value)}><span>{first[0]?.toUpperCase()}</span><div><strong>{first}</strong><small>{household.role}</small></div><ChevronDown /></button>{profile && <div className="profile-popover"><p><strong>{bootstrap.user.name}</strong><small>{bootstrap.user.email}</small></p><button onClick={() => void onSignOut()}>Sign out</button></div>}</div>
         </div>
       </header>
 
       <main className="today-page module-page">
         {error && <div className="module-alert">{error}</div>}
-        {view === "today" && <DashboardWidgets first={first} userId={bootstrap.user.id} householdId={household.id} tasks={openTasks} groceries={openGroceries} events={upcoming} home={home} meals={meals} setHome={setHome} demo={demo} onView={setView} onAdd={setAdd} onToggleTask={toggleTask} />}
+        {view === "today" && <DashboardWidgets first={first} userId={bootstrap.user.id} householdId={household.id} tasks={openTasks} groceries={openGroceries} events={upcoming} home={home} meals={meals} setHome={setHome} demo={demo} onView={(next) => setView(next)} onAdd={setAdd} onToggleTask={toggleTask} />}
         {view === "tasks" && <TasksView tasks={core.tasks} loading={loading} onAdd={() => setAdd("task")} onToggle={toggleTask} />}
         {view === "groceries" && <GroceriesView items={core.groceries} loading={loading} onAdd={() => setAdd("grocery")} onToggle={toggleGrocery} onImportant={toggleImportant} />}
         {view === "calendar" && <CalendarView events={core.events} loading={loading} onAdd={() => setAdd("event")} />}
         {view === "meals" && <MealsView data={meals} members={core.members} loading={loading} householdId={household.id} demo={demo} onChange={setMeals} onGroceriesAdded={(items) => setCore((current) => ({ ...current, groceries: [...items, ...current.groceries] }))} />}
+        {view === "family" && <FamilyHubView householdId={household.id} userId={bootstrap.user.id} householdName={householdName} data={communication} loading={loading} demo={demo} onChange={setCommunication} />}
         {view === "members" && <MembersView core={core} householdName={householdName} />}
       </main>
     </div>
 
-    <nav className="mobile-nav" aria-label="Main navigation">{nav.map(({ key, label, Icon }) => <button key={key} className={view === key ? "is-active" : ""} onClick={() => setView(key)}><Icon /><span>{label}</span></button>)}</nav>
+    <nav className="mobile-nav" aria-label="Main navigation">{nav.map(({ key, label, Icon }) => <button key={key} className={view === key ? "is-active" : ""} onClick={() => key === "family" ? void openFamilyHub() : setView(key)}><Icon /><span>{label}</span>{key === "family" && communication.unreadCount > 0 && <b className="nav-unread">{communication.unreadCount > 9 ? "9+" : communication.unreadCount}</b>}</button>)}</nav>
     <button className="mobile-quick-add" aria-label="Quick add" onClick={() => setAdd("task")}><Plus /></button>
     {add && <CreateModal kind={add} members={core.members} onClose={() => setAdd(null)} onCreated={(item) => { if (add === "task") setCore((current) => ({ ...current, tasks: [item as EverydayTask, ...current.tasks] })); if (add === "grocery") setCore((current) => ({ ...current, groceries: [item as GroceryItem, ...current.groceries] })); if (add === "event") setCore((current) => ({ ...current, events: [...current.events, item as HouseholdEvent].sort((a, b) => a.startsAt.localeCompare(b.startsAt)) })); setAdd(null); }} householdId={household.id} demo={demo} />}
     {settings && <HouseholdSettingsModal currentName={householdName} onClose={() => setSettings(false)} onSave={async (name) => { if (demo) setHouseholdName(name.trim()); else setHouseholdName((await api.updateHousehold(household.id, { name })).name); }} />}
