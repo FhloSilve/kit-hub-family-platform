@@ -61,3 +61,23 @@ export interface SaveMealRecipeInput {
 export interface SaveMealSuggestionInput { title: string; notes?: string; mealType?: MealType; }
 export interface SaveMealSettingsInput { dietaryNotes: string; }
 export interface AddRecipeIngredientsResponse { items: GroceryItem[]; addedCount: number; }
+
+export interface HouseholdMessage {
+  id: string; body: string; authorUserId: string; authorName: string; createdAt: string; editedAt: string | null;
+}
+export interface HouseholdAnnouncement {
+  id: string; title: string; body: string; pinned: boolean; createdBy: string; createdByName: string; createdAt: string; updatedAt: string;
+}
+export interface HouseholdActivityItem {
+  id: string; kind: string; summary: string; actorUserId: string | null; actorName: string | null; createdAt: string;
+}
+export interface HouseholdCommunicationResponse {
+  messages: HouseholdMessage[];
+  announcements: HouseholdAnnouncement[];
+  activity: HouseholdActivityItem[];
+  unreadCount: number;
+  canSend: boolean;
+  canAnnounce: boolean;
+}
+export interface CreateHouseholdMessageInput { body: string; }
+export interface CreateHouseholdAnnouncementInput { title: string; body: string; }
