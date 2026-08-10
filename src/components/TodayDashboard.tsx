@@ -163,9 +163,48 @@ function MembersView({ core, householdName }: { core: EverydayCoreResponse; hous
   return <><Heading title={householdName} text="The people who make this place home." /><section className="module-card member-grid">{core.members.map((member) => <article key={member.id}><span>{member.name[0]?.toUpperCase()}</span><div><strong>{member.name}</strong><small>{member.email} · {member.role}</small></div></article>)}</section></>;
 }
 
+function localInputValue(date: Date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+function localDateValue(date: Date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
 function CreateModal({ kind, members, onClose, onCreated, householdId, demo }: { kind: Exclude<AddKind, null>; members: EverydayCoreResponse["members"]; onClose: () => void; onCreated: (item: EverydayTask | GroceryItem | HouseholdEvent) => void; householdId: string; demo: boolean }) {
+  const initialStart = useMemo(() => { const date = new Date(); date.setMinutes(0, 0, 0); date.setHours(date.getHours() + 1); return date; }, []);
+  const initialEnd = useMemo(() => new Date(initialStart.getTime() + 60 * 60 * 1000), [initialStart]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [allDay, setAllDay] = useState(false);
+  const [eventType, setEventType] = useState<EventType>("event");
+  const [recurrence, setRecurrence] = useState<EventRecurrence>("none");
+  const [startDateTime, setStartDateTime] = useState(localInputValue(initialStart));
+  const [endDateTime, setEndDateTime] = useState(localInputValue(initialEnd));
+  const [startDate, setStartDate] = useState(localDateValue(initialStart));
+  const [endDate, setEndDate] = useState(localDateValue(initialStart));
+
+  function changeEventType(next: EventType) {
+    setEventType(next);
+    if (next === "birthday") {
+      setAllDay(true);
+      setRecurrence("yearly");
+      setStartDate(startDateTime.slice(0, 10));
+      setEndDate(startDateTime.slice(0, 10));
+    }
+  }
+  function changeAllDay(next: boolean) {
+    setAllDay(next);
+    if (next) {
+      setStartDate(startDateTime.slice(0, 10));
+      setEndDate(endDateTime.slice(0, 10));
+    } else {
+      const start = new Date(`${startDate}T09:00`);
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+      setStartDateTime(localInputValue(start));
+      setEndDateTime(localInputValue(end));
+    }
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setErr(null); const form = new FormData(event.currentTarget);
     try {
@@ -176,16 +215,19 @@ function CreateModal({ kind, members, onClose, onCreated, householdId, demo }: {
         const input = { name: String(form.get("name") || ""), quantity: String(form.get("quantity") || "1"), important: form.get("important") === "on" };
         onCreated(demo ? { id: crypto.randomUUID(), checked: false, createdAt: new Date().toISOString(), ...input } : await api.createGroceryItem(householdId, input));
       } else {
-        const start = String(form.get("startsAt") || "");
-        const input = { title: String(form.get("title") || ""), description: String(form.get("description") || ""), location: String(form.get("location") || ""), startsAt: new Date(start).toISOString(), allDay: form.get("allDay") === "on", eventType: String(form.get("eventType") || "event") as EventType, recurrence: String(form.get("recurrence") || "none") as EventRecurrence, reminderMinutes: Number(form.get("reminderMinutes") || 0) || null };
-        onCreated(demo ? { id: crypto.randomUUID(), endsAt: null, createdAt: new Date().toISOString(), ...input } : await api.createEvent(householdId, input));
+        const start = allDay ? new Date(`${startDate}T00:00:00`) : new Date(startDateTime);
+        const end = allDay ? new Date(`${endDate}T23:59:59`) : new Date(endDateTime);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) throw new Error("Choose a valid start and end.");
+        if (end < start) throw new Error("The end must be after the start.");
+        const input = { title: String(form.get("title") || ""), description: String(form.get("description") || ""), location: String(form.get("location") || ""), startsAt: start.toISOString(), endsAt: end.toISOString(), allDay, eventType, recurrence, reminderMinutes: Number(form.get("reminderMinutes") || 0) || null };
+        onCreated(demo ? { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...input } : await api.createEvent(householdId, input));
       }
     } catch (caught) { setErr(caught instanceof Error ? caught.message : "Could not save this item."); } finally { setBusy(false); }
   }
   return <div className="modal-backdrop"><div className="modal-panel create-v2"><header><div><span>Quick add</span><h2>{kind === "task" ? "New task" : kind === "grocery" ? "New grocery item" : "New calendar item"}</h2></div><button aria-label="Close" onClick={onClose}><X /></button></header><form onSubmit={submit}>
     {kind === "task" && <><label>Task<input name="title" required autoFocus /></label><div className="form-grid"><label>Priority<select name="priority"><option value="normal">Normal</option><option value="high">Urgent / important</option><option value="low">Low</option></select></label><label>Due<input name="dueAt" type="datetime-local" /></label></div><label>Assign to<select name="assignee"><option value="">Anyone</option>{members.map((member) => <option key={member.userId} value={member.userId}>{member.name}</option>)}</select></label></>}
     {kind === "grocery" && <><label>Item<input name="name" required autoFocus /></label><label>Quantity<input name="quantity" defaultValue="1" /></label><label className="check-label"><input name="important" type="checkbox" /> Highlight as important</label></>}
-    {kind === "event" && <><label>Title<input name="title" required autoFocus /></label><div className="form-grid"><label>Type<select name="eventType"><option value="event">Event</option><option value="birthday">Birthday</option><option value="happening">Happening</option><option value="appointment">Appointment</option><option value="school">School</option><option value="pet">Pet</option><option value="meal">Meal</option><option value="holiday">Holiday</option></select></label><label>Starts<input name="startsAt" type="datetime-local" required /></label></div><label>Location<input name="location" /></label><label>Notes<textarea name="description" rows={3} /></label><div className="form-grid"><label>Repeat<select name="recurrence"><option value="none">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label><label>Reminder<select name="reminderMinutes"><option value="0">No reminder</option><option value="15">15 minutes before</option><option value="60">1 hour before</option><option value="1440">1 day before</option><option value="10080">1 week before</option></select></label></div><label className="check-label"><input name="allDay" type="checkbox" /> All-day event</label></>}
+    {kind === "event" && <><label>Title<input name="title" required autoFocus /></label><div className="form-grid"><label>Type<select name="eventType" value={eventType} onChange={(event) => changeEventType(event.target.value as EventType)}><option value="event">Event</option><option value="birthday">Birthday</option><option value="happening">Happening</option><option value="appointment">Appointment</option><option value="school">School</option><option value="pet">Pet</option><option value="meal">Meal</option><option value="holiday">Holiday</option></select></label><label className="check-label check-label--event"><input name="allDay" type="checkbox" checked={allDay} onChange={(event) => changeAllDay(event.target.checked)} /> All-day event</label></div>{allDay ? <div className="form-grid"><label>Start date<input name="startDate" type="date" value={startDate} onChange={(event) => { const next = event.target.value; setStartDate(next); if (endDate < next) setEndDate(next); }} required /></label><label>End date<input name="endDate" type="date" min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} required /></label></div> : <div className="form-grid"><label>Starts<input name="startsAt" type="datetime-local" value={startDateTime} onChange={(event) => { const next = event.target.value; setStartDateTime(next); const start = new Date(next); const currentEnd = new Date(endDateTime); if (!Number.isNaN(start.getTime()) && (!endDateTime || currentEnd <= start)) setEndDateTime(localInputValue(new Date(start.getTime() + 60 * 60 * 1000))); }} required /></label><label>Ends<input name="endsAt" type="datetime-local" min={startDateTime} value={endDateTime} onChange={(event) => setEndDateTime(event.target.value)} required /></label></div>}<label>Location<input name="location" /></label><label>Notes<textarea name="description" rows={3} /></label><div className="form-grid"><label>Repeat<select name="recurrence" value={recurrence} onChange={(event) => setRecurrence(event.target.value as EventRecurrence)}><option value="none">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label><label>Reminder<select name="reminderMinutes"><option value="0">No reminder</option><option value="15">15 minutes before</option><option value="60">1 hour before</option><option value="1440">1 day before</option><option value="10080">1 week before</option></select></label></div></>}
     {err && <div className="module-alert">{err}</div>}<footer><button type="button" className="button button--secondary" onClick={onClose}>Cancel</button><button className="button button--primary" disabled={busy}>{busy ? "Saving…" : "Save"}</button></footer>
   </form></div></div>;
 }
