@@ -1,0 +1,14 @@
+@media(max-width:760px){
+  .mobile-nav{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:0!important;padding-left:4px!important;padding-right:4px!important;overflow:hidden}
+  .mobile-nav button{min-width:0!important;padding-left:2px!important;padding-right:2px!important;font-size:9px!important;white-space:nowrap}
+  .mobile-nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .mobile-nav button svg{width:21px;height:21px}
+  .mobile-quick-add{bottom:calc(82px + env(safe-area-inset-bottom))!important;right:14px!important;width:54px!important;height:54px!important}
+  .family-hub{padding-bottom:18px}
+  .family-hub__composer{padding-bottom:6px}
+}
+@media(max-width:430px){
+  .mobile-nav button{font-size:8.5px!important}
+  .mobile-nav button:nth-child(3) span{font-size:0}
+  .mobile-nav button:nth-child(3) span::after{content:"Tasks";font-size:8.5px}
+}
