@@ -9,6 +9,7 @@ import "./meals.css";
 import "./dashboard-widgets.css";
 import "./dashboard-polish.css";
 import "./family-tools.css";
+import "./feedback.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
