@@ -4,6 +4,7 @@ import { AdminConsole } from "./components/AdminConsole";
 import { AuthScreen } from "./components/AuthScreen";
 import { AppUpdatePrompt } from "./components/AppUpdatePrompt";
 import { Brand } from "./components/Brand";
+import { FamilyToolsDock } from "./components/FamilyToolsDock";
 import { HouseholdOnboarding } from "./components/HouseholdOnboarding";
 import { PlatformAdminEntry } from "./components/PlatformAdminEntry";
 import { TodayDashboard } from "./components/TodayDashboard";
@@ -22,12 +23,8 @@ export default function App() {
 
 function AdminRoute() {
   const session = authClient.useSession();
-
   if (session.isPending) return <LoadingScreen label="Checking your admin session…" />;
-  if (!session.data?.user) {
-    return <><AuthScreen onAuthenticated={session.refetch} /><AppUpdatePrompt /></>;
-  }
-
+  if (!session.data?.user) return <><AuthScreen onAuthenticated={session.refetch} /><AppUpdatePrompt /></>;
   return <><AdminConsole onBack={() => { window.location.href = "/"; }} /><AppUpdatePrompt /></>;
 }
 
@@ -51,6 +48,6 @@ function ConnectedApp() {
   if (bootstrapError && !bootstrap) return <main className="fatal-state"><Brand /><div><h1>We couldn&apos;t open Kit Hub.</h1><p>{bootstrapError.message}</p>{bootstrapError.requestId && <small className="request-reference">Reference: {bootstrapError.requestId}</small>}<div className="fatal-state__actions"><button className="button button--primary" type="button" onClick={() => setBootstrapAttempt((attempt) => attempt + 1)}>Try again</button><button className="button button--secondary" type="button" onClick={() => void signOut()}>Sign out</button></div></div></main>;
   if (!bootstrap) return <LoadingScreen label="Setting things up…" />;
   if (!bootstrap.activeHousehold) return <HouseholdOnboarding bootstrap={bootstrap} onCreated={handleHouseholdCreated} onSignOut={signOut} />;
-  return <><TodayDashboard bootstrap={bootstrap} onSignOut={signOut} /><PlatformAdminEntry /></>;
+  return <><TodayDashboard bootstrap={bootstrap} onSignOut={signOut} /><FamilyToolsDock householdId={bootstrap.activeHousehold.id} /><PlatformAdminEntry /></>;
 }
 function LoadingScreen({ label }: { label: string }) { return <main className="loading-screen"><Brand /><span className="loading-orbit" aria-hidden="true"><i /></span><p>{label}</p></main>; }
