@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DragEvent, ReactNode } from "react";
-import { CalendarDays, Check, EyeOff, GripVertical, ListTodo, Pencil, Plus, RotateCcw, Save, ShoppingBasket, Sparkles, X } from "lucide-react";
-import type { EverydayTask, GroceryItem, HouseholdEvent } from "../../shared/contracts";
+import type { Dispatch, DragEvent, PointerEvent as ReactPointerEvent, ReactNode, SetStateAction } from "react";
+import { Check, CookingPot, EyeOff, GripVertical, Pencil, Plus, RotateCcw, Save, Sparkles, X } from "lucide-react";
+import type { EverydayTask, FamilyNote, GroceryItem, HouseholdEvent, HouseholdFocus, HouseholdHomeResponse, MealPlannerResponse } from "../../shared/contracts";
+import { api } from "../lib/api";
 
-type View = "today" | "calendar" | "tasks" | "groceries" | "members";
+type View = "today" | "calendar" | "tasks" | "groceries" | "meals" | "members";
 type AddKind = "task" | "grocery" | "event" | null;
-type WidgetId = "events" | "tasks" | "groceries" | "note" | "focus" | "occasions";
+type WidgetId = "events" | "tasks" | "groceries" | "meals" | "note" | "focus" | "occasions";
 type WidgetSize = "small" | "medium" | "wide" | "full";
-type WidgetSetting = { id: WidgetId; size: WidgetSize; hidden: boolean };
+type WidgetHeight = "compact" | "normal" | "tall";
+type WidgetSetting = { id: WidgetId; size: WidgetSize; height: WidgetHeight; hidden: boolean };
+type ResizeState = { id: WidgetId; axis: "width" | "height"; startX: number; startY: number; gridWidth: number; startSize: WidgetSize; startHeight: WidgetHeight };
 
 interface Props {
   first: string;
@@ -16,6 +19,10 @@ interface Props {
   tasks: EverydayTask[];
   groceries: GroceryItem[];
   events: HouseholdEvent[];
+  home: HouseholdHomeResponse;
+  meals: MealPlannerResponse;
+  setHome: Dispatch<SetStateAction<HouseholdHomeResponse>>;
+  demo: boolean;
   onView: (view: View) => void;
   onAdd: (kind: AddKind) => void;
   onToggleTask: (task: EverydayTask) => void;
@@ -25,31 +32,34 @@ const widgetNames: Record<WidgetId, string> = {
   events: "Upcoming Events",
   tasks: "Tasks / To-do",
   groceries: "Groceries",
-  note: "Family note",
+  meals: "Tonight's dinner",
+  note: "Family notes",
   focus: "Household focus",
   occasions: "Special occasions",
 };
 
 const widgetDescriptions: Record<WidgetId, string> = {
   events: "See what is coming up next.",
-  tasks: "Keep your personal and household to-dos close.",
+  tasks: "Keep household to-dos close.",
   groceries: "See what still needs to be picked up.",
-  note: "Keep a shared family note on Home.",
-  focus: "Surface urgent tasks and important groceries.",
+  meals: "Keep tonight's dinner and cook visible.",
+  note: "Keep shared family notes on Home.",
+  focus: "Surface the household's current focus.",
   occasions: "Keep birthdays and holidays visible.",
 };
 
-const defaultLayout: WidgetSetting[] = [
-  { id: "events", size: "small", hidden: false },
-  { id: "tasks", size: "small", hidden: false },
-  { id: "groceries", size: "small", hidden: false },
-  { id: "note", size: "small", hidden: true },
-  { id: "focus", size: "small", hidden: false },
-  { id: "occasions", size: "small", hidden: true },
-];
-
+const recommendedWidgets = new Set<WidgetId>(["events", "tasks", "groceries", "meals", "focus"]);
+const defaultLayout: WidgetSetting[] = (["events", "tasks", "groceries", "meals", "note", "focus", "occasions"] as WidgetId[]).map((id) => ({
+  id,
+  size: "small",
+  height: "normal",
+  hidden: !recommendedWidgets.has(id),
+}));
 const allWidgetIds = defaultLayout.map((item) => item.id);
 const validSizes: WidgetSize[] = ["small", "medium", "wide", "full"];
+const validHeights: WidgetHeight[] = ["compact", "normal", "tall"];
+const widthSpans: Record<WidgetSize, number> = { small: 4, medium: 6, wide: 8, full: 12 };
+const heightPixels: Record<WidgetHeight, number> = { compact: 180, normal: 260, tall: 360 };
 
 function normalizeLayout(value: unknown): WidgetSetting[] {
   if (!Array.isArray(value)) return defaultLayout.map((item) => ({ ...item }));
@@ -62,6 +72,7 @@ function normalizeLayout(value: unknown): WidgetSetting[] {
     next.push({
       id: item.id as WidgetId,
       size: validSizes.includes(item.size as WidgetSize) ? (item.size as WidgetSize) : "small",
+      height: validHeights.includes(item.height as WidgetHeight) ? (item.height as WidgetHeight) : "normal",
       hidden: item.hidden === true,
     });
     seen.add(item.id as WidgetId);
@@ -70,7 +81,7 @@ function normalizeLayout(value: unknown): WidgetSetting[] {
   return next;
 }
 
-function loadLayout(key: string) {
+function parseStored(key: string): WidgetSetting[] | null {
   try {
     const stored = localStorage.getItem(key);
     return stored ? normalizeLayout(JSON.parse(stored)) : null;
@@ -79,66 +90,83 @@ function loadLayout(key: string) {
   }
 }
 
-export function DashboardWidgets({ first, userId, householdId, tasks, groceries, events, onView, onAdd, onToggleTask }: Props) {
+function nearestSize(span: number): WidgetSize {
+  return validSizes.reduce((best, size) => Math.abs(widthSpans[size] - span) < Math.abs(widthSpans[best] - span) ? size : best, "small" as WidgetSize);
+}
+
+function nearestHeight(pixels: number): WidgetHeight {
+  return validHeights.reduce((best, height) => Math.abs(heightPixels[height] - pixels) < Math.abs(heightPixels[best] - pixels) ? height : best, "normal" as WidgetHeight);
+}
+
+function localDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function DashboardWidgets({ first, userId, householdId, tasks, groceries, events, home, meals, setHome, demo, onView, onAdd, onToggleTask }: Props) {
   const storageKey = `kit-hub-widgets:${userId}:${householdId}`;
-  const [layout, setLayout] = useState<WidgetSetting[]>(() => loadLayout(storageKey) ?? defaultLayout.map((item) => ({ ...item })));
+  const legacyKey = `kit-hub-home-layout:${userId}:${householdId}`;
+  const existing = parseStored(storageKey) ?? parseStored(legacyKey);
+  const [layout, setLayout] = useState<WidgetSetting[]>(() => existing ?? defaultLayout.map((item) => ({ ...item })));
   const [draft, setDraft] = useState<WidgetSetting[]>(layout);
   const [editing, setEditing] = useState(false);
-  const [needsSetup, setNeedsSetup] = useState(() => loadLayout(storageKey) === null);
+  const [needsSetup, setNeedsSetup] = useState(existing === null);
   const [setupSelection, setSetupSelection] = useState<Set<WidgetId>>(() => new Set(defaultLayout.filter((item) => !item.hidden).map((item) => item.id)));
   const [dragged, setDragged] = useState<WidgetId | null>(null);
+  const [resize, setResize] = useState<ResizeState | null>(null);
+  const [editingNote, setEditingNote] = useState<FamilyNote | "new" | null>(null);
+  const [editingFocus, setEditingFocus] = useState(false);
+  const [homeError, setHomeError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = loadLayout(storageKey);
+    const stored = parseStored(storageKey) ?? parseStored(legacyKey);
     const next = stored ?? defaultLayout.map((item) => ({ ...item }));
+    if (!parseStored(storageKey) && stored) localStorage.setItem(storageKey, JSON.stringify(stored));
     setLayout(next);
     setDraft(next);
     setNeedsSetup(stored === null);
-  }, [storageKey]);
+    setEditing(false);
+  }, [storageKey, legacyKey]);
+
+  useEffect(() => {
+    if (!resize) return;
+    function move(event: PointerEvent) {
+      if (resize.axis === "width") {
+        const columnWidth = Math.max(1, resize.gridWidth / 12);
+        const rawSpan = widthSpans[resize.startSize] + (event.clientX - resize.startX) / columnWidth;
+        const size = nearestSize(Math.max(4, Math.min(12, rawSpan)));
+        setDraft((items) => items.map((item) => item.id === resize.id ? { ...item, size } : item));
+      } else {
+        const rawHeight = heightPixels[resize.startHeight] + (event.clientY - resize.startY);
+        const height = nearestHeight(Math.max(160, Math.min(420, rawHeight)));
+        setDraft((items) => items.map((item) => item.id === resize.id ? { ...item, height } : item));
+      }
+    }
+    function up() { setResize(null); }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up, { once: true });
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [resize]);
 
   const active = editing ? draft : layout;
   const hidden = active.filter((item) => item.hidden);
   const specialOccasions = useMemo(() => events.filter((event) => event.eventType === "birthday" || event.eventType === "holiday"), [events]);
+  const tonight = meals.plans.find((plan) => plan.mealDate === localDateKey() && plan.mealType === "dinner") ?? null;
 
   function patch(id: WidgetId, change: Partial<WidgetSetting>) {
-    setDraft((items) => items.map((item) => (item.id === id ? { ...item, ...change } : item)));
+    setDraft((items) => items.map((item) => item.id === id ? { ...item, ...change } : item));
   }
-
-  function startEdit() {
-    setDraft(layout.map((item) => ({ ...item })));
-    setEditing(true);
-  }
-
-  function cancelEdit() {
-    setDraft(layout.map((item) => ({ ...item })));
-    setEditing(false);
-  }
-
+  function startEdit() { setDraft(layout.map((item) => ({ ...item }))); setEditing(true); }
+  function cancelEdit() { setDraft(layout.map((item) => ({ ...item }))); setEditing(false); setResize(null); }
   function saveLayout() {
     const next = normalizeLayout(draft);
     localStorage.setItem(storageKey, JSON.stringify(next));
-    setLayout(next);
-    setDraft(next);
-    setEditing(false);
-    setNeedsSetup(false);
+    setLayout(next); setDraft(next); setEditing(false); setNeedsSetup(false);
   }
-
   function saveSetup() {
     const next = defaultLayout.map((item) => ({ ...item, hidden: !setupSelection.has(item.id) }));
     localStorage.setItem(storageKey, JSON.stringify(next));
-    setLayout(next);
-    setDraft(next);
-    setNeedsSetup(false);
+    setLayout(next); setDraft(next); setNeedsSetup(false);
   }
-
-  function useAllWidgets() {
-    setSetupSelection(new Set(allWidgetIds));
-  }
-
-  function resetDraft() {
-    setDraft(defaultLayout.map((item) => ({ ...item })));
-  }
-
   function drop(target: WidgetId) {
     if (!dragged || dragged === target) return;
     setDraft((items) => {
@@ -153,49 +181,71 @@ export function DashboardWidgets({ first, userId, householdId, tasks, groceries,
     });
     setDragged(null);
   }
+  function beginResize(event: ReactPointerEvent<HTMLButtonElement>, item: WidgetSetting, axis: "width" | "height") {
+    event.preventDefault(); event.stopPropagation();
+    const grid = event.currentTarget.closest(".dashboard-widget-grid") as HTMLElement | null;
+    setResize({ id: item.id, axis, startX: event.clientX, startY: event.clientY, gridWidth: grid?.clientWidth || 1200, startSize: item.size, startHeight: item.height });
+  }
+
+  async function saveNote(body: string) {
+    setHomeError(null);
+    if (editingNote && editingNote !== "new") {
+      const updated = demo ? { ...editingNote, body, updatedAt: new Date().toISOString() } : await api.updateFamilyNote(householdId, editingNote.id, { body });
+      setHome((current) => ({ ...current, notes: current.notes.map((note) => note.id === updated.id ? updated : note) }));
+    } else {
+      const created = demo ? { id: crypto.randomUUID(), body, authorUserId: userId, authorName: first, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } : await api.createFamilyNote(householdId, { body });
+      setHome((current) => ({ ...current, notes: [created, ...current.notes] }));
+    }
+    setEditingNote(null);
+  }
+  async function deleteNote(note: FamilyNote) {
+    if (!window.confirm(`Delete the note from ${note.authorName}?`)) return;
+    try {
+      if (!demo) await api.deleteFamilyNote(householdId, note.id);
+      setHome((current) => ({ ...current, notes: current.notes.filter((item) => item.id !== note.id) }));
+    } catch (error) { setHomeError(error instanceof Error ? error.message : "The family note could not be deleted."); }
+  }
+  async function saveFocus(title: string, details: string) {
+    const focus = demo ? { title, details: details || null, updatedByUserId: userId, updatedByName: first, updatedAt: new Date().toISOString() } : await api.saveHouseholdFocus(householdId, { title, details });
+    setHome((current) => ({ ...current, focus })); setEditingFocus(false);
+  }
 
   const widgetContent: Record<WidgetId, ReactNode> = {
     events: <><WidgetHeading title="Upcoming Events" action="View all" onClick={() => onView("calendar")} />{events.length ? <EventList events={events} /> : <EmptyWidget text="No plans yet." action="Add event" onClick={() => onAdd("event")} />}</>,
     tasks: <><WidgetHeading title="Tasks / To-do" action="View all" onClick={() => onView("tasks")} />{tasks.length ? <div className="task-list">{tasks.slice(0, 5).map((task) => <TaskRow key={task.id} task={task} onToggle={onToggleTask} />)}</div> : <EmptyWidget text="Nothing on the list." action="Add task" onClick={() => onAdd("task")} />}</>,
     groceries: <><WidgetHeading title="Groceries" action="Open list" onClick={() => onView("groceries")} />{groceries.length ? <div className="home-grocery-preview">{groceries.slice(0, 5).map((item) => <button key={item.id} onClick={() => onView("groceries")}><strong>{item.important ? "★ " : ""}{item.name}</strong><small>{item.quantity}</small></button>)}</div> : <EmptyWidget text="The grocery list is empty." action="Add grocery" onClick={() => onAdd("grocery")} />}</>,
-    note: <><span className="widget-kicker">Family</span><h2>Family note</h2><p className="handwritten-note">Leave a little note for everyone here soon…</p><small>Shared notes stay visible when this widget is enabled.</small></>,
-    focus: <><span className="widget-kicker">Priority</span><h2>Household focus</h2><p>Important things rise to the surface.</p><div className="focus-counts"><strong>{tasks.filter((task) => task.priority === "high").length}</strong> urgent tasks · <strong>{groceries.filter((item) => item.important).length}</strong> important groceries</div></>,
-    occasions: <><span className="widget-kicker">Coming up</span><h2>Special occasions</h2>{specialOccasions.length ? <EventList events={specialOccasions.slice(0, 3)} /> : <p>Birthdays and holidays will appear here automatically.</p>}</>,
+    meals: <div className="dashboard-meal-card"><header><span><CookingPot /></span><div><small>Tonight&apos;s dinner</small><h2>{tonight?.title || "Nothing planned yet"}</h2></div></header>{tonight ? <div className="dashboard-meal-details">{tonight.cookName && <span>Cook: {tonight.cookName}</span>}{tonight.notes && <p>{tonight.notes}</p>}</div> : <p>Choose dinner, assign the cook, and keep the household in sync.</p>}<button onClick={() => onView("meals")}>{tonight ? "Open meal planner" : "Plan tonight's dinner"} <span>→</span></button></div>,
+    note: <><header className="shared-home-heading"><div><span>Shared with the household</span><h2>Family notes</h2></div>{home.canManage && <button onClick={() => setEditingNote("new")}><Plus /> Add note</button>}</header>{homeError && <p className="shared-home-error">{homeError}</p>}{home.notes.length ? <div className="family-note-list">{home.notes.slice(0, 4).map((note) => <article key={note.id}><p className="handwritten-note">{note.body}</p><footer><small>{note.authorName} · {formatHomeDate(note.updatedAt)}</small>{home.canManage && <span><button aria-label="Edit family note" onClick={() => setEditingNote(note)}><Pencil /></button><button aria-label="Delete family note" onClick={() => void deleteNote(note)}><X /></button></span>}</footer></article>)}</div> : <button className="shared-home-empty" disabled={!home.canManage} onClick={() => setEditingNote("new")}><Plus /><strong>No family notes yet.</strong><small>{home.canManage ? "Leave the first note for everyone." : "A household member can add one here."}</small></button>}</>,
+    focus: <><header className="shared-home-heading"><div><span>What matters right now</span><h2>Household focus</h2></div>{home.canManage && <button onClick={() => setEditingFocus(true)}><Pencil /> {home.focus ? "Edit" : "Set focus"}</button>}</header>{home.focus ? <div className="household-focus-content"><strong>{home.focus.title}</strong>{home.focus.details && <p>{home.focus.details}</p>}<small>Updated by {home.focus.updatedByName} · {formatHomeDate(home.focus.updatedAt)}</small></div> : <button className="shared-home-empty" disabled={!home.canManage} onClick={() => setEditingFocus(true)}><Plus /><strong>No household focus yet.</strong><small>{home.canManage ? "Highlight the one thing everyone should remember." : "A household member can set it here."}</small></button>}</>,
+    occasions: <><h2>Special occasions</h2>{specialOccasions.length ? <EventList events={specialOccasions.slice(0, 3)} /> : <p>Birthdays and holidays will appear here automatically.</p>}</>,
   };
 
   return <>
     <header className="today-heading module-heading"><div><span className="today-date">Kit Hub</span><h1>Welcome home, {first}.</h1><p>Your Home can be as simple or as detailed as you want it to be.</p></div>{!needsSetup && !editing && <button className="button button--secondary" onClick={startEdit}><Pencil /> Edit widgets</button>}</header>
 
-    {needsSetup && <section className="widget-onboarding">
-      <div className="widget-onboarding__intro"><span><Sparkles /></span><div><strong>Make Home yours</strong><p>Choose the widgets you are most likely to use. You can change this whenever you want.</p></div></div>
-      <div className="widget-onboarding__grid">{allWidgetIds.map((id) => {
-        const selected = setupSelection.has(id);
-        return <button key={id} type="button" className={selected ? "is-selected" : ""} onClick={() => setSetupSelection((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })}><span className="widget-onboarding__check">{selected && <Check />}</span><strong>{widgetNames[id]}</strong><small>{widgetDescriptions[id]}</small>{defaultLayout.find((item) => item.id === id)?.hidden === false && <em>Recommended</em>}</button>;
-      })}</div>
-      <footer><button className="button button--secondary" onClick={useAllWidgets}>Select all</button><button className="button button--primary" onClick={saveSetup}>Use these widgets</button></footer>
-    </section>}
+    {needsSetup && <section className="widget-onboarding"><div className="widget-onboarding__intro"><span><Sparkles /></span><div><strong>Make Home yours</strong><p>Choose the widgets you are most likely to use. You can add, remove or resize them later.</p></div></div><div className="widget-onboarding__grid">{allWidgetIds.map((id) => { const selected = setupSelection.has(id); return <button key={id} type="button" className={selected ? "is-selected" : ""} onClick={() => setSetupSelection((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; })}><span className="widget-onboarding__check">{selected && <Check />}</span><strong>{widgetNames[id]}</strong><small>{widgetDescriptions[id]}</small>{recommendedWidgets.has(id) && <em>Recommended</em>}</button>; })}</div><footer><button className="button button--secondary" onClick={() => setSetupSelection(new Set(allWidgetIds))}>Select all</button><button className="button button--primary" onClick={saveSetup}>Use these widgets</button></footer></section>}
 
-    {!needsSetup && <>
-      {editing && <section className="widget-edit-toolbar"><div><strong>Edit widgets</strong><small>Drag to move. Resize, hide, or restore widgets without changing anyone else's Home.</small></div><div><button className="button button--secondary" onClick={resetDraft}><RotateCcw /> Reset</button><button className="button button--secondary" onClick={cancelEdit}><X /> Cancel</button><button className="button button--primary" onClick={saveLayout}><Save /> Save layout</button></div></section>}
-      {editing && hidden.length > 0 && <section className="widget-add-tray"><span>Add widget</span>{hidden.map((item) => <button key={item.id} onClick={() => patch(item.id, { hidden: false })}><Plus /> {widgetNames[item.id]}</button>)}</section>}
-      <div className={`home-restored-grid dashboard-widget-grid ${editing ? "is-editing" : ""}`}>{active.filter((item) => !item.hidden).map((item) => <section key={item.id} className={`dashboard-card dashboard-widget dashboard-widget--${item.size} dashboard-widget--${item.id}`} draggable={editing} onDragStart={() => setDragged(item.id)} onDragEnd={() => setDragged(null)} onDragOver={(event: DragEvent<HTMLElement>) => { if (editing) event.preventDefault(); }} onDrop={() => drop(item.id)}>{editing && <div className="dashboard-widget__editor"><span><GripVertical /> Move</span><label>Size<select value={item.size} onChange={(event) => patch(item.id, { size: event.target.value as WidgetSize })}><option value="small">Small</option><option value="medium">Medium</option><option value="wide">Wide</option><option value="full">Full width</option></select></label><button onClick={() => patch(item.id, { hidden: true })}><EyeOff /> Hide</button></div>}<div className="dashboard-widget__content">{widgetContent[item.id]}</div></section>)}</div>
-    </>}
+    {!needsSetup && <>{editing && <section className="widget-edit-toolbar"><div><strong>Edit widgets</strong><small>Drag widgets to move them. Drag the right or bottom border to resize.</small></div><div><button className="button button--secondary" onClick={() => setDraft(defaultLayout.map((item) => ({ ...item }))) }><RotateCcw /> Reset</button><button className="button button--secondary" onClick={cancelEdit}><X /> Cancel</button><button className="button button--primary" onClick={saveLayout}><Save /> Save layout</button></div></section>}{editing && hidden.length > 0 && <section className="widget-add-tray"><span>Add widget</span>{hidden.map((item) => <button key={item.id} onClick={() => patch(item.id, { hidden: false })}><Plus /> {widgetNames[item.id]}</button>)}</section>}<div className={`home-restored-grid dashboard-widget-grid ${editing ? "is-editing" : ""}`}>{active.filter((item) => !item.hidden).map((item) => <section key={item.id} className={`dashboard-card dashboard-widget dashboard-widget--${item.size} dashboard-widget-height--${item.height} dashboard-widget--${item.id}`} draggable={editing && resize === null} onDragStart={() => setDragged(item.id)} onDragEnd={() => setDragged(null)} onDragOver={(event: DragEvent<HTMLElement>) => { if (editing) event.preventDefault(); }} onDrop={() => drop(item.id)}>{editing && <div className="dashboard-widget__editor"><span><GripVertical /> Move</span><small>{item.size} · {item.height}</small><button onClick={() => patch(item.id, { hidden: true })}><EyeOff /> Hide</button></div>}<div className="dashboard-widget__content">{widgetContent[item.id]}</div>{editing && <><button className="dashboard-widget__resize dashboard-widget__resize--x" aria-label={`Resize ${widgetNames[item.id]} width`} title="Drag to resize width" onPointerDown={(event) => beginResize(event, item, "width")} /><button className="dashboard-widget__resize dashboard-widget__resize--y" aria-label={`Resize ${widgetNames[item.id]} height`} title="Drag to resize height" onPointerDown={(event) => beginResize(event, item, "height")} /></>}</section>)}</div></>}
+
+    {editingNote && <FamilyNoteModal note={editingNote === "new" ? null : editingNote} onClose={() => setEditingNote(null)} onSave={saveNote} />}
+    {editingFocus && <HouseholdFocusModal focus={home.focus} onClose={() => setEditingFocus(false)} onSave={saveFocus} />}
   </>;
 }
 
-function WidgetHeading({ title, action, onClick }: { title: string; action: string; onClick: () => void }) {
-  return <header className="card-heading"><div><h2>{title}</h2></div><button onClick={onClick}>{action}</button></header>;
+function formatHomeDate(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "Recently" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+function WidgetHeading({ title, action, onClick }: { title: string; action: string; onClick: () => void }) { return <header className="card-heading"><div><h2>{title}</h2></div><button onClick={onClick}>{action}</button></header>; }
+function EmptyWidget({ text, action, onClick }: { text: string; action: string; onClick: () => void }) { return <button className="empty-state empty-state--clickable" onClick={onClick}><Plus /><strong>{text}</strong><span>{action}</span></button>; }
+function TaskRow({ task, onToggle }: { task: EverydayTask; onToggle: (task: EverydayTask) => void }) { const urgent = task.priority === "high" && task.status !== "done"; return <div className={`task-row handwritten-row ${task.status === "done" ? "is-done" : ""} ${urgent ? "is-urgent" : ""}`}><button className="task-check" onClick={() => onToggle(task)}>{task.status === "done" && <Check />}</button><div><strong>{task.title}</strong><small>{task.assigneeName || "Anyone"}</small></div>{urgent && <span className="urgent-badge">! Urgent</span>}</div>; }
+function EventList({ events }: { events: HouseholdEvent[] }) { return <div className="event-list">{events.map((event) => <article key={event.id} className={`event-row event-type--${event.eventType || "event"}`}><span><strong>{new Date(event.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</strong><small>{event.allDay ? "All day" : new Date(event.startsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</small></span><div><strong>{event.title}</strong><small>{event.eventType}</small></div></article>)}</div>; }
+
+function FamilyNoteModal({ note, onClose, onSave }: { note: FamilyNote | null; onClose: () => void; onSave: (body: string) => Promise<void> }) {
+  const [body, setBody] = useState(note?.body ?? ""); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
+  async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setBusy(true); setError(null); try { await onSave(body.trim()); } catch (caught) { setError(caught instanceof Error ? caught.message : "The family note could not be saved."); } finally { setBusy(false); } }
+  return <div className="modal-backdrop shared-home-backdrop"><div className="shared-home-modal" role="dialog" aria-modal="true"><header><div><span>Shared with everyone</span><h2>{note ? "Edit family note" : "New family note"}</h2></div><button onClick={onClose}><X /></button></header><form onSubmit={submit}><label>Note<textarea autoFocus maxLength={500} required rows={6} value={body} onChange={(event) => setBody(event.target.value)} /></label><small>{body.length}/500 characters</small>{error && <p className="module-alert">{error}</p>}<footer><button type="button" className="button button--secondary" onClick={onClose}>Cancel</button><button className="button button--primary" disabled={busy || !body.trim()}>{busy ? "Saving…" : "Save note"}</button></footer></form></div></div>;
 }
 
-function EmptyWidget({ text, action, onClick }: { text: string; action: string; onClick: () => void }) {
-  return <button className="empty-state empty-state--clickable" onClick={onClick}><Plus /><strong>{text}</strong><span>{action}</span></button>;
-}
-
-function TaskRow({ task, onToggle }: { task: EverydayTask; onToggle: (task: EverydayTask) => void }) {
-  const urgent = task.priority === "high" && task.status !== "done";
-  return <div className={`task-row handwritten-row ${task.status === "done" ? "is-done" : ""} ${urgent ? "is-urgent" : ""}`}><button className="task-check" onClick={() => onToggle(task)}>{task.status === "done" && <Check />}</button><div><strong>{task.title}</strong><small>{task.assigneeName || "Anyone"}{task.dueAt ? ` · ${new Date(task.dueAt).toLocaleString()}` : ""}</small></div>{urgent && <span className="urgent-badge">! Urgent</span>}</div>;
-}
-
-function EventList({ events }: { events: HouseholdEvent[] }) {
-  return <div className="event-list">{events.map((event) => <article key={event.id} className={`event-row event-type--${event.eventType || "event"}`}><span><strong>{new Date(event.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</strong><small>{event.allDay ? "All day" : new Date(event.startsAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</small></span><div><strong>{event.title}</strong><small>{event.eventType}{event.recurrence && event.recurrence !== "none" ? ` · repeats ${event.recurrence}` : ""}</small></div></article>)}</div>;
+function HouseholdFocusModal({ focus, onClose, onSave }: { focus: HouseholdFocus | null; onClose: () => void; onSave: (title: string, details: string) => Promise<void> }) {
+  const [title, setTitle] = useState(focus?.title ?? ""); const [details, setDetails] = useState(focus?.details ?? ""); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
+  async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setBusy(true); setError(null); try { await onSave(title.trim(), details.trim()); } catch (caught) { setError(caught instanceof Error ? caught.message : "The household focus could not be saved."); } finally { setBusy(false); } }
+  return <div className="modal-backdrop shared-home-backdrop"><div className="shared-home-modal" role="dialog" aria-modal="true"><header><div><span>Visible to the household</span><h2>Household focus</h2></div><button onClick={onClose}><X /></button></header><form onSubmit={submit}><label>Headline<input autoFocus maxLength={80} required value={title} onChange={(event) => setTitle(event.target.value)} /></label><label>Details <small>Optional</small><textarea maxLength={400} rows={5} value={details} onChange={(event) => setDetails(event.target.value)} /></label>{error && <p className="module-alert">{error}</p>}<footer><button type="button" className="button button--secondary" onClick={onClose}>Cancel</button><button className="button button--primary" disabled={busy || !title.trim()}>{busy ? "Saving…" : "Save focus"}</button></footer></form></div></div>;
 }
