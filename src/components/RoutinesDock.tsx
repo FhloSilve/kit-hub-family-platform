@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Check, Clock3, Plus, Repeat2, Sparkles, Trash2, X } from "lucide-react";
+import "../routines.css";
 
 type Routine={id:string;title:string;notes:string|null;cadence:"daily"|"weekly"|"monthly";assigneeUserId:string|null;assigneeName:string|null;nextDueAt:string|null;reminderMinutes:number|null;lastCompletedAt:string|null};
 type Member={userId:string;name:string};type Recent={id:string;title:string;completedByName:string;completedAt:string};type Data={routines:Routine[];members:Member[];recent:Recent[];canManage:boolean};
