@@ -7,6 +7,7 @@ import communication from "./communication";
 import chatMedia from "./chat-media";
 import familyTools from "./family-tools";
 import feedback from "./feedback";
+import gifSearch from "./gif-search";
 import releaseState from "./release-state";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import type { AppBindings } from "./http";
@@ -19,6 +20,7 @@ app.post("/api/v1/admin/releases/:runId/cancel", async (c) => { const access = a
 app.route("/", releaseState);
 app.route("/", feedback);
 app.route("/", familyTools);
+app.route("/", gifSearch);
 app.route("/", chatMedia);
 app.route("/", communication);
 app.route("/", familyHome);
