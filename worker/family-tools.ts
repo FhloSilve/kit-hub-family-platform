@@ -14,7 +14,7 @@ async function member(c: Ctx, householdId: string, userId: string) {
 }
 async function requireMember(c: Ctx) {
   const u = await user(c); if (!u) return { response: apiError(c,401,"AUTH_REQUIRED","Sign in to continue.") };
-  const householdId = c.req.param("householdId");
+  const householdId = c.req.param("householdId") ?? "";
   if (!(await member(c,householdId,u.id))) return { response: apiError(c,403,"HOUSEHOLD_VIEW_REQUIRED","You do not have access to this household.") };
   return { u, householdId };
 }
