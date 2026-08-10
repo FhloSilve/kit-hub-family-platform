@@ -10,15 +10,12 @@ const targets=[
  ".household-focus-content",
  ".task-row>div",
  ".calendar-v2-agenda-event>div:last-child",
- ".calendar-v2-event",
  ".dashboard-meal-details",
- ".meal-slot.is-planned",
  ".meal-recipe-list article>div",
  ".meal-suggestion-list article>div",
  ".meal-dietary-card>div",
 ];
 const languages=Object.entries(languageNames) as Array<[KitLanguage,string]>;
-const owned=new WeakSet<Element>();
 
 function contentText(element:Element){
  const clone=element.cloneNode(true) as HTMLElement;
@@ -32,14 +29,14 @@ export function ContentTranslationEnhancer({householdId}:{householdId:string}){
   function enhance(){
    queued=false;
    if(localStorage.getItem("kit-hub-offer-translations")==="0"){
-    document.querySelectorAll(".kit-content-translate").forEach(node=>node.remove());
+    document.querySelectorAll<HTMLElement>("[data-kit-translation-enhanced='1']").forEach(element=>{element.querySelectorAll(":scope > .kit-content-translate").forEach(node=>node.remove());delete element.dataset.kitTranslationEnhanced});
     return;
    }
    const targetLanguage=normalizeLanguage(localStorage.getItem("kit-hub-language"));
    for(const selector of targets)for(const element of Array.from(document.querySelectorAll<HTMLElement>(selector))){
-    if(owned.has(element)||element.closest("[data-no-content-translation]"))continue;
+    if(element.dataset.kitTranslationEnhanced==="1"||element.closest("[data-no-content-translation]"))continue;
     const text=contentText(element);if(!text||text.length<2)continue;
-    owned.add(element);
+    element.dataset.kitTranslationEnhanced="1";
     const wrap=document.createElement("span");wrap.className="kit-content-translate";
     const trigger=document.createElement("button");trigger.type="button";trigger.className="kit-content-translate__trigger";trigger.textContent="🌐 Translate";wrap.appendChild(trigger);element.appendChild(wrap);
     trigger.addEventListener("click",()=>{
@@ -57,7 +54,7 @@ export function ContentTranslationEnhancer({householdId}:{householdId:string}){
     });
    }
   }
-  const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(enhance)};schedule();const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true});const localeChanged=()=>schedule();window.addEventListener("kit-hub-locale-changed",localeChanged);return()=>{observer.disconnect();window.removeEventListener("kit-hub-locale-changed",localeChanged)};
+  const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(enhance)};schedule();const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true});const localeChanged=()=>{document.querySelectorAll<HTMLElement>("[data-kit-translation-enhanced='1']").forEach(element=>{element.querySelectorAll(":scope > .kit-content-translate").forEach(node=>node.remove());delete element.dataset.kitTranslationEnhanced});schedule()};window.addEventListener("kit-hub-locale-changed",localeChanged);return()=>{observer.disconnect();window.removeEventListener("kit-hub-locale-changed",localeChanged)};
  },[householdId]);
  return null;
 }
