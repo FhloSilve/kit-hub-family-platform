@@ -1,0 +1,2 @@
+ALTER TABLE tester_feedback ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low','normal','high','critical'));
+CREATE INDEX IF NOT EXISTS tester_feedback_priority_status_idx ON tester_feedback(priority,status,created_at DESC);
