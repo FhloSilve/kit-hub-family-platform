@@ -16,7 +16,7 @@ export type AppBindings = {
 
 export function apiError(
   c: Context<AppBindings>,
-  status: 400 | 401 | 403 | 404 | 409 | 422 | 500,
+  status: 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500,
   code: string,
   message: string,
   details?: Record<string, string>,
