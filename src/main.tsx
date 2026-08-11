@@ -12,6 +12,13 @@ import "./family-tools.css";
 import "./feedback.css";
 import "./mobile-family-hub.css";
 import "./brand-icons.css";
+import "./dark-mode.css";
+
+const storedAppearance = localStorage.getItem("kit-hub-appearance");
+const appearance = storedAppearance === "light" || storedAppearance === "dark" || storedAppearance === "system" ? storedAppearance : "system";
+const dark = appearance === "dark" || (appearance === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+document.documentElement.dataset.kitAppearance = dark ? "dark" : "light";
+document.documentElement.style.colorScheme = dark ? "dark" : "light";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
