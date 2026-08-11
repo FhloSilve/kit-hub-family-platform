@@ -4,7 +4,8 @@ import "../silvi.css";
 
 type Summary={openTasks:number;myOpenTasks:number;upcomingEvents:number;plannedMeals:number;activeRoutines:number;myRoutines:number;overdueRoutines:number};
 type Context={summary:Summary};
-type Proposal={id:string;type:"task.create"|"task.complete"|"event.create"|"meal.plan"|"routine.create"|"routine.complete";summary:string;payload:Record<string,unknown>;expiresAt:string;status?:"pending"|"completed"|"cancelled"|"failed";result?:string};
+type ActionType="task.create"|"task.update"|"task.complete"|"event.create"|"event.update"|"meal.plan"|"meal.move"|"routine.create"|"routine.assign"|"routine.complete";
+type Proposal={id:string;type:ActionType;summary:string;payload:Record<string,unknown>;expiresAt:string;status?:"pending"|"completed"|"cancelled"|"failed";result?:string};
 type Answer={question:string;answer:string;proposal?:Proposal};
 async function json<T>(url:string,init?:RequestInit){const response=await fetch(url,{credentials:"include",...init,headers:{"content-type":"application/json",...init?.headers}});const body=await response.json().catch(()=>({})) as any;if(!response.ok)throw new Error(body?.error?.message||"Silvi could not answer that right now.");return body as T}
 const suggestions=["What needs attention today?","What is coming up this week?","Add a task to take the bins out tomorrow","Plan pasta for dinner Friday"];
@@ -24,16 +25,19 @@ function ProposalCard({proposal,busy,onConfirm,onCancel}:{proposal:Proposal;busy
  if(proposal.status==="completed")return <div className="silvi-proposal is-completed"><div className="silvi-proposal__heading"><Check/><div><small>APPLIED</small><strong>{proposal.result||proposal.summary}</strong></div></div></div>;
  if(proposal.status==="cancelled")return <div className="silvi-proposal is-cancelled"><div className="silvi-proposal__heading"><XCircle/><div><small>NOT APPLIED</small><strong>Proposal cancelled</strong></div></div></div>;
  if(proposal.status==="failed")return <div className="silvi-proposal is-failed"><div className="silvi-proposal__heading"><XCircle/><div><small>NOT APPLIED</small><strong>This proposal could not be applied.</strong></div></div></div>;
- return <section className="silvi-proposal"><div className="silvi-proposal__heading"><ShieldCheck/><div><small>CONFIRM BEFORE SILVI CHANGES KIT HUB</small><strong>{proposal.summary}</strong></div></div>{details.length>0&&<dl>{details.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}<p className="silvi-proposal__expiry"><Clock3/>This proposal expires at {new Date(proposal.expiresAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}.</p><div className="silvi-proposal__actions"><button className="button button--primary" type="button" disabled={busy} onClick={onConfirm}><Check/>{busy?"Applying…":"Approve & apply"}</button><button className="button button--secondary" type="button" disabled={busy} onClick={onCancel}><X/>Cancel</button></div></section>
+ return <section className="silvi-proposal"><div className="silvi-proposal__heading"><ShieldCheck/><div><small>CONFIRM BEFORE SILVI CHANGES KIT HUB</small><strong>{proposal.summary}</strong></div></div>{details.length>0&&<dl>{details.map(([label,value])=><div key={`${label}-${value}`}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}<p className="silvi-proposal__expiry"><Clock3/>This proposal expires at {new Date(proposal.expiresAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}.</p><div className="silvi-proposal__actions"><button className="button button--primary" type="button" disabled={busy} onClick={onConfirm}><Check/>{busy?"Applying…":"Approve & apply"}</button><button className="button button--secondary" type="button" disabled={busy} onClick={onCancel}><X/>Cancel</button></div></section>
 }
 
 function proposalDetails(proposal:Proposal):Array<[string,string]>{
- const p=proposal.payload;const rows:Array<[string,string]>=[];
- const add=(label:string,value:unknown)=>{if(value===null||value===undefined||value==="")return;rows.push([label,String(value)])};
+ const p=proposal.payload;const rows:Array<[string,string]>=[];const add=(label:string,value:unknown)=>{if(value===null||value===undefined||value==="")return;rows.push([label,String(value)])};
  if(proposal.type==="task.create"){add("Task",p.title);add("Priority",p.priority);add("Due",formatDate(p.dueAt));if(p.notes)add("Notes",p.notes)}
+ else if(proposal.type==="task.update"){if(p.title)add("New title",p.title);if(p.priority)add("Priority",p.priority);if(Object.prototype.hasOwnProperty.call(p,"dueAt"))add("Due",p.dueAt?formatDate(p.dueAt):"Clear due date");if(Object.prototype.hasOwnProperty.call(p,"assigneeUserId"))add("Assignment",p.assigneeUserId?"Change assignee":"Unassigned");if(Object.prototype.hasOwnProperty.call(p,"notes"))add("Notes",p.notes||"Clear notes")}
  else if(proposal.type==="event.create"){add("Event",p.title);add("Starts",formatDate(p.startsAt));add("Ends",formatDate(p.endsAt));if(p.location)add("Location",p.location);add("All day",p.allDay===true?"Yes":"No")}
+ else if(proposal.type==="event.update"){if(p.title)add("New title",p.title);if(p.startsAt)add("New start",formatDate(p.startsAt));if(Object.prototype.hasOwnProperty.call(p,"endsAt"))add("New end",p.endsAt?formatDate(p.endsAt):"Clear end");if(Object.prototype.hasOwnProperty.call(p,"location"))add("Location",p.location||"Clear location");if(Object.prototype.hasOwnProperty.call(p,"allDay"))add("All day",p.allDay===true?"Yes":"No")}
  else if(proposal.type==="meal.plan"){add("Meal",p.title);add("Date",p.mealDate);add("Type",p.mealType);if(p.notes)add("Notes",p.notes)}
+ else if(proposal.type==="meal.move"){add("Move to date",p.mealDate);add("Move to",p.mealType)}
  else if(proposal.type==="routine.create"){add("Routine",p.title);add("Repeats",p.cadence);add("Next due",formatDate(p.nextDueAt));if(p.notes)add("Notes",p.notes)}
+ else if(proposal.type==="routine.assign"){add("Assignment",p.assigneeUserId?"Change assignee":"Unassigned")}
  return rows;
 }
 function formatDate(value:unknown){if(typeof value!=="string"||!value)return"";const date=new Date(value);return Number.isNaN(date.getTime())?value:date.toLocaleString()}
