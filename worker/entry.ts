@@ -23,6 +23,7 @@ import releaseState from "./release-state";
 import productOps, { markBetaTesterActive, privateBetaAccess } from "./product-ops";
 import adoptionInsights from "./adoption-insights";
 import betaReadiness from "./beta-readiness";
+import securityReadiness from "./security-readiness";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import { apiError, type AppBindings } from "./http";
 import { applySecurityHeaders, protectHouseholdRoute } from "./security";
@@ -68,5 +69,5 @@ app.use("/api/v1/bootstrap", async (c, next) => {
   await next();
 });
 
-app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", betaReadiness);app.route("/", adoptionInsights);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silviTaskClarifications);app.route("/", silviMeals);app.route("/", silviGroceries);app.route("/", silviResponder);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
+app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", betaReadiness);app.route("/", securityReadiness);app.route("/", adoptionInsights);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silviTaskClarifications);app.route("/", silviMeals);app.route("/", silviGroceries);app.route("/", silviResponder);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
 export default app;
