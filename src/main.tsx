@@ -15,10 +15,9 @@ import "./mobile-family-hub.css";
 import "./brand-icons.css";
 import "./dark-mode.css";
 import "./mobile-layout-fixes.css";
-import "./dark-mode-polish-v2.css";
 import "./admin-polish-v2.css";
 import "./profile-menu-polish.css";
-import "./stability-desktop.css";
+import "./stability-consolidated.css";
 import "./stability-pass-2.css";
 
 const storedAppearance = localStorage.getItem("kit-hub-appearance");
