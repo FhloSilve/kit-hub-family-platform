@@ -3,18 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f6efe2" />
+    <meta name="theme-color" content="#f6efe2" id="app-theme-color" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Kit Hub" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/kit-hub-icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/kit-hub-icon.svg" />
+    <meta name="apple-mobile-web-app-title" content="Kit Hub" id="apple-app-title" />
+    <link rel="manifest" href="/manifest.webmanifest" id="app-manifest" />
+    <link rel="icon" href="/kit-hub-icon.svg" type="image/svg+xml" id="app-favicon" />
+    <link rel="apple-touch-icon" href="/kit-hub-icon.svg" id="apple-touch-icon" />
     <meta
       name="description"
       content="Kit Hub is your family's warm, shared digital home for everyday life."
+      id="app-description"
     />
     <title>Kit Hub — Your family's digital home</title>
+    <script>
+      (function () {
+        var isAdmin = location.pathname === '/admin' || location.pathname === '/admin/';
+        if (!isAdmin) return;
+        document.title = 'Kit Hub Admin';
+        document.getElementById('app-theme-color').setAttribute('content', '#23262a');
+        document.getElementById('apple-app-title').setAttribute('content', 'KH Admin');
+        document.getElementById('app-manifest').setAttribute('href', '/admin-manifest.webmanifest');
+        document.getElementById('app-favicon').setAttribute('href', '/admin-tech-lock.svg');
+        document.getElementById('apple-touch-icon').setAttribute('href', '/admin-tech-lock.svg');
+        document.getElementById('app-description').setAttribute('content', 'Administration and production controls for Kit Hub.');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
