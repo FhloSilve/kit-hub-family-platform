@@ -1,14 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Silvi fox">
-  <circle cx="128" cy="128" r="118" fill="#f6f3ee"/>
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M43 38 91 79c12-5 24-7 37-7s25 2 37 7l48-41-7 72 16 27-28 8c-5 30-27 62-66 80-39-18-61-50-66-80l-28-8 16-27Z" stroke="#23262a" stroke-width="9"/>
-    <path d="M52 51 88 83 68 104" stroke="#aeb2b8" stroke-width="7"/>
-    <path d="M204 51 168 83 188 104" stroke="#e94b2b" stroke-width="7"/>
-    <path d="M91 82c15 19 25 42 30 69" stroke="#aeb2b8" stroke-width="7"/>
-    <path d="M165 82c-15 19-25 42-30 69" stroke="#e94b2b" stroke-width="7"/>
-    <path d="M76 137c11-9 24-10 37-4-8 10-19 14-31 11" stroke="#23262a" stroke-width="7"/>
-    <path d="M180 137c-11-9-24-10-37-4 8 10 19 14 31 11" stroke="#23262a" stroke-width="7"/>
-    <path d="m113 181 15-7 15 7-15 14Z" fill="#23262a" stroke="#23262a" stroke-width="3"/>
-    <path d="M111 207c6 4 11 6 17 6s11-2 17-6" stroke="#23262a" stroke-width="6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Silvi geometric fox head">
+  <defs>
+    <linearGradient id="silvi-gradient" x1="42" y1="48" x2="214" y2="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f06a1a"/>
+      <stop offset="0.52" stop-color="#e94b2b"/>
+      <stop offset="1" stop-color="#b91324"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="#f6f3ee"/>
+  <g fill="none" stroke="url(#silvi-gradient)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M52 48 96 88h64l44-40-7 70 17 29-45 15-41 54-41-54-45-15 17-29Z"/>
+    <path d="M52 48 86 88 59 118"/>
+    <path d="M204 48 170 88 197 118"/>
+    <path d="M59 118 96 88 128 216"/>
+    <path d="M197 118 160 88 128 216"/>
+    <path d="M42 147 87 162"/>
+    <path d="M214 147 169 162"/>
   </g>
 </svg>
