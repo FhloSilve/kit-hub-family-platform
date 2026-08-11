@@ -1,16 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Silvi line art fox">
-  <rect x="8" y="8" width="240" height="240" rx="52" fill="#f6f3ee" stroke="#dedad2" stroke-width="4"/>
+  <circle cx="128" cy="128" r="116" fill="#f6f3ee" stroke="#d6d4d0" stroke-width="4"/>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M42 53 82 88c13-8 29-12 46-12s33 4 46 12l40-35-8 72c-2 18-7 35-15 50-13 25-34 46-63 60-29-14-50-35-63-60-8-15-13-32-15-50Z" stroke="#23262a" stroke-width="10"/>
-    <path d="M48 59 84 91 65 123 54 111Z" stroke="#c0c3c7" stroke-width="8"/>
-    <path d="M208 59 172 91 191 123 202 111Z" stroke="#e94b2b" stroke-width="8"/>
-    <path d="M82 88c17 18 30 38 39 61 4 11 6 23 7 37" stroke="#c0c3c7" stroke-width="8"/>
-    <path d="M174 88c-17 18-30 38-39 61-4 11-6 23-7 37" stroke="#e94b2b" stroke-width="8"/>
-    <path d="m75 137 28-9-10 18-17 4" stroke="#23262a" stroke-width="8"/>
-    <path d="m181 137-28-9 10 18 17 4" stroke="#23262a" stroke-width="8"/>
-    <path d="m111 185 17-8 17 8-17 16Z" fill="#23262a" stroke="#23262a" stroke-width="4"/>
-    <path d="M107 210c7 5 14 7 21 7s14-2 21-7" stroke="#23262a" stroke-width="7"/>
-    <path d="M55 118 38 131l22 3-16 15 27-1" stroke="#23262a" stroke-width="8"/>
-    <path d="m201 118 17 13-22 3 16 15-27-1" stroke="#23262a" stroke-width="8"/>
+    <!-- Clear outer fox silhouette: large ears, soft cheeks, pointed chin. -->
+    <path d="M54 49 91 83c11-6 24-9 37-9s26 3 37 9l37-34-6 66c-2 24-9 46-21 65-11 18-27 35-47 47-20-12-36-29-47-47-12-19-19-41-21-65Z" stroke="#23262a" stroke-width="10"/>
+
+    <!-- Silver and scarlet ear details. -->
+    <path d="M62 62 91 88 72 112Z" stroke="#aeb2b8" stroke-width="7"/>
+    <path d="M194 62 165 88 184 112Z" stroke="#e94b2b" stroke-width="7"/>
+
+    <!-- Two restrained facial accents, readable even at launcher size. -->
+    <path d="M92 89c12 18 20 37 24 58" stroke="#aeb2b8" stroke-width="7"/>
+    <path d="M164 89c-12 18-20 37-24 58" stroke="#e94b2b" stroke-width="7"/>
+
+    <!-- Calm, friendly eyes. -->
+    <path d="M82 139c9-7 20-8 31-3-7 8-17 12-28 9" stroke="#23262a" stroke-width="7"/>
+    <path d="M174 139c-9-7-20-8-31-3 7 8 17 12 28 9" stroke="#23262a" stroke-width="7"/>
+
+    <!-- Nose and small smile. -->
+    <path d="m114 181 14-7 14 7-14 13Z" fill="#23262a" stroke="#23262a" stroke-width="3"/>
+    <path d="M111 207c6 4 11 6 17 6s11-2 17-6" stroke="#23262a" stroke-width="6"/>
   </g>
 </svg>
