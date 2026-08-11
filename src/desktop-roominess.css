@@ -3,22 +3,43 @@
   html { font-size: 17px; }
   .app-shell { grid-template-columns: 260px minmax(0, 1fr) !important; }
   .app-main, .main-content, .dashboard-main { max-width: none !important; }
-  .dashboard-content, .dashboard-page, .page-content { width: 100% !important; max-width: 1680px !important; margin-inline: auto !important; }
-  .dashboard-widget-grid { gap: 22px !important; }
-  .dashboard-widget { padding: 22px !important; }
-  .sidebar-nav button { min-height: 48px; font-size: 1rem; }
+  .dashboard-content, .dashboard-page, .page-content { width: calc(100% - 48px) !important; max-width: 1880px !important; margin-inline: auto !important; }
+  .dashboard-widget-grid { gap: 24px !important; align-items:stretch !important; }
+  .dashboard-widget { padding: 24px !important; min-height:310px; }
+  .dashboard-widget-height--compact { min-height:230px !important; }
+  .dashboard-widget-height--normal { min-height:330px !important; }
+  .dashboard-widget-height--tall { min-height:470px !important; }
+  .dashboard-widget-height--compact .family-note-list,.dashboard-widget-height--compact .event-list,.dashboard-widget-height--compact .task-list,.dashboard-widget-height--compact .home-grocery-preview{max-height:150px!important}
+  .dashboard-widget-height--normal .family-note-list,.dashboard-widget-height--normal .event-list,.dashboard-widget-height--normal .task-list,.dashboard-widget-height--normal .home-grocery-preview{max-height:260px!important}
+  .dashboard-widget-height--tall .family-note-list,.dashboard-widget-height--tall .event-list,.dashboard-widget-height--tall .task-list,.dashboard-widget-height--tall .home-grocery-preview{max-height:400px!important}
+  .dashboard-widget--note .dashboard-widget__content,.dashboard-widget--focus .dashboard-widget__content,.dashboard-widget--occasions .dashboard-widget__content{padding:22px!important}
+  .sidebar-nav button { min-height: 50px; font-size: 1rem; }
   .topbar button, .button { min-height: 48px; }
-  .empty-state.empty-state--clickable { min-height: 190px; }
-  .empty-state.empty-state--clickable > strong { font-size: .82rem; }
-  .empty-state.empty-state--clickable > span { min-height: 38px; padding-inline: 15px; font-size: .72rem; }
-  .calendar-v2-weekday { font-size: .72rem; }
-  .calendar-v2-day { min-height: 145px; padding: 12px; }
-  .calendar-v2-event, .calendar-v2-more { font-size: .7rem; }
-  .notification-popover article small { font-size: .78rem; }
+  .empty-state.empty-state--clickable { min-height: 220px; }
+  .empty-state.empty-state--clickable > strong { font-size: .86rem; }
+  .empty-state.empty-state--clickable > span { min-height: 40px; padding-inline: 16px; font-size: .76rem; }
+  .dashboard-widget-add{min-height:44px!important;font-size:.76rem!important}
+  .calendar-v2-weekday { font-size: .76rem; }
+  .calendar-v2-day { min-height: 155px; padding: 13px; }
+  .calendar-v2-event, .calendar-v2-more { font-size: .74rem; }
+  .notification-popover article small { font-size: .8rem; }
 }
 @media (min-width: 1500px) {
   html { font-size: 18px; }
   .app-shell { grid-template-columns: 280px minmax(0, 1fr) !important; }
-  .dashboard-content, .dashboard-page, .page-content { max-width: 1840px !important; }
-  .dashboard-widget-grid { gap: 26px !important; }
+  .dashboard-content, .dashboard-page, .page-content { width: calc(100% - 64px) !important; max-width: 2100px !important; }
+  .dashboard-widget-grid { gap: 28px !important; }
+  .dashboard-widget { min-height:340px; padding:26px!important; }
+  .dashboard-widget-height--compact { min-height:250px !important; }
+  .dashboard-widget-height--normal { min-height:360px !important; }
+  .dashboard-widget-height--tall { min-height:520px !important; }
+}
+@media (min-width: 1900px) {
+  html { font-size: 19px; }
+  .app-shell { grid-template-columns: 300px minmax(0, 1fr) !important; }
+  .dashboard-content, .dashboard-page, .page-content { width: calc(100% - 80px) !important; max-width: 2360px !important; }
+  .dashboard-widget-grid { gap: 30px !important; }
+  .dashboard-widget { min-height:370px; }
+  .dashboard-widget-height--normal { min-height:390px !important; }
+  .dashboard-widget-height--tall { min-height:560px !important; }
 }
