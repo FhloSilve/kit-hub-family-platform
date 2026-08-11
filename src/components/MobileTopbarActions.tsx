@@ -33,6 +33,6 @@ export function MobileTopbarActions(){
       <button type="button" className="mobile-topbar-utility mobile-topbar-utility--silvi" onClick={openSilvi} aria-label="Open Silvi"><img src="/silvi-geometric.svg" alt=""/></button>
       <button type="button" className="mobile-topbar-utility mobile-topbar-utility--add" onClick={quickAdd} aria-label="Quick add"><Plus/></button>
     </div>,target)}
-    {profileTarget&&createPortal(<button type="button" className="mobile-profile-routines" onClick={openRoutines}><Repeat2/>Household rhythm</button>,profileTarget)}
+    {profileTarget&&createPortal(<button type="button" className="mobile-profile-routines" onClick={openRoutines} title="Recurring chores, reminders and assignments"><Repeat2/><span>Routines & recurring chores</span></button>,profileTarget)}
   </>;
 }
