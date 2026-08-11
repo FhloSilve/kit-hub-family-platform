@@ -12,6 +12,7 @@ import routines from "./routines";
 import silvi from "./silvi";
 import silviGroceries from "./silvi-groceries";
 import silviMeals from "./silvi-meals";
+import silviTaskClarifications from "./silvi-task-clarifications";
 import silviResponder from "./silvi-responder";
 import silviInsights from "./silvi-insights";
 import calendarEnhancements from "./calendar-enhancements";
@@ -56,5 +57,5 @@ app.use("/api/v1/bootstrap", async (c, next) => {
   await next();
 });
 
-app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", betaReadiness);app.route("/", adoptionInsights);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silviMeals);app.route("/", silviGroceries);app.route("/", silviResponder);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
+app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", betaReadiness);app.route("/", adoptionInsights);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silviTaskClarifications);app.route("/", silviMeals);app.route("/", silviGroceries);app.route("/", silviResponder);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
 export default app;
