@@ -14,6 +14,7 @@ import "./feedback.css";
 import "./mobile-family-hub.css";
 import "./brand-icons.css";
 import "./dark-mode.css";
+import "./dark-theme-palettes.css";
 import "./mobile-layout-fixes.css";
 import "./admin-polish-v2.css";
 import "./profile-menu-polish.css";
