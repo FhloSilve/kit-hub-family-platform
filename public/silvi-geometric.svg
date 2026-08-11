@@ -1,24 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Silvi geometric fox">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f3ec"/><stop offset=".5" stop-color="#c9cbd0"/><stop offset="1" stop-color="#8f9399"/></linearGradient>
-    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".35" stop-color="#d8dbe0"/><stop offset=".7" stop-color="#9da2a9"/><stop offset="1" stop-color="#f4f5f6"/></linearGradient>
-    <linearGradient id="scarlet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff744d"/><stop offset=".55" stop-color="#d94a2f"/><stop offset="1" stop-color="#9f2f22"/></linearGradient>
-    <filter id="shadow"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-opacity=".22"/></filter>
-  </defs>
-  <circle cx="128" cy="128" r="116" fill="url(#bg)" stroke="#f7f7f5" stroke-width="8"/>
-  <g filter="url(#shadow)" stroke="#343638" stroke-linejoin="round">
-    <path d="M50 38 104 82 128 76 152 82 206 38 194 120 180 178 128 222 76 178 62 120Z" fill="#343638" stroke-width="4"/>
-    <path d="M58 51 105 91 82 123 68 113Z" fill="url(#silver)" stroke-width="3"/>
-    <path d="M198 51 151 91 174 123 188 113Z" fill="url(#silver)" stroke-width="3"/>
-    <path d="M104 82 128 76 128 192 92 165 82 123Z" fill="url(#silver)" stroke-width="3"/>
-    <path d="M152 82 128 76 128 192 164 165 174 123Z" fill="url(#scarlet)" stroke-width="3"/>
-    <path d="M82 123 105 91 118 125 101 162 92 165Z" fill="#f4f4f2" stroke-width="3"/>
-    <path d="M174 123 151 91 138 125 155 162 164 165Z" fill="#f0f1f2" stroke-width="3"/>
-    <path d="M86 130 113 123 104 140 91 145Z" fill="#2b2d2f" stroke-width="2"/>
-    <path d="M170 130 143 123 152 140 165 145Z" fill="#2b2d2f" stroke-width="2"/>
-    <path d="M128 192 111 180 128 172 145 180Z" fill="#242628" stroke-width="3"/>
-    <path d="M104 165 128 192 152 165 144 195 128 208 112 195Z" fill="#f9f7f3" stroke-width="3"/>
-    <path d="M68 72 83 96 62 87Z" fill="url(#scarlet)" stroke-width="2"/>
-    <path d="M188 72 173 96 194 87Z" fill="#5f6267" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Silvi line art fox">
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="#f6f3ee" stroke="#dedad2" stroke-width="4"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 53 82 88c13-8 29-12 46-12s33 4 46 12l40-35-8 72c-2 18-7 35-15 50-13 25-34 46-63 60-29-14-50-35-63-60-8-15-13-32-15-50Z" stroke="#23262a" stroke-width="10"/>
+    <path d="M48 59 84 91 65 123 54 111Z" stroke="#c0c3c7" stroke-width="8"/>
+    <path d="M208 59 172 91 191 123 202 111Z" stroke="#e94b2b" stroke-width="8"/>
+    <path d="M82 88c17 18 30 38 39 61 4 11 6 23 7 37" stroke="#c0c3c7" stroke-width="8"/>
+    <path d="M174 88c-17 18-30 38-39 61-4 11-6 23-7 37" stroke="#e94b2b" stroke-width="8"/>
+    <path d="m75 137 28-9-10 18-17 4" stroke="#23262a" stroke-width="8"/>
+    <path d="m181 137-28-9 10 18 17 4" stroke="#23262a" stroke-width="8"/>
+    <path d="m111 185 17-8 17 8-17 16Z" fill="#23262a" stroke="#23262a" stroke-width="4"/>
+    <path d="M107 210c7 5 14 7 21 7s14-2 21-7" stroke="#23262a" stroke-width="7"/>
+    <path d="M55 118 38 131l22 3-16 15 27-1" stroke="#23262a" stroke-width="8"/>
+    <path d="m201 118 17 13-22 3 16 15-27-1" stroke="#23262a" stroke-width="8"/>
   </g>
 </svg>
