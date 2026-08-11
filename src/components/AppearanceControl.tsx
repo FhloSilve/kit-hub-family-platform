@@ -69,6 +69,7 @@ export function AppearanceControl() {
   const change = (next: Appearance) => { setMode(next); setDark(resolvedDark(next)); };
   const quickToggle = () => change(dark ? "light" : "dark");
   const scrollToFeedback = () => document.querySelector<HTMLElement>(".admin-feedback-board")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const toggleAdminColour = () => document.querySelector<HTMLElement>(".admin-toolbar")?.classList.toggle("is-open");
 
   return <>
     <button className={`appearance-quick-toggle ${isAdmin ? "appearance-admin-toggle" : ""}`} type="button" onClick={quickToggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Switch to light mode" : "Switch to dark mode"}>
@@ -77,7 +78,7 @@ export function AppearanceControl() {
     {isAdmin && <nav className="admin-mobile-nav" aria-label="Admin navigation">
       <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Rocket/><span>Release</span></button>
       <button type="button" onClick={scrollToFeedback}><MessageSquareWarning/><span>Feedback</span></button>
-      <button type="button" onClick={() => window.dispatchEvent(new Event("kit-hub-admin-colour"))}><Palette/><span>Colour</span></button>
+      <button className="admin-mobile-colour" type="button" onClick={toggleAdminColour}><Palette/><span>Colour</span></button>
       <button className="admin-mobile-appearance" type="button" onClick={quickToggle}>{dark?<Sun/>:<Moon/>}<span>{dark?"Light":"Dark"}</span></button>
       <button type="button" onClick={() => { window.location.href = "/"; }}><House/><span>Kit Hub</span></button>
     </nav>}
