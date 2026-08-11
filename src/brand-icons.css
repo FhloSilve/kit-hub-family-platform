@@ -1,0 +1,20 @@
+/* Dedicated product identities: Kit Hub home, Silvi assistant, and Admin. */
+.brand__mark{padding:0;overflow:hidden;background:#fffdf8!important;color:inherit!important;transform:none!important;border:1px solid rgba(48,51,54,.08)}
+.brand__mark img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.brand--compact .brand__mark img{width:100%;height:100%}
+
+.silvi-launcher::before{content:"";width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:url('/silvi-geometric.svg') center/cover no-repeat;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.silvi-launcher>svg{display:none}
+.silvi-mark{padding:0!important;overflow:hidden;background:url('/silvi-geometric.svg') center/cover no-repeat!important;box-shadow:0 7px 18px rgba(53,54,56,.16)}
+.silvi-mark>svg{display:none}
+.silvi-answer{position:relative;grid-template-columns:26px 1fr!important}
+.silvi-answer>svg{display:none}
+.silvi-answer::before{content:"";width:23px;height:23px;border-radius:50%;background:url('/silvi-geometric.svg') center/cover no-repeat;box-shadow:0 2px 7px rgba(0,0,0,.12)}
+
+.platform-admin-entry{padding-left:9px}
+.platform-admin-entry>svg{display:none!important}
+.platform-admin-entry::before{content:"";width:31px;height:31px;flex:0 0 31px;border-radius:9px;background:url('/admin-tech-lock.svg') center/cover no-repeat;box-shadow:0 3px 9px rgba(0,0,0,.18)}
+.admin-title>span{overflow:hidden;padding:0!important;background:url('/admin-tech-lock.svg') center/cover no-repeat!important;border-color:rgba(255,255,255,.12)!important;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.admin-title>span>svg{display:none!important}
+
+@media(max-width:700px){.silvi-launcher::before{width:38px;height:38px;flex-basis:38px}.silvi-launcher{padding:7px!important;border-radius:18px}.platform-admin-entry::before{width:29px;height:29px;flex-basis:29px}}
