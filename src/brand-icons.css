@@ -17,4 +17,9 @@
 .admin-title>span{overflow:hidden;padding:0!important;background:url('/admin-tech-lock.svg') center/cover no-repeat!important;border-color:rgba(255,255,255,.12)!important;box-shadow:0 10px 24px rgba(0,0,0,.18)}
 .admin-title>span>svg{display:none!important}
 
-@media(max-width:700px){.silvi-launcher::before{width:38px;height:38px;flex-basis:38px}.silvi-launcher{padding:7px!important;border-radius:18px}.platform-admin-entry::before{width:29px;height:29px;flex-basis:29px}}
+.chat-expression-gif-status{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:10px 0;padding:11px 12px;border:1px solid rgba(185,91,66,.18);border-radius:13px;background:#fff4ee}
+.chat-expression-gif-status p{margin:0;font-size:12px;line-height:1.45;color:#7d483b}
+.chat-expression-gif-status button{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;min-height:34px;padding:0 10px;border:1px solid rgba(47,83,96,.18);border-radius:10px;background:#fff;font:inherit;font-size:11px;font-weight:800}
+.chat-expression-gif-status button svg{width:14px}
+
+@media(max-width:700px){.silvi-launcher::before{width:38px;height:38px;flex-basis:38px}.silvi-launcher{padding:7px!important;border-radius:18px}.platform-admin-entry::before{width:29px;height:29px;flex-basis:29px}.chat-expression-gif-status{display:grid}.chat-expression-gif-status button{justify-self:start}}
