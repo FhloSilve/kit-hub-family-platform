@@ -76,7 +76,7 @@ function eveningPressure(events:EventRow[],tasks:TaskRow[],date:string,nowMs:num
 
 async function buildInsights(c:Ctx,a:Access){
  const now=new Date(),nowMs=now.getTime(),weekEnd=new Date(nowMs+7*86400000).toISOString(),today=now.toISOString().slice(0,10),monthAgo=new Date(nowMs-30*86400000).toISOString();
- const[members,tasksResult,routinesResult,eventsResult,mealsResult,completions]=await Promise.all([
+ const[membersResult,tasksResult,routinesResult,eventsResult,mealsResult,completions]=await Promise.all([
   c.env.DB.prepare(`SELECT m.user_id userId,u.name FROM memberships m JOIN "user" u ON u.id=m.user_id WHERE m.household_id=? AND m.status='active' ORDER BY u.name`).bind(a.householdId).all<MemberRow>(),
   c.env.DB.prepare(`SELECT id,title,assignee_user_id assigneeUserId,due_at dueAt,priority,created_at createdAt FROM everyday_tasks WHERE household_id=? AND status='todo'`).bind(a.householdId).all<TaskRow>(),
   c.env.DB.prepare(`SELECT id,title,assignee_user_id assigneeUserId,next_due_at nextDueAt,cadence FROM household_routines WHERE household_id=? AND active=1`).bind(a.householdId).all<RoutineRow>(),
@@ -84,7 +84,7 @@ async function buildInsights(c:Ctx,a:Access){
   c.env.DB.prepare(`SELECT id,meal_date mealDate,meal_type mealType,title,cook_user_id cookUserId FROM meal_plans WHERE household_id=? AND meal_date>=? AND meal_date<=date(?, '+7 day')`).bind(a.householdId,today,today).all<MealRow>(),
   c.env.DB.prepare(`SELECT completed_by completedBy,COUNT(*) count FROM household_routine_completions WHERE household_id=? AND completed_at>=? GROUP BY completed_by`).bind(a.householdId,monthAgo).all<any>(),
  ]);
- const members=members.results,tasks=tasksResult.results,routines=routinesResult.results,events=eventsResult.results,meals=mealsResult.results;
+ const members=membersResult.results,tasks=tasksResult.results,routines=routinesResult.results,events=eventsResult.results,meals=mealsResult.results;
  const insights:Insight[]=[];
  const completionMap=new Map(completions.results.map((x:any)=>[x.completedBy,Number(x.count)]));
  const workload=members.map(m=>{const openTasks=tasks.filter(t=>t.assigneeUserId===m.userId).length,openRoutines=routines.filter(r=>r.assigneeUserId===m.userId).length,overdue=routines.filter(r=>r.assigneeUserId===m.userId&&r.nextDueAt&&Date.parse(r.nextDueAt)<nowMs).length,completed30=completionMap.get(m.userId)??0;return{...m,open:openTasks+openRoutines,openTasks,openRoutines,overdue,completed30}});
