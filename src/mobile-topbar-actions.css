@@ -1,29 +1,32 @@
-.mobile-topbar-utilities{display:none}
+.mobile-topbar-utilities{display:none}.mobile-profile-routines{display:none}
 @media(max-width:760px){
   .app-topbar{min-height:76px!important;padding:10px 14px!important;gap:10px!important;align-items:center!important;border-bottom:1px solid var(--line)!important}
   .mobile-brand{display:flex!important;align-items:center!important;flex:0 0 auto!important}
   .mobile-brand .brand__words{display:none!important}
   .mobile-brand .brand__mark{width:46px!important;height:46px!important;border-radius:14px!important}
   .topbar-search,.site-theme-picker,.mobile-search-button,.profile-button>div,.profile-button>svg{display:none!important}
-  .topbar-actions{margin-left:auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;min-width:0!important}
+  .topbar-actions{margin-left:auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;min-width:0!important}
   .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button{width:42px!important;height:42px!important;min-width:42px!important;border-radius:13px!important;padding:0!important}
   .topbar-actions>.profile-menu>.profile-button>span{width:42px!important;height:42px!important;border-radius:13px!important;font-size:16px!important}
-  .mobile-topbar-utilities{display:flex;align-items:center;gap:7px;order:-1}
+  .mobile-topbar-utilities{display:flex;align-items:center;gap:8px;order:-1}
   .mobile-topbar-utility{display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--line);border-radius:13px;background:var(--theme-paper,var(--paper));color:var(--theme-ink,var(--ink));box-shadow:none}
   .mobile-topbar-utility svg{width:20px;height:20px}
   .mobile-topbar-utility--silvi{background:color-mix(in srgb,var(--theme-paper,var(--paper)) 86%,var(--theme-primary,#345c4b) 14%)}
   .mobile-topbar-utility--silvi img{width:25px;height:25px;display:block}
-  .mobile-topbar-utility--add{background:var(--theme-primary,#345c4b);color:#fff;border-color:transparent}
+  .mobile-topbar-utility--add{background:var(--theme-primary,#345c4b);color:#17211d;border-color:transparent}
   .appearance-quick-toggle{display:none!important}
   .silvi-launcher,.routines-launcher,.family-tools-launcher,.mobile-quick-add{display:none!important}
+  .mobile-profile-routines{display:flex!important;align-items:center;gap:9px;width:100%;border:0;background:transparent;color:inherit;font:inherit;text-align:left;padding:10px 12px;border-radius:10px}
+  .mobile-profile-routines svg{width:18px;height:18px}
+  input,textarea,select{font-size:16px!important}
 }
 @media(max-width:430px){
-  .app-topbar{padding-left:8px!important;padding-right:8px!important;gap:5px!important}
-  .topbar-actions{gap:4px!important}
-  .mobile-topbar-utilities{gap:4px}
-  .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button,.mobile-topbar-utility{width:36px!important;height:36px!important;min-width:36px!important;border-radius:11px!important}
-  .topbar-actions>.profile-menu>.profile-button>span{width:36px!important;height:36px!important;border-radius:11px!important;font-size:15px!important}
+  .app-topbar{padding-left:9px!important;padding-right:9px!important;gap:6px!important}
+  .topbar-actions{gap:5px!important}
+  .mobile-topbar-utilities{gap:5px}
+  .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button,.mobile-topbar-utility{width:38px!important;height:38px!important;min-width:38px!important;border-radius:12px!important}
+  .topbar-actions>.profile-menu>.profile-button>span{width:38px!important;height:38px!important;border-radius:12px!important;font-size:15px!important}
   .mobile-topbar-utility svg{width:18px;height:18px}
   .mobile-topbar-utility--silvi img{width:22px;height:22px}
-  .mobile-brand .brand__mark{width:40px!important;height:40px!important}
+  .mobile-brand .brand__mark{width:42px!important;height:42px!important}
 }
