@@ -1,0 +1,19 @@
+{
+  "id": "/admin",
+  "name": "Kit Hub Admin",
+  "short_name": "KH Admin",
+  "description": "Administration and production controls for Kit Hub.",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#171a1d",
+  "theme_color": "#23262a",
+  "icons": [
+    {
+      "src": "/admin-tech-lock.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
