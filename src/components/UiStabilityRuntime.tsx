@@ -31,6 +31,19 @@ export function UiStabilityRuntime() {
     let originalOverflow = '';
     let originalPaddingRight = '';
 
+    const syncAccessibility = () => {
+      document.querySelectorAll<HTMLElement>('.sidebar-nav button,.mobile-nav button,.admin-mobile-nav button').forEach(button => {
+        if (button.classList.contains('is-active')) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+      document.querySelectorAll<HTMLElement>('.profile-button').forEach(button => {
+        button.setAttribute('aria-haspopup', 'menu');
+        const menu = button.closest('.profile-menu')?.querySelector('.profile-popover');
+        button.setAttribute('aria-expanded', menu && visible(menu) ? 'true' : 'false');
+      });
+      document.querySelectorAll<HTMLElement>('.profile-popover').forEach(menu => menu.setAttribute('role', 'menu'));
+    };
+
     const syncModalState = () => {
       const modal = topModal();
       const shouldLock = Boolean(modal);
@@ -58,6 +71,7 @@ export function UiStabilityRuntime() {
         previousFocus?.focus?.({ preventScroll: true });
         previousFocus = null;
       }
+      syncAccessibility();
     };
 
     const syncViewport = () => {
