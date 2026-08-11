@@ -8,108 +8,20 @@ type EventRow = { id:string; title:string; startsAt:string; endsAt:string|null; 
 type TaskRow = { id:string; title:string; dueAt:string|null; assigneeName:string|null };
 type MealRow = { id:string; mealDate:string; mealType:string; title:string; cookName:string|null };
 type RoutineRow = { id:string; title:string; nextDueAt:string|null; assigneeName:string|null; overdue:number|boolean };
-type HouseholdContext = {
-  household:{name?:string;timezone?:string}|null;
-  locale:{language?:string;region?:string;timeZone?:string}|null;
-  currentTime:string;
-  currentUserId:string;
-  members:Array<{userId:string;name:string;role:string}>;
-  tasks:TaskRow[];
-  upcomingEvents:EventRow[];
-  meals:MealRow[];
-  routines:RoutineRow[];
-};
-
-const models = ["@cf/zai-org/glm-4.7-flash", "@cf/meta/llama-3.1-8b-instruct-fast"] as const;
-function clean(value: unknown, max = 500) { return typeof value === "string" ? value.trim().slice(0, max) : ""; }
-function requestId(c: Ctx) { return c.get("requestId") || c.req.header("cf-ray") || crypto.randomUUID(); }
-function withTimeout<T>(promise: Promise<T>, ms: number) { return Promise.race<T>([promise,new Promise<T>((_,reject)=>setTimeout(()=>reject(new Error("AI_TIMEOUT")),ms))]); }
-function localDate(value:string){return new Intl.DateTimeFormat(undefined,{weekday:"short",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(value));}
-
-async function access(c: Ctx) {
-  const session = await createAuth(c.env,c.req.raw).api.getSession({headers:c.req.raw.headers});
-  if(!session?.user)return {response:apiError(c,401,"AUTH_REQUIRED","Sign in to ask Silvi about your household.")} as const;
-  const householdId=c.req.param("householdId")??"";
-  const membership=householdId?await c.env.DB.prepare("SELECT role_key role FROM memberships WHERE household_id=? AND user_id=? AND status='active'").bind(householdId,session.user.id).first<{role:string}>():null;
-  if(!membership)return {response:apiError(c,403,"HOUSEHOLD_VIEW_REQUIRED","You do not have access to this household.")} as const;
-  return {user:session.user,householdId,role:membership.role} as const;
-}
-
-async function contextFor(c:Ctx,householdId:string,userId:string):Promise<HouseholdContext>{
-  const now=new Date().toISOString(),today=now.slice(0,10),weekEnd=new Date(Date.now()+7*86400000).toISOString();
-  const [household,locale,members,tasks,events,meals,routines]=await Promise.all([
-    c.env.DB.prepare("SELECT name,timezone FROM households WHERE id=?").bind(householdId).first<{name:string;timezone:string}>(),
-    c.env.DB.prepare("SELECT language,region,time_zone timeZone FROM user_locale_preferences WHERE user_id=?").bind(userId).first<{language:string;region:string;timeZone:string}>(),
-    c.env.DB.prepare(`SELECT m.user_id userId,u.name,m.role_key role FROM memberships m JOIN "user" u ON u.id=m.user_id WHERE m.household_id=? AND m.status='active' ORDER BY u.name`).bind(householdId).all<{userId:string;name:string;role:string}>(),
-    c.env.DB.prepare(`SELECT t.id,t.title,t.due_at dueAt,u.name assigneeName FROM everyday_tasks t LEFT JOIN "user" u ON u.id=t.assignee_user_id WHERE t.household_id=? AND t.status='todo' ORDER BY CASE WHEN t.due_at IS NULL THEN 1 ELSE 0 END,t.due_at LIMIT 15`).bind(householdId).all<TaskRow>(),
-    c.env.DB.prepare(`SELECT id,title,starts_at startsAt,ends_at endsAt,all_day allDay,event_type eventType FROM everyday_events WHERE household_id=? AND starts_at>=? AND starts_at<=? ORDER BY starts_at LIMIT 15`).bind(householdId,now,weekEnd).all<EventRow>(),
-    c.env.DB.prepare(`SELECT p.id,p.meal_date mealDate,p.meal_type mealType,p.title,u.name cookName FROM meal_plans p LEFT JOIN "user" u ON u.id=p.cook_user_id WHERE p.household_id=? AND p.meal_date>=? AND p.meal_date<=date(?, '+7 day') ORDER BY p.meal_date LIMIT 15`).bind(householdId,today,today).all<MealRow>(),
-    c.env.DB.prepare(`SELECT r.id,r.title,r.next_due_at nextDueAt,u.name assigneeName,CASE WHEN r.next_due_at IS NOT NULL AND r.next_due_at<? THEN 1 ELSE 0 END overdue FROM household_routines r LEFT JOIN "user" u ON u.id=r.assignee_user_id WHERE r.household_id=? AND r.active=1 ORDER BY CASE WHEN r.next_due_at IS NULL THEN 1 ELSE 0 END,r.next_due_at LIMIT 15`).bind(now,householdId).all<RoutineRow>(),
-  ]);
-  return {household,locale:locale??null,currentTime:now,currentUserId:userId,members:members.results,tasks:tasks.results,upcomingEvents:events.results,meals:meals.results,routines:routines.results};
-}
-
-function deterministicAnswer(question:string,ctx:HouseholdContext):string|null{
-  const q=question.toLowerCase();
-  const now=new Date(ctx.currentTime),today=now.toISOString().slice(0,10);
-  const todaysEvents=ctx.upcomingEvents.filter(e=>e.startsAt.slice(0,10)===today);
-  if(/cancelled|canceled/.test(q)&&/(appointment|event|tonight|today)/.test(q)){
-    const candidates=todaysEvents.length?todaysEvents:ctx.upcomingEvents.slice(0,3);
-    if(candidates.length===1)return `I found “${candidates[0]!.title}” at ${localDate(candidates[0]!.startsAt)}. I can see that you want to cancel it, but Silvi does not yet have a safe calendar-delete action. Open that event and remove it manually for now; I will not change anything without confirmation.`;
-    if(candidates.length>1)return `I found ${candidates.length} possible calendar items: ${candidates.map(e=>`“${e.title}” (${localDate(e.startsAt)})`).join(", ")}. Tell me which one you mean. Silvi does not yet delete events automatically.`;
-    return "I could not find a matching upcoming appointment in the next seven days. Nothing was changed.";
-  }
-  if(/event|calendar|appointment/.test(q)&&/(week|upcoming|have|today|tonight)/.test(q)){
-    if(!ctx.upcomingEvents.length)return "There are no upcoming calendar events in the next seven days.";
-    return `You have ${ctx.upcomingEvents.length} upcoming event${ctx.upcomingEvents.length===1?"":"s"}: ${ctx.upcomingEvents.slice(0,6).map(e=>`“${e.title}” on ${localDate(e.startsAt)}`).join("; ")}.`;
-  }
-  if(/task|forgotten|todo|to-do/.test(q)){
-    if(!ctx.tasks.length)return "There are no open household tasks right now.";
-    const overdue=ctx.tasks.filter(t=>t.dueAt&&Date.parse(t.dueAt)<Date.now());
-    return overdue.length?`${overdue.length} open task${overdue.length===1?" looks":"s look"} overdue: ${overdue.slice(0,5).map(t=>`“${t.title}”`).join(", ")}. There are ${ctx.tasks.length} open tasks in total.`:`There are ${ctx.tasks.length} open household tasks and none of the dated ones I can see are overdue.`;
-  }
-  if(/chore|routine|fair|balance/.test(q)){
-    const assigned=ctx.routines.filter(r=>r.assigneeName);if(!ctx.routines.length)return "There are no active household routines to compare yet.";
-    const counts=new Map<string,number>();for(const r of assigned)counts.set(r.assigneeName!,1+(counts.get(r.assigneeName!)??0));
-    const summary=[...counts.entries()].map(([name,count])=>`${name}: ${count}`).join(", ");
-    return `There are ${ctx.routines.length} active routines. Current assigned routine counts are ${summary||"not assigned yet"}. ${ctx.routines.filter(r=>Boolean(r.overdue)).length} are overdue.`;
-  }
-  if(/meal|dinner|food/.test(q)){
-    if(!ctx.meals.length)return "There are no meals planned for the next seven days yet.";
-    return `There are ${ctx.meals.length} planned meals in the next seven days: ${ctx.meals.slice(0,6).map(m=>`${m.title} (${m.mealDate})`).join(", ")}.`;
-  }
-  return null;
-}
-
-function fallbackSummary(ctx:HouseholdContext){
-  return `I could not reach the AI model quickly enough, but I can still read the current household summary: ${ctx.tasks.length} open tasks, ${ctx.upcomingEvents.length} events in the next seven days, ${ctx.meals.length} planned meals, and ${ctx.routines.filter(r=>Boolean(r.overdue)).length} overdue routines. Ask me about one of those areas and I can answer from Kit Hub directly.`;
-}
-
-async function runModel(c:Ctx,system:string,prompt:string){
-  let last:unknown=null;
-  for(const model of models){
-    try{
-      const started=Date.now();
-      const ai:any=await withTimeout(c.env.AI.run(model,{messages:[{role:"system",content:system},{role:"user",content:prompt}],max_tokens:450,temperature:.1}) as Promise<any>,8000);
-      const raw=clean(ai?.response??ai?.result?.response??ai?.text,5000);
-      if(raw){console.log(JSON.stringify({level:"info",event:"silvi_ai_success",requestId:requestId(c),model,durationMs:Date.now()-started}));return raw;}
-      last=new Error("EMPTY_RESPONSE");
-    }catch(error){last=error;console.error(JSON.stringify({level:"error",event:"silvi_ai_attempt_failed",requestId:requestId(c),model,message:error instanceof Error?error.message:"Unknown AI error"}));}
-  }
-  throw last instanceof Error?last:new Error("AI_UNAVAILABLE");
-}
-
-app.get("/api/v1/households/:householdId/silvi/status",async c=>{const a=await access(c);if("response" in a)return a.response;return c.json({configured:Boolean(c.env.AI),primaryModel:models[0],fallbackModel:models[1],localFallbacks:true});});
-
-app.post("/api/v1/households/:householdId/silvi/ask",async c=>{
-  const a=await access(c);if("response" in a)return a.response;
-  const body=await c.req.json().catch(()=>null) as {question?:unknown}|null,question=clean(body?.question,700);if(!question)return apiError(c,422,"VALIDATION_FAILED","Ask Silvi a household question.");
-  const ctx=await contextFor(c,a.householdId,a.user.id);
-  const direct=deterministicAnswer(question,ctx);if(direct)return c.json({answer:direct,generatedAt:new Date().toISOString(),requiresConfirmation:false,source:"kit-hub"});
-  const system="You are Silvi, Kit Hub's private household assistant. Answer only from the supplied compact household data. Never invent facts. Keep the answer concise and practical. Do not claim to have changed anything. Action proposals are temporarily disabled while the assistant connection is being stabilized. Return plain text only.";
-  const prompt=`Current user: ${a.user.name??"Household member"}\nCurrent time: ${ctx.currentTime}\nHousehold: ${JSON.stringify(ctx.household)}\nMembers: ${JSON.stringify(ctx.members)}\nTasks: ${JSON.stringify(ctx.tasks)}\nEvents: ${JSON.stringify(ctx.upcomingEvents)}\nMeals: ${JSON.stringify(ctx.meals)}\nRoutines: ${JSON.stringify(ctx.routines)}\nQuestion: ${question}`;
-  try{const answer=clean(await runModel(c,system,prompt),4000);return c.json({answer:answer||fallbackSummary(ctx),generatedAt:new Date().toISOString(),requiresConfirmation:false,source:"ai"});}
-  catch(error){console.error(JSON.stringify({level:"error",event:"silvi_ai_fallback",requestId:requestId(c),message:error instanceof Error?error.message:"Unknown AI error"}));return c.json({answer:fallbackSummary(ctx),generatedAt:new Date().toISOString(),requiresConfirmation:false,source:"kit-hub-fallback"});}
-});
-
+type HouseholdContext = { household:{name?:string;timezone?:string}|null; locale:{language?:string;region?:string;timeZone?:string}|null; currentTime:string; currentUserId:string; members:Array<{userId:string;name:string;role:string}>; tasks:TaskRow[]; upcomingEvents:EventRow[]; meals:MealRow[]; routines:RoutineRow[] };
+const models=["@cf/zai-org/glm-4.7-flash","@cf/meta/llama-3.1-8b-instruct-fast"] as const;
+function clean(value:unknown,max=500){return typeof value==="string"?value.trim().slice(0,max):""}
+function requestId(c:Ctx){return c.get("requestId")||c.req.header("cf-ray")||crypto.randomUUID()}
+function withTimeout<T>(promise:Promise<T>,ms:number){return Promise.race<T>([promise,new Promise<T>((_,reject)=>setTimeout(()=>reject(new Error("AI_TIMEOUT")),ms))])}
+function localDate(value:string){return new Intl.DateTimeFormat(undefined,{weekday:"short",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(value))}
+async function access(c:Ctx){const session=await createAuth(c.env,c.req.raw).api.getSession({headers:c.req.raw.headers});if(!session?.user)return{response:apiError(c,401,"AUTH_REQUIRED","Sign in to ask Silvi about your household.")}as const;const householdId=c.req.param("householdId")??"";const membership=householdId?await c.env.DB.prepare("SELECT role_key role FROM memberships WHERE household_id=? AND user_id=? AND status='active'").bind(householdId,session.user.id).first<{role:string}>():null;if(!membership)return{response:apiError(c,403,"HOUSEHOLD_VIEW_REQUIRED","You do not have access to this household.")}as const;return{user:session.user,householdId,role:membership.role}as const}
+async function canManageCalendar(c:Ctx,householdId:string,userId:string){const override=await c.env.DB.prepare("SELECT effect FROM member_permission_overrides WHERE household_id=? AND user_id=? AND permission_key='calendar.manage' LIMIT 1").bind(householdId,userId).first<{effect:string}>();if(override)return override.effect==="allow";const membership=await c.env.DB.prepare("SELECT role_key role FROM memberships WHERE household_id=? AND user_id=? AND status='active'").bind(householdId,userId).first<{role:string}>();if(!membership)return false;const permission=await c.env.DB.prepare("SELECT effect FROM role_permissions WHERE role_key=? AND permission_key='calendar.manage' LIMIT 1").bind(membership.role).first<{effect:string}>();return permission?.effect==="allow"}
+async function contextFor(c:Ctx,householdId:string,userId:string):Promise<HouseholdContext>{const now=new Date().toISOString(),today=now.slice(0,10),weekEnd=new Date(Date.now()+7*86400000).toISOString();const[household,locale,members,tasks,events,meals,routines]=await Promise.all([c.env.DB.prepare("SELECT name,timezone FROM households WHERE id=?").bind(householdId).first<{name:string;timezone:string}>(),c.env.DB.prepare("SELECT language,region,time_zone timeZone FROM user_locale_preferences WHERE user_id=?").bind(userId).first<{language:string;region:string;timeZone:string}>(),c.env.DB.prepare(`SELECT m.user_id userId,u.name,m.role_key role FROM memberships m JOIN "user" u ON u.id=m.user_id WHERE m.household_id=? AND m.status='active' ORDER BY u.name`).bind(householdId).all<{userId:string;name:string;role:string}>(),c.env.DB.prepare(`SELECT t.id,t.title,t.due_at dueAt,u.name assigneeName FROM everyday_tasks t LEFT JOIN "user" u ON u.id=t.assignee_user_id WHERE t.household_id=? AND t.status='todo' ORDER BY CASE WHEN t.due_at IS NULL THEN 1 ELSE 0 END,t.due_at LIMIT 15`).bind(householdId).all<TaskRow>(),c.env.DB.prepare(`SELECT id,title,starts_at startsAt,ends_at endsAt,all_day allDay,event_type eventType FROM everyday_events WHERE household_id=? AND starts_at>=? AND starts_at<=? ORDER BY starts_at LIMIT 15`).bind(householdId,now,weekEnd).all<EventRow>(),c.env.DB.prepare(`SELECT p.id,p.meal_date mealDate,p.meal_type mealType,p.title,u.name cookName FROM meal_plans p LEFT JOIN "user" u ON u.id=p.cook_user_id WHERE p.household_id=? AND p.meal_date>=? AND p.meal_date<=date(?, '+7 day') ORDER BY p.meal_date LIMIT 15`).bind(householdId,today,today).all<MealRow>(),c.env.DB.prepare(`SELECT r.id,r.title,r.next_due_at nextDueAt,u.name assigneeName,CASE WHEN r.next_due_at IS NOT NULL AND r.next_due_at<? THEN 1 ELSE 0 END overdue FROM household_routines r LEFT JOIN "user" u ON u.id=r.assignee_user_id WHERE r.household_id=? AND r.active=1 ORDER BY CASE WHEN r.next_due_at IS NULL THEN 1 ELSE 0 END,r.next_due_at LIMIT 15`).bind(now,householdId).all<RoutineRow>()]);return{household,locale:locale??null,currentTime:now,currentUserId:userId,members:members.results,tasks:tasks.results,upcomingEvents:events.results,meals:meals.results,routines:routines.results}}
+function cancellation(question:string,ctx:HouseholdContext){const q=question.toLowerCase();if(!(/cancelled|canceled|cancel|remove|delete/.test(q)&&/(appointment|event|calendar|tonight|today)/.test(q)))return null;const today=new Date(ctx.currentTime).toISOString().slice(0,10),todays=ctx.upcomingEvents.filter(e=>e.startsAt.slice(0,10)===today),candidates=todays.length?todays:ctx.upcomingEvents.slice(0,3);if(candidates.length===1){const event=candidates[0]!;return{answer:`I found “${event.title}” at ${localDate(event.startsAt)}. I can remove it from the household calendar, but only after you approve the change below.`,proposal:{id:`event-cancel:${event.id}`,type:"event.cancel",summary:`Remove “${event.title}” from the household calendar.`,payload:{eventId:event.id},expiresAt:new Date(Date.now()+10*60*1000).toISOString()}}}if(candidates.length>1)return{answer:`I found ${candidates.length} possible calendar items: ${candidates.map(e=>`“${e.title}” (${localDate(e.startsAt)})`).join(", ")}. Tell me which one you want to cancel.`};return{answer:"I could not find a matching upcoming appointment in the next seven days. Nothing was changed."}}
+function deterministicAnswer(question:string,ctx:HouseholdContext):string|null{const q=question.toLowerCase();if(/event|calendar|appointment/.test(q)&&/(week|upcoming|have|today|tonight)/.test(q)){if(!ctx.upcomingEvents.length)return"There are no upcoming calendar events in the next seven days.";return`You have ${ctx.upcomingEvents.length} upcoming event${ctx.upcomingEvents.length===1?"":"s"}: ${ctx.upcomingEvents.slice(0,6).map(e=>`“${e.title}” on ${localDate(e.startsAt)}`).join("; ")}.`}if(/task|forgotten|todo|to-do/.test(q)){if(!ctx.tasks.length)return"There are no open household tasks right now.";const overdue=ctx.tasks.filter(t=>t.dueAt&&Date.parse(t.dueAt)<Date.now());return overdue.length?`${overdue.length} open task${overdue.length===1?" looks":"s look"} overdue: ${overdue.slice(0,5).map(t=>`“${t.title}”`).join(", ")}. There are ${ctx.tasks.length} open tasks in total.`:`There are ${ctx.tasks.length} open household tasks and none of the dated ones I can see are overdue.`}if(/chore|routine|fair|balance/.test(q)){const assigned=ctx.routines.filter(r=>r.assigneeName);if(!ctx.routines.length)return"There are no active household routines to compare yet.";const counts=new Map<string,number>();for(const r of assigned)counts.set(r.assigneeName!,1+(counts.get(r.assigneeName!)??0));return`There are ${ctx.routines.length} active routines. Current assigned routine counts are ${[...counts.entries()].map(([name,count])=>`${name}: ${count}`).join(", ")||"not assigned yet"}. ${ctx.routines.filter(r=>Boolean(r.overdue)).length} are overdue.`}if(/meal|dinner|food/.test(q)){if(!ctx.meals.length)return"There are no meals planned for the next seven days yet.";return`There are ${ctx.meals.length} planned meals in the next seven days: ${ctx.meals.slice(0,6).map(m=>`${m.title} (${m.mealDate})`).join(", ")}.`}return null}
+function fallbackSummary(ctx:HouseholdContext){return`I could not reach the AI model quickly enough, but I can still read the current household summary: ${ctx.tasks.length} open tasks, ${ctx.upcomingEvents.length} events in the next seven days, ${ctx.meals.length} planned meals, and ${ctx.routines.filter(r=>Boolean(r.overdue)).length} overdue routines. Ask me about one of those areas and I can answer from Kit Hub directly.`}
+async function runModel(c:Ctx,system:string,prompt:string){let last:unknown=null;for(const model of models){try{const started=Date.now();const ai:any=await withTimeout(c.env.AI.run(model,{messages:[{role:"system",content:system},{role:"user",content:prompt}],max_tokens:450,temperature:.1})as Promise<any>,8000);const raw=clean(ai?.response??ai?.result?.response??ai?.text,5000);if(raw){console.log(JSON.stringify({level:"info",event:"silvi_ai_success",requestId:requestId(c),model,durationMs:Date.now()-started}));return raw}last=new Error("EMPTY_RESPONSE")}catch(error){last=error;console.error(JSON.stringify({level:"error",event:"silvi_ai_attempt_failed",requestId:requestId(c),model,message:error instanceof Error?error.message:"Unknown AI error"}))}}throw last instanceof Error?last:new Error("AI_UNAVAILABLE")}
+app.get("/api/v1/households/:householdId/silvi/status",async c=>{const a=await access(c);if("response"in a)return a.response;return c.json({configured:Boolean(c.env.AI),primaryModel:models[0],fallbackModel:models[1],localFallbacks:true})});
+app.post("/api/v1/households/:householdId/silvi/events/:eventId/cancel",async c=>{const a=await access(c);if("response"in a)return a.response;if(!(await canManageCalendar(c,a.householdId,a.user.id)))return apiError(c,403,"CALENDAR_MANAGE_REQUIRED","You do not have permission to remove household calendar items.");const body=await c.req.json().catch(()=>null)as{confirm?:unknown}|null;if(body?.confirm!==true)return apiError(c,422,"CONFIRMATION_REQUIRED","Confirm the calendar removal before Silvi applies it.");const eventId=c.req.param("eventId"),event=await c.env.DB.prepare("SELECT title FROM everyday_events WHERE id=? AND household_id=?").bind(eventId,a.householdId).first<{title:string}>();if(!event)return apiError(c,404,"EVENT_NOT_FOUND","That calendar item is no longer available.");await c.env.DB.prepare("DELETE FROM everyday_events WHERE id=? AND household_id=?").bind(eventId,a.householdId).run();return c.json({result:`Removed “${event.title}” from the household calendar.`})});
+app.post("/api/v1/households/:householdId/silvi/ask",async c=>{const a=await access(c);if("response"in a)return a.response;const body=await c.req.json().catch(()=>null)as{question?:unknown}|null,question=clean(body?.question,700);if(!question)return apiError(c,422,"VALIDATION_FAILED","Ask Silvi a household question.");const ctx=await contextFor(c,a.householdId,a.user.id);const cancel=cancellation(question,ctx);if(cancel)return c.json({...cancel,generatedAt:new Date().toISOString(),requiresConfirmation:Boolean(cancel.proposal),source:"kit-hub"});const direct=deterministicAnswer(question,ctx);if(direct)return c.json({answer:direct,generatedAt:new Date().toISOString(),requiresConfirmation:false,source:"kit-hub"});const system="You are Silvi, Kit Hub's private household assistant. Answer only from supplied household data. Never invent facts. Keep the answer concise and practical. Do not claim to have changed anything. Return plain text only.";const prompt=`Current user: ${a.user.name??"Household member"}\nCurrent time: ${ctx.currentTime}\nHousehold: ${JSON.stringify(ctx.household)}\nMembers: ${JSON.stringify(ctx.members)}\nTasks: ${JSON.stringify(ctx.tasks)}\nEvents: ${JSON.stringify(ctx.upcomingEvents)}\nMeals: ${JSON.stringify(ctx.meals)}\nRoutines: ${JSON.stringify(ctx.routines)}\nQuestion: ${question}`;try{const answer=clean(await runModel(c,system,prompt),4000);return c.json({answer:answer||fallbackSummary(ctx),generatedAt:new Date().toISOString(),requiresConfirmation:false,source:"ai"})}catch(error){console.error(JSON.stringify({level:"error",event:"silvi_ai_fallback",requestId:requestId(c),message:error instanceof Error?error.message:"Unknown AI error"}));return c.json({answer:fallbackSummary(ctx),generatedAt:new Date().toISOString(),requiresConfirmation:false,source:"kit-hub-fallback"})}});
 export default app;
