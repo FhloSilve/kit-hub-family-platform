@@ -40,6 +40,11 @@ app.use("*", async (c, next) => {
 });
 
 app.use("/api/v1/households/:householdId/*", protectHouseholdRoute);
+app.use("/api/v1/admin/*", async (c, next) => {
+  const access = await requirePlatformAdmin(c);
+  if (access.response) return access.response;
+  await next();
+});
 
 async function serveAdminShell(c: Context<AppBindings>) {
   const shellResponse = await c.env.ASSETS.fetch(new URL("/", c.req.url).toString());
@@ -58,9 +63,9 @@ async function serveAdminShell(c: Context<AppBindings>) {
 }
 
 app.get("/admin", serveAdminShell);app.get("/admin/", serveAdminShell);app.get("/admin/launch",serveAdminShell);app.get("/admin/launch/",serveAdminShell);app.get("/admin/feedback",serveAdminShell);app.get("/admin/feedback/",serveAdminShell);
-app.get("/api/v1/admin/releases/status", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return c.json(await fetchAdminReleaseStatus(c)); });
-app.post("/api/v1/admin/releases", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return dispatchAdminRelease(c); });
-app.post("/api/v1/admin/releases/:runId/cancel", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return cancelAdminRelease(c, Number(c.req.param("runId"))); });
+app.get("/api/v1/admin/releases/status", async (c) => c.json(await fetchAdminReleaseStatus(c)));
+app.post("/api/v1/admin/releases", async (c) => dispatchAdminRelease(c));
+app.post("/api/v1/admin/releases/:runId/cancel", async (c) => cancelAdminRelease(c, Number(c.req.param("runId"))));
 
 app.use("/api/v1/bootstrap", async (c, next) => {
   const beta = await privateBetaAccess(c);
