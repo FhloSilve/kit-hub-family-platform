@@ -4,3 +4,5 @@ BETTER_AUTH_SECRET=replace-with-a-random-secret-at-least-32-characters
 KIT_HUB_ADMIN_EMAILS=you@example.com
 # Fine-grained GitHub token with Actions: Read and write for this repository.
 GITHUB_RELEASE_TOKEN=replace-with-github-actions-token
+# Geoapify API key used by the Worker for Calendar place/address autocomplete.
+GEOAPIFY_API_KEY=replace-with-geoapify-api-key
