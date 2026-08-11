@@ -1,11 +1,16 @@
 /* Use the extra room available in the desktop app without changing phone/tablet layouts. */
 @media (min-width: 1180px) {
-  html { font-size: 17px; }
-  .app-shell { grid-template-columns: 260px minmax(0, 1fr) !important; }
+  html { font-size: 18px; }
+  .app-shell { grid-template-columns: 270px minmax(0, 1fr) !important; }
   .app-main, .main-content, .dashboard-main { max-width: none !important; }
-  .dashboard-content, .dashboard-page, .page-content { width: calc(100% - 48px) !important; max-width: 1880px !important; margin-inline: auto !important; }
+  .today-page.module-page,.admin-page,.dashboard-content,.dashboard-page,.page-content { width: calc(100% - 28px) !important; max-width: none !important; margin-inline: auto !important; }
+  .today-page.module-page { padding-inline: clamp(24px,2.2vw,44px) !important; }
+  .module-heading h1,.today-heading h1{font-size:clamp(2.2rem,3vw,3.6rem)!important}
+  .module-heading p,.today-heading p{font-size:1rem!important;line-height:1.55}
   .dashboard-widget-grid { gap: 24px !important; align-items:stretch !important; }
   .dashboard-widget { padding: 24px !important; min-height:310px; }
+  .dashboard-widget h2,.dashboard-widget h3{font-size:1.35rem!important}
+  .dashboard-widget p,.dashboard-widget strong,.dashboard-widget button,.dashboard-widget small{font-size:max(.82rem,inherit)}
   .dashboard-widget-height--compact { min-height:230px !important; }
   .dashboard-widget-height--normal { min-height:330px !important; }
   .dashboard-widget-height--tall { min-height:470px !important; }
@@ -13,21 +18,34 @@
   .dashboard-widget-height--normal .family-note-list,.dashboard-widget-height--normal .event-list,.dashboard-widget-height--normal .task-list,.dashboard-widget-height--normal .home-grocery-preview{max-height:260px!important}
   .dashboard-widget-height--tall .family-note-list,.dashboard-widget-height--tall .event-list,.dashboard-widget-height--tall .task-list,.dashboard-widget-height--tall .home-grocery-preview{max-height:400px!important}
   .dashboard-widget--note .dashboard-widget__content,.dashboard-widget--focus .dashboard-widget__content,.dashboard-widget--occasions .dashboard-widget__content{padding:22px!important}
-  .sidebar-nav button { min-height: 50px; font-size: 1rem; }
-  .topbar button, .button { min-height: 48px; }
+  .sidebar-nav button { min-height: 52px; font-size: 1.02rem; }
+  .topbar button, .button { min-height: 50px; font-size:.95rem; }
   .empty-state.empty-state--clickable { min-height: 220px; }
-  .empty-state.empty-state--clickable > strong { font-size: .86rem; }
-  .empty-state.empty-state--clickable > span { min-height: 40px; padding-inline: 16px; font-size: .76rem; }
-  .dashboard-widget-add{min-height:44px!important;font-size:.76rem!important}
-  .calendar-v2-weekday { font-size: .76rem; }
-  .calendar-v2-day { min-height: 155px; padding: 13px; }
-  .calendar-v2-event, .calendar-v2-more { font-size: .74rem; }
-  .notification-popover article small { font-size: .8rem; }
+  .empty-state.empty-state--clickable > strong { font-size: .9rem; }
+  .empty-state.empty-state--clickable > span { min-height: 40px; padding-inline: 16px; font-size: .8rem; }
+  .dashboard-widget-add{min-height:44px!important;font-size:.8rem!important}
+  .module-card{padding:24px!important}
+  .task-row,.grocery-row{min-height:58px;font-size:1rem}
+  .calendar-v2-weekday { font-size: .8rem; }
+  .calendar-v2-day { min-height: 170px; padding: 14px; }
+  .calendar-v2-event, .calendar-v2-more { font-size: .78rem; }
+  .calendar-v2-event span{font-weight:700;opacity:.75}
+  .calendar-v2-time-grid{display:grid;grid-template-columns:88px repeat(7,minmax(130px,1fr));border:1px solid var(--line);border-radius:20px;overflow:auto;background:var(--paper);box-shadow:var(--shadow)}
+  .calendar-v2-time-grid.is-day{grid-template-columns:88px minmax(520px,1fr)}
+  .calendar-v2-time-corner,.calendar-v2-time-dayhead,.calendar-v2-all-day-label,.calendar-v2-all-day-cell,.calendar-v2-hour-label,.calendar-v2-hour-cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .calendar-v2-time-corner,.calendar-v2-all-day-label,.calendar-v2-hour-label{padding:10px;color:var(--ink-soft);font-size:.75rem;font-weight:850;background:color-mix(in srgb,var(--paper) 90%,var(--sage) 10%)}
+  .calendar-v2-time-dayhead{display:grid;gap:2px;padding:12px;text-align:center;background:color-mix(in srgb,var(--paper) 86%,var(--sage) 14%)}
+  .calendar-v2-time-dayhead.is-today{background:color-mix(in srgb,var(--paper) 70%,var(--sage) 30%)}
+  .calendar-v2-time-dayhead strong{font-size:.9rem}.calendar-v2-time-dayhead span{font-size:.72rem;color:var(--ink-soft)}
+  .calendar-v2-all-day-cell{min-height:52px;padding:6px;display:grid;gap:5px}.calendar-v2-all-day-cell button{border:0;border-radius:8px;padding:7px 9px;background:color-mix(in srgb,var(--paper) 72%,var(--coral) 28%);color:var(--ink);text-align:left;font-weight:800}
+  .calendar-v2-hour-label{min-height:76px;text-align:right}.calendar-v2-hour-cell{position:relative;min-height:76px;padding:5px;background:var(--paper)}.calendar-v2-hour-cell.is-today{background:color-mix(in srgb,var(--paper) 94%,var(--sage) 6%)}
+  .calendar-v2-hour-event{width:100%;display:grid;gap:2px;border:0;border-left:4px solid var(--coral);border-radius:8px;padding:7px 9px;background:color-mix(in srgb,var(--paper) 70%,var(--coral) 30%);color:var(--ink);text-align:left}.calendar-v2-hour-event span,.calendar-v2-hour-event small{font-size:.7rem}.calendar-v2-hour-event strong{font-size:.82rem}
+  .notification-popover article small { font-size: .82rem; }
 }
 @media (min-width: 1500px) {
-  html { font-size: 18px; }
-  .app-shell { grid-template-columns: 280px minmax(0, 1fr) !important; }
-  .dashboard-content, .dashboard-page, .page-content { width: calc(100% - 64px) !important; max-width: 2100px !important; }
+  html { font-size: 19px; }
+  .app-shell { grid-template-columns: 290px minmax(0, 1fr) !important; }
+  .today-page.module-page,.admin-page,.dashboard-content,.dashboard-page,.page-content { width: calc(100% - 36px) !important; }
   .dashboard-widget-grid { gap: 28px !important; }
   .dashboard-widget { min-height:340px; padding:26px!important; }
   .dashboard-widget-height--compact { min-height:250px !important; }
@@ -35,9 +53,9 @@
   .dashboard-widget-height--tall { min-height:520px !important; }
 }
 @media (min-width: 1900px) {
-  html { font-size: 19px; }
-  .app-shell { grid-template-columns: 300px minmax(0, 1fr) !important; }
-  .dashboard-content, .dashboard-page, .page-content { width: calc(100% - 80px) !important; max-width: 2360px !important; }
+  html { font-size: 20px; }
+  .app-shell { grid-template-columns: 310px minmax(0, 1fr) !important; }
+  .today-page.module-page,.admin-page,.dashboard-content,.dashboard-page,.page-content { width: calc(100% - 44px) !important; }
   .dashboard-widget-grid { gap: 30px !important; }
   .dashboard-widget { min-height:370px; }
   .dashboard-widget-height--normal { min-height:390px !important; }
