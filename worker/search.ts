@@ -25,11 +25,13 @@ app.get("/api/v1/places/autocomplete",async c=>{
   url.searchParams.set("format","json");
   url.searchParams.set("limit","6");
   url.searchParams.set("apiKey",apiKey);
-  const lang=(c.req.header("accept-language")||"en").split(",")[0]?.slice(0,5);
-  if(lang)url.searchParams.set("lang",lang);
+  const requestedLanguage=(c.req.header("accept-language")||"en").split(",")[0]||"en";
+  const lang=(requestedLanguage.match(/[A-Za-z]{2}/)?.[0]||"en").toLowerCase();
+  url.searchParams.set("lang",lang);
   let response:Response;
   try{response=await fetch(url.toString(),{headers:{accept:"application/json"}})}catch{return apiError(c,500,"PLACE_SEARCH_NETWORK_FAILED","Kit Hub could not reach Geoapify. Try place suggestions again in a moment.")}
   if(!response.ok){
+    if(response.status===400)return apiError(c,500,"PLACE_SEARCH_REQUEST_REJECTED","Geoapify rejected the place-search request. Kit Hub has corrected the request format; run Sync + release + verify if you still see this message.");
     if(response.status===401||response.status===403)return apiError(c,500,"PLACE_SEARCH_KEY_REJECTED","Geoapify rejected the configured API key. Check the GEOAPIFY_API_KEY Worker secret and its Geoapify restrictions.");
     if(response.status===429)return apiError(c,500,"PLACE_SEARCH_RATE_LIMITED","Geoapify is temporarily rate-limiting place suggestions. Try again shortly.");
     return apiError(c,500,"PLACE_SEARCH_FAILED","Place suggestions are temporarily unavailable.");
