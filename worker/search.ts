@@ -14,6 +14,8 @@ async function access(c:Ctx, householdId?:string){
   return {user:session.user};
 }
 
+function language(c:Ctx){const raw=(c.req.header("accept-language")||"en").split(",")[0]||"en";const code=raw.split("-")[0]?.trim().toLowerCase();return code&&/^[a-z]{2}$/.test(code)?code:"en";}
+
 app.get("/api/v1/places/autocomplete",async c=>{
   const a=await access(c); if("response" in a)return a.response;
   const q=(c.req.query("q")||"").trim();
@@ -25,13 +27,11 @@ app.get("/api/v1/places/autocomplete",async c=>{
   url.searchParams.set("format","json");
   url.searchParams.set("limit","6");
   url.searchParams.set("apiKey",apiKey);
-  const requestedLanguage=(c.req.header("accept-language")||"en").split(",")[0]||"en";
-  const lang=(requestedLanguage.match(/[A-Za-z]{2}/)?.[0]||"en").toLowerCase();
-  url.searchParams.set("lang",lang);
+  url.searchParams.set("lang",language(c));
   let response:Response;
   try{response=await fetch(url.toString(),{headers:{accept:"application/json"}})}catch{return apiError(c,500,"PLACE_SEARCH_NETWORK_FAILED","Kit Hub could not reach Geoapify. Try place suggestions again in a moment.")}
   if(!response.ok){
-    if(response.status===400)return apiError(c,500,"PLACE_SEARCH_REQUEST_REJECTED","Geoapify rejected the place-search request. Kit Hub has corrected the request format; run Sync + release + verify if you still see this message.");
+    if(response.status===400)return apiError(c,500,"PLACE_SEARCH_REQUEST_REJECTED","Geoapify rejected the place-search request. Kit Hub will keep the location field available for manual entry.");
     if(response.status===401||response.status===403)return apiError(c,500,"PLACE_SEARCH_KEY_REJECTED","Geoapify rejected the configured API key. Check the GEOAPIFY_API_KEY Worker secret and its Geoapify restrictions.");
     if(response.status===429)return apiError(c,500,"PLACE_SEARCH_RATE_LIMITED","Geoapify is temporarily rate-limiting place suggestions. Try again shortly.");
     return apiError(c,500,"PLACE_SEARCH_FAILED","Place suggestions are temporarily unavailable.");
@@ -45,6 +45,24 @@ app.get("/api/v1/places/autocomplete",async c=>{
     city:item.city||item.town||item.village||null,country:item.country||null,
   })).filter((item:any)=>item.label&&Number.isFinite(item.latitude)&&Number.isFinite(item.longitude));
   return c.json({results});
+});
+
+app.get("/api/v1/places/reverse",async c=>{
+  const a=await access(c);if("response" in a)return a.response;
+  const lat=Number(c.req.query("lat")),lon=Number(c.req.query("lon"));
+  if(!Number.isFinite(lat)||lat< -90||lat>90||!Number.isFinite(lon)||lon< -180||lon>180)return apiError(c,422,"INVALID_LOCATION","Kit Hub could not label that shared location.");
+  const apiKey=c.env.GEOAPIFY_API_KEY?.trim();
+  if(!apiKey)return c.json({label:null,city:null,country:null});
+  const url=new URL("https://api.geoapify.com/v1/geocode/reverse");
+  url.searchParams.set("lat",String(lat));url.searchParams.set("lon",String(lon));url.searchParams.set("format","json");url.searchParams.set("limit","1");url.searchParams.set("lang",language(c));url.searchParams.set("apiKey",apiKey);
+  try{
+    const response=await fetch(url.toString(),{headers:{accept:"application/json"}});if(!response.ok)return c.json({label:null,city:null,country:null});
+    const body=await response.json().catch(()=>({results:[]})) as any;const item=Array.isArray(body.results)?body.results[0]:null;
+    if(!item)return c.json({label:null,city:null,country:null});
+    const city=String(item.city||item.town||item.village||item.county||"").trim()||null;const country=String(item.country||"").trim()||null;
+    const label=String(city&&country?`${city}, ${country}`:city||country||item.formatted||"").trim().slice(0,180)||null;
+    return c.json({label,city,country});
+  }catch{return c.json({label:null,city:null,country:null});}
 });
 
 app.get("/api/v1/households/:householdId/search",async c=>{
