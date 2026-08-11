@@ -6,25 +6,16 @@ import "../mobile-topbar-actions.css";
 export function MobileTopbarActions(){
   const[target,setTarget]=useState<HTMLElement|null>(null);
   const[profileTarget,setProfileTarget]=useState<HTMLElement|null>(null);
-  const[profileInitial,setProfileInitial]=useState("?");
   const[dark,setDark]=useState(()=>document.documentElement.dataset.kitAppearance==="dark");
   useEffect(()=>{
-    let profileHost:HTMLElement|null=null;
     const locate=()=>{
       setTarget(document.querySelector<HTMLElement>(".topbar-actions"));
       setProfileTarget(document.querySelector<HTMLElement>(".profile-popover"));
-      const profileButton=document.querySelector<HTMLButtonElement>(".profile-button");
-      const nextHost=profileButton?.parentElement as HTMLElement|null;
-      if(profileHost&&profileHost!==nextHost)profileHost.classList.remove("mobile-profile-host");
-      profileHost=nextHost;
-      profileHost?.classList.add("mobile-profile-host");
-      const initial=profileButton?.querySelector("span")?.textContent?.trim();
-      if(initial)setProfileInitial(initial.slice(0,1).toUpperCase());
     };
     locate();
     const observer=new MutationObserver(locate);
     observer.observe(document.body,{childList:true,subtree:true});
-    return()=>{observer.disconnect();profileHost?.classList.remove("mobile-profile-host")};
+    return()=>observer.disconnect();
   },[]);
   useEffect(()=>{
     const sync=(event:Event)=>setDark(Boolean((event as CustomEvent<{dark?:boolean}>).detail?.dark));
@@ -36,13 +27,11 @@ export function MobileTopbarActions(){
   const openSilvi=()=>document.querySelector<HTMLButtonElement>(".silvi-launcher")?.click();
   const openRoutines=()=>document.querySelector<HTMLButtonElement>(".routines-launcher")?.click();
   const quickAdd=()=>document.querySelector<HTMLButtonElement>(".mobile-quick-add")?.click();
-  const openProfile=()=>document.querySelector<HTMLButtonElement>(".profile-button")?.click();
   return <>
     {createPortal(<div className="mobile-topbar-utilities" aria-label="Quick actions">
       <button type="button" className="mobile-topbar-utility" onClick={toggleAppearance} aria-label={dark?"Switch to light mode":"Switch to dark mode"}>{dark?<Sun/>:<Moon/>}</button>
       <button type="button" className="mobile-topbar-utility mobile-topbar-utility--silvi" onClick={openSilvi} aria-label="Open Silvi"><img src="/silvi-geometric.svg" alt=""/></button>
       <button type="button" className="mobile-topbar-utility mobile-topbar-utility--add" onClick={quickAdd} aria-label="Quick add"><Plus/></button>
-      <button type="button" className="mobile-topbar-utility mobile-topbar-profile-proxy" onClick={openProfile} aria-label="Open profile menu"><span>{profileInitial}</span></button>
     </div>,target)}
     {profileTarget&&createPortal(<button type="button" className="mobile-profile-routines" onClick={openRoutines}><Repeat2/>Household rhythm</button>,profileTarget)}
   </>;
