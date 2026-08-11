@@ -1,0 +1,24 @@
+/* Use the extra room available in the desktop app without changing phone/tablet layouts. */
+@media (min-width: 1180px) {
+  html { font-size: 17px; }
+  .app-shell { grid-template-columns: 260px minmax(0, 1fr) !important; }
+  .app-main, .main-content, .dashboard-main { max-width: none !important; }
+  .dashboard-content, .dashboard-page, .page-content { width: 100% !important; max-width: 1680px !important; margin-inline: auto !important; }
+  .dashboard-widget-grid { gap: 22px !important; }
+  .dashboard-widget { padding: 22px !important; }
+  .sidebar-nav button { min-height: 48px; font-size: 1rem; }
+  .topbar button, .button { min-height: 48px; }
+  .empty-state.empty-state--clickable { min-height: 190px; }
+  .empty-state.empty-state--clickable > strong { font-size: .82rem; }
+  .empty-state.empty-state--clickable > span { min-height: 38px; padding-inline: 15px; font-size: .72rem; }
+  .calendar-v2-weekday { font-size: .72rem; }
+  .calendar-v2-day { min-height: 145px; padding: 12px; }
+  .calendar-v2-event, .calendar-v2-more { font-size: .7rem; }
+  .notification-popover article small { font-size: .78rem; }
+}
+@media (min-width: 1500px) {
+  html { font-size: 18px; }
+  .app-shell { grid-template-columns: 280px minmax(0, 1fr) !important; }
+  .dashboard-content, .dashboard-page, .page-content { max-width: 1840px !important; }
+  .dashboard-widget-grid { gap: 26px !important; }
+}
