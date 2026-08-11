@@ -14,6 +14,8 @@ import "./mobile-family-hub.css";
 import "./brand-icons.css";
 import "./dark-mode.css";
 import "./mobile-layout-fixes.css";
+import "./dark-mode-polish-v2.css";
+import "./admin-polish-v2.css";
 
 const storedAppearance = localStorage.getItem("kit-hub-appearance");
 const appearance = storedAppearance === "light" || storedAppearance === "dark" || storedAppearance === "system" ? storedAppearance : "system";
