@@ -25,8 +25,10 @@ export function AppearanceControl() {
   const [dark, setDark] = useState(() => resolvedDark(preferredAppearance()));
   const [settingsNav, setSettingsNav] = useState<HTMLElement | null>(null);
   const [settingsBody, setSettingsBody] = useState<HTMLElement | null>(null);
+  const [topbarActions, setTopbarActions] = useState<HTMLElement | null>(null);
   const [showPanel, setShowPanel] = useState(false);
-  const isAdmin = window.location.pathname === "/admin" || window.location.pathname === "/admin/";
+  const isAdmin = window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/");
+  const isFeedback = window.location.pathname.startsWith("/admin/feedback");
 
   useEffect(() => { applyAppearance(mode); setDark(resolvedDark(mode)); }, [mode]);
   useEffect(() => {
@@ -40,6 +42,7 @@ export function AppearanceControl() {
     const locate = () => {
       setSettingsNav(document.querySelector<HTMLElement>(".family-tools > nav"));
       setSettingsBody(document.querySelector<HTMLElement>(".family-tools__body"));
+      setTopbarActions(document.querySelector<HTMLElement>(".topbar-actions"));
     };
     locate();
     const observer = new MutationObserver(locate);
@@ -68,28 +71,19 @@ export function AppearanceControl() {
   ], []);
   const change = (next: Appearance) => { setMode(next); setDark(resolvedDark(next)); };
   const quickToggle = () => change(dark ? "light" : "dark");
-  const scrollToFeedback = () => document.querySelector<HTMLElement>(".admin-feedback-board")?.scrollIntoView({ behavior: "smooth", block: "start" });
   const toggleAdminColour = () => document.querySelector<HTMLElement>(".admin-toolbar")?.classList.toggle("is-open");
+  const appearanceButton = <button className={`appearance-quick-toggle ${isAdmin ? "appearance-admin-toggle" : ""}`} type="button" onClick={quickToggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Switch to light mode" : "Switch to dark mode"}>{dark ? <Sun /> : <Moon />}</button>;
 
   return <>
-    <button className={`appearance-quick-toggle ${isAdmin ? "appearance-admin-toggle" : ""}`} type="button" onClick={quickToggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Switch to light mode" : "Switch to dark mode"}>
-      {dark ? <Sun /> : <Moon />}
-    </button>
+    {isAdmin ? appearanceButton : topbarActions ? createPortal(appearanceButton, topbarActions) : appearanceButton}
     {isAdmin && <nav className="admin-mobile-nav" aria-label="Admin navigation">
-      <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Rocket/><span>Release</span></button>
-      <button type="button" onClick={scrollToFeedback}><MessageSquareWarning/><span>Feedback</span></button>
+      <button className={!isFeedback?"is-active":""} type="button" onClick={() => { window.location.href="/admin"; }}><Rocket/><span>Release</span></button>
+      <button className={isFeedback?"is-active":""} type="button" onClick={() => { window.location.href="/admin/feedback"; }}><MessageSquareWarning/><span>Feedback</span></button>
       <button className="admin-mobile-colour" type="button" onClick={toggleAdminColour}><Palette/><span>Colour</span></button>
       <button className="admin-mobile-appearance" type="button" onClick={quickToggle}>{dark?<Sun/>:<Moon/>}<span>{dark?"Light":"Dark"}</span></button>
       <button type="button" onClick={() => { window.location.href = "/"; }}><House/><span>Kit Hub</span></button>
     </nav>}
-    {settingsNav && createPortal(
-      <button type="button" className={`appearance-settings-tab ${showPanel ? "is-active" : ""}`} onClick={() => setShowPanel(true)}>
-        {dark ? <Moon /> : <Sun />}<span>Appearance</span>
-      </button>, settingsNav)}
-    {settingsBody && showPanel && createPortal(
-      <section className="appearance-settings-panel">
-        <div className="appearance-settings-heading"><small>APPEARANCE</small><h3>Light, dark or device</h3><p>This choice belongs to you. Your household colour theme stays the same; Kit Hub simply adapts it for light or dark surfaces.</p></div>
-        <div className="appearance-settings-options">{options.map(({ value, label, text, Icon }) => <button key={value} type="button" className={mode === value ? "is-selected" : ""} onClick={() => change(value)}><span><Icon /></span><div><strong>{label}</strong><small>{text}</small></div><i aria-hidden="true" /></button>)}</div>
-      </section>, settingsBody)}
+    {settingsNav && createPortal(<button type="button" className={`appearance-settings-tab ${showPanel ? "is-active" : ""}`} onClick={() => setShowPanel(true)}>{dark ? <Moon /> : <Sun />}<span>Appearance</span></button>, settingsNav)}
+    {settingsBody && showPanel && createPortal(<section className="appearance-settings-panel"><div className="appearance-settings-heading"><small>APPEARANCE</small><h3>Light, dark or device</h3><p>This choice belongs to you. Your household colour theme stays the same; Kit Hub simply adapts it for light or dark surfaces.</p></div><div className="appearance-settings-options">{options.map(({ value, label, text, Icon }) => <button key={value} type="button" className={mode === value ? "is-selected" : ""} onClick={() => change(value)}><span><Icon /></span><div><strong>{label}</strong><small>{text}</small></div><i aria-hidden="true" /></button>)}</div></section>, settingsBody)}
   </>;
 }
