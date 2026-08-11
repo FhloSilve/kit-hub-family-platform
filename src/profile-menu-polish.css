@@ -18,4 +18,13 @@
 :root[data-kit-appearance="dark"] .profile-popover button:hover,:root[data-kit-appearance="dark"] .profile-popover button:focus-visible,:root[data-kit-appearance="dark"] .profile-popover button:active{background:color-mix(in srgb,var(--theme-primary) 13%,#2b3237 87%)!important}
 :root[data-kit-appearance="dark"] .profile-popover button:last-child{color:#f39a84!important;border-top-color:#465057!important}
 :root[data-kit-appearance="dark"] .profile-popover button:last-child svg{color:#f39a84!important}
-@media(max-width:620px){.profile-menu{z-index:700}.profile-popover{position:fixed!important;z-index:900!important;right:12px!important;left:12px!important;top:auto!important;bottom:calc(84px + env(safe-area-inset-bottom))!important;width:auto!important;max-width:none!important;padding:12px!important;border-radius:22px!important}.profile-popover>p:first-child{padding:10px 10px 15px!important}.profile-popover button{min-height:52px!important;font-size:15px!important}.profile-popover button svg{width:19px!important;height:19px!important}}
+@media(max-width:760px){
+  .app-topbar{overflow:visible!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .topbar-actions{overflow:visible!important;position:relative!important}
+  .profile-menu{position:relative!important;z-index:1000!important;overflow:visible!important}
+  .profile-menu:has(.profile-popover){z-index:1200!important}
+  .profile-popover{position:absolute!important;z-index:1300!important;right:0!important;left:auto!important;top:calc(100% + 10px)!important;bottom:auto!important;width:min(340px,calc(100vw - 24px))!important;min-width:0!important;max-width:none!important;max-height:calc(100dvh - 110px)!important;overflow:auto!important;padding:12px!important;border-radius:22px!important;transform:none!important}
+  .profile-popover>p:first-child{padding:10px 10px 15px!important}
+  .profile-popover button{min-height:52px!important;font-size:15px!important}
+  .profile-popover button svg{width:19px!important;height:19px!important}
+}
