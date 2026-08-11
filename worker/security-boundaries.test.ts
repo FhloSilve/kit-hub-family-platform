@@ -13,6 +13,12 @@ describe("private beta security boundaries",()=>{
     expect(security).toContain("HOUSEHOLD_VIEW_REQUIRED");
   });
 
+  it("puts every admin API behind the platform-admin allowlist",()=>{
+    const entry=read("worker/entry.ts");
+    expect(entry).toContain('app.use("/api/v1/admin/*"');
+    expect(entry).toContain("requirePlatformAdmin(c)");
+  });
+
   it("keeps Silvi changes behind explicit, scoped confirmation",()=>{
     const silvi=read("worker/silvi.ts");
     expect(silvi).toContain('body?.confirm !== true');
@@ -30,6 +36,14 @@ describe("private beta security boundaries",()=>{
     expect(security).toContain('key: "silvi-action"');
     expect(security).toContain('key: "household-write"');
     expect(security).toContain("api_security_rate_limits");
+    expect(security).toContain('apiError(c, 429, "RATE_LIMITED"');
+  });
+
+  it("applies baseline response security headers",()=>{
+    const security=read("worker/security.ts");
+    expect(security).toContain('"x-frame-options", "DENY"');
+    expect(security).toContain('"x-content-type-options", "nosniff"');
+    expect(security).toContain('"cross-origin-opener-policy", "same-origin"');
   });
 
   it("keeps successful household edits from silently leaving stale screens",()=>{
