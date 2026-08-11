@@ -1,5 +1,6 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import react from "@vitejs/plugin-react";
+import { resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 
 function kitHubBuildStamp(): Plugin {
@@ -23,4 +24,12 @@ function kitHubBuildStamp(): Plugin {
 
 export default defineConfig({
   plugins: [react(), kitHubBuildStamp(), cloudflare()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        admin: resolve(__dirname, "admin.html"),
+      },
+    },
+  },
 });
