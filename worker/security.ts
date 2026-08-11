@@ -27,7 +27,7 @@ async function consumeLimit(c: SecurityContext, userId: string, householdId: str
   if (count > limit.max) {
     const retrySeconds = Math.max(1, Math.ceil(((windowStart + 1) * limit.windowMs - Date.now()) / 1000));
     c.header("retry-after", String(retrySeconds));
-    return apiError(c, 409, "RATE_LIMITED", "Too many changes were requested in a short period. Please wait a moment and try again.");
+    return apiError(c, 429, "RATE_LIMITED", "Too many changes were requested in a short period. Please wait a moment and try again.");
   }
   if (Math.random() < 0.02) {
     void c.env.DB.prepare("DELETE FROM api_security_rate_limits WHERE updated_at<datetime('now','-2 day')").run().catch(() => undefined);
