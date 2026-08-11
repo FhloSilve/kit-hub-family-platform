@@ -16,8 +16,9 @@ import search from "./search";
 import presence from "./presence";
 import coordinationActions from "./coordination-actions";
 import releaseState from "./release-state";
+import productOps, { markBetaTesterActive, privateBetaAccess } from "./product-ops";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
-import type { AppBindings } from "./http";
+import { apiError, type AppBindings } from "./http";
 
 export { HouseholdRealtime };
 const app = new Hono<AppBindings>();
@@ -42,5 +43,13 @@ app.get("/admin", serveAdminShell);app.get("/admin/", serveAdminShell);
 app.get("/api/v1/admin/releases/status", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return c.json(await fetchAdminReleaseStatus(c)); });
 app.post("/api/v1/admin/releases", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return dispatchAdminRelease(c); });
 app.post("/api/v1/admin/releases/:runId/cancel", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return cancelAdminRelease(c, Number(c.req.param("runId"))); });
-app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
+
+app.use("/api/v1/bootstrap", async (c, next) => {
+  const beta = await privateBetaAccess(c);
+  if (!beta.allowed) return apiError(c, 403, "PRIVATE_BETA_REQUIRED", "Kit Hub is currently in private beta. Ask the platform administrator to add your email to the beta tester list, then sign in again.");
+  if (beta.session?.user?.email) await markBetaTesterActive(c, beta.session.user.email);
+  await next();
+});
+
+app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
 export default app;
