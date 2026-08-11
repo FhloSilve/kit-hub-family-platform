@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Kit Hub Admin tech K with lock">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#24272b"/><stop offset="1" stop-color="#0f1114"/></linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".28" stop-color="#b7bbc1"/><stop offset=".58" stop-color="#f6f7f8"/><stop offset="1" stop-color="#777d84"/></linearGradient>
+    <linearGradient id="scarlet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff744d"/><stop offset="1" stop-color="#bb3826"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-opacity=".3"/></filter>
+  </defs>
+  <rect x="10" y="10" width="236" height="236" rx="48" fill="url(#panel)" stroke="#3b3f44" stroke-width="4"/>
+  <g filter="url(#shadow)">
+    <path d="M62 48h30v65l59-65h39l-66 72 70 88h-40l-51-66-11 12v54H62Z" fill="url(#steel)" stroke="#6d7278" stroke-width="3"/>
+    <path d="m124 120 28-30 24 30-27 31Z" fill="url(#scarlet)" opacity=".95"/>
+    <g transform="translate(147 142)">
+      <rect x="0" y="34" width="78" height="60" rx="13" fill="url(#steel)" stroke="#5e6369" stroke-width="4"/>
+      <path d="M16 37V24C16 7 26-3 39-3S62 7 62 24v13" fill="none" stroke="url(#scarlet)" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="39" cy="62" r="8" fill="#202327"/>
+      <path d="M36 68h6v14h-6Z" fill="#202327"/>
+    </g>
+  </g>
+</svg>
