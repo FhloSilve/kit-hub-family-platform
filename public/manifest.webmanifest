@@ -1,8 +1,10 @@
 {
+  "id": "/",
   "name": "Kit Hub Family Platform",
   "short_name": "Kit Hub",
   "description": "Your family's warm, shared digital home for everyday life.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f8f5ed",
   "theme_color": "#f6efe2",
