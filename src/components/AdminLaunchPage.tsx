@@ -1,5 +1,6 @@
 import { ArrowLeft, Gauge, MessageSquareText, Rocket } from "lucide-react";
 import { AdminAdoptionPanel } from "./AdminAdoptionPanel";
+import { AdminBetaReadinessPanel } from "./AdminBetaReadinessPanel";
 import { AdminLaunchReadiness } from "./AdminLaunchReadiness";
 import "../admin-launch-readiness.css";
 
@@ -15,5 +16,6 @@ export function AdminLaunchPage({onBack}:{onBack:()=>void}){
     </header>
     <AdminLaunchReadiness/>
     <AdminAdoptionPanel/>
+    <AdminBetaReadinessPanel/>
   </main>
 }
