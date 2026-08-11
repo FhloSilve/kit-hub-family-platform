@@ -18,8 +18,8 @@ app.get("/api/v1/places/autocomplete",async c=>{
   const a=await access(c); if("response" in a)return a.response;
   const q=(c.req.query("q")||"").trim();
   if(q.length<3)return c.json({results:[]});
-  const apiKey=(c.env as unknown as {GEOAPIFY_API_KEY?:string}).GEOAPIFY_API_KEY;
-  if(!apiKey)return apiError(c,500,"PLACE_SEARCH_NOT_CONFIGURED","Place search needs the GEOAPIFY_API_KEY secret in production.");
+  const apiKey=c.env.GEOAPIFY_API_KEY?.trim();
+  if(!apiKey)return apiError(c,500,"PLACE_SEARCH_NOT_CONFIGURED","Place suggestions are not configured yet. Add the GEOAPIFY_API_KEY Worker secret, then run Sync + release + verify again.");
   const url=new URL("https://api.geoapify.com/v1/geocode/autocomplete");
   url.searchParams.set("text",q.slice(0,180));
   url.searchParams.set("format","json");
@@ -27,8 +27,13 @@ app.get("/api/v1/places/autocomplete",async c=>{
   url.searchParams.set("apiKey",apiKey);
   const lang=(c.req.header("accept-language")||"en").split(",")[0]?.slice(0,5);
   if(lang)url.searchParams.set("lang",lang);
-  const response=await fetch(url.toString(),{headers:{accept:"application/json"}});
-  if(!response.ok)return apiError(c,500,"PLACE_SEARCH_FAILED","Place suggestions are temporarily unavailable.");
+  let response:Response;
+  try{response=await fetch(url.toString(),{headers:{accept:"application/json"}})}catch{return apiError(c,500,"PLACE_SEARCH_NETWORK_FAILED","Kit Hub could not reach Geoapify. Try place suggestions again in a moment.")}
+  if(!response.ok){
+    if(response.status===401||response.status===403)return apiError(c,500,"PLACE_SEARCH_KEY_REJECTED","Geoapify rejected the configured API key. Check the GEOAPIFY_API_KEY Worker secret and its Geoapify restrictions.");
+    if(response.status===429)return apiError(c,500,"PLACE_SEARCH_RATE_LIMITED","Geoapify is temporarily rate-limiting place suggestions. Try again shortly.");
+    return apiError(c,500,"PLACE_SEARCH_FAILED","Place suggestions are temporarily unavailable.");
+  }
   const body=await response.json().catch(()=>({results:[]})) as any;
   const results=(Array.isArray(body.results)?body.results:[]).slice(0,6).map((item:any)=>({
     id:String(item.place_id||`${item.lat},${item.lon}`),
