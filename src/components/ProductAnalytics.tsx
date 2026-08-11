@@ -45,7 +45,7 @@ export function ProductAnalytics({ householdId }: { householdId: string }) {
 
     const click = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
-      const navButton = target?.closest<HTMLButtonElement>(".sidebar-nav button");
+      const navButton = target?.closest<HTMLButtonElement>(".sidebar-nav button,.mobile-nav button");
       if (navButton) {
         const label = navButton.textContent?.trim().toLowerCase() ?? "";
         const match = sidebarEvents.find(([term]) => label.includes(term));
@@ -54,6 +54,7 @@ export function ProductAnalytics({ householdId }: { householdId: string }) {
       if (target?.closest(".routines-launcher")) record("routines_view", `routines-${Date.now()}`);
       if (target?.closest(".search-launcher,.global-search-launcher")) record("search_used", `search-${Date.now()}`);
       if (target?.closest(".feedback-launcher")) record("feedback_opened", `feedback-${Date.now()}`);
+      if (target?.closest(".silvi-launcher")) record("silvi_opened", `silvi-click-${Date.now()}`);
     };
     document.addEventListener("click", click);
 
