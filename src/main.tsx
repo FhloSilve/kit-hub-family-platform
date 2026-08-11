@@ -11,6 +11,7 @@ import "./dashboard-polish.css";
 import "./family-tools.css";
 import "./feedback.css";
 import "./mobile-family-hub.css";
+import "./brand-icons.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
