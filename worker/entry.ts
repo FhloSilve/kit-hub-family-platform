@@ -25,9 +25,20 @@ import adoptionInsights from "./adoption-insights";
 import betaReadiness from "./beta-readiness";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import { apiError, type AppBindings } from "./http";
+import { applySecurityHeaders, protectHouseholdRoute } from "./security";
 
 export { HouseholdRealtime };
 const app = new Hono<AppBindings>();
+
+app.use("*", async (c, next) => {
+  const requestId = c.req.header("cf-ray") ?? crypto.randomUUID();
+  c.set("requestId", requestId);
+  await next();
+  c.header("x-request-id", requestId);
+  applySecurityHeaders(c);
+});
+
+app.use("/api/v1/households/:householdId/*", protectHouseholdRoute);
 
 async function serveAdminShell(c: Context<AppBindings>) {
   const shellResponse = await c.env.ASSETS.fetch(new URL("/", c.req.url).toString());
