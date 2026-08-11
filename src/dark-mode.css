@@ -1,128 +1,17 @@
-/* Kit Hub appearance layer: charcoal dark mode with theme-aware accents. */
-:root[data-kit-appearance="dark"] {
-  color-scheme: dark;
-  --ink: #f3efe8;
-  --ink-soft: #c2c9ca;
-  --cream: #20252a;
-  --paper: #2a3036;
-  --white: #30363d;
-  --line: #4a535a;
-  --shadow: 0 18px 50px rgba(0,0,0,.28);
-  --shadow-soft: 0 8px 24px rgba(0,0,0,.22);
-  --sage-soft: #33433b;
-  --mint: #2f4139;
-  --coral-soft: #4a302c;
-  --gold-soft: #493e28;
-  --blue-soft: #2e4048;
-}
-
-:root[data-kit-appearance="dark"][data-kit-theme] {
-  --theme-bg: #20252a;
-  --theme-paper: #2a3036;
-  --theme-ink: #f4f0e8;
-  --theme-soft: #343b41;
-}
-:root[data-kit-appearance="dark"][data-kit-theme="meadow"]{--theme-primary:#9fd3b9;--theme-secondary:#83a995;--theme-accent:#f39a84}
-:root[data-kit-appearance="dark"][data-kit-theme="coastal"]{--theme-primary:#9bc8d0;--theme-secondary:#79b0b8;--theme-accent:#ed9870}
-:root[data-kit-appearance="dark"][data-kit-theme="urban"]{--theme-primary:#d7cfcb;--theme-secondary:#b8bcc5;--theme-accent:#aabbd5}
-:root[data-kit-appearance="dark"][data-kit-theme="seashell"]{--theme-primary:#a9cce3;--theme-secondary:#6fd0cf;--theme-accent:#ff99aa}
-:root[data-kit-appearance="dark"][data-kit-theme="rose"]{--theme-primary:#f2afb8;--theme-secondary:#da898d;--theme-accent:#ffa5a5}
-:root[data-kit-appearance="dark"][data-kit-theme="sapphire"]{--theme-primary:#91c5ef;--theme-secondary:#9bb7dc;--theme-accent:#69baf0}
-:root[data-kit-appearance="dark"][data-kit-theme="lapis"]{--theme-primary:#a9baf4;--theme-secondary:#bd96cc;--theme-accent:#de8fc0}
-:root[data-kit-appearance="dark"][data-kit-theme="amethyst"]{--theme-primary:#cdb4f0;--theme-secondary:#ddb4c5;--theme-accent:#e8d86d}
-
-:root[data-kit-appearance="dark"] body,
-:root[data-kit-appearance="dark"] html,
-:root[data-kit-appearance="dark"] .app-main,
-:root[data-kit-appearance="dark"] .today-page,
-:root[data-kit-appearance="dark"] .module-page { background: var(--theme-bg, #20252a) !important; color: var(--theme-ink, #f4f0e8); }
-
-:root[data-kit-appearance="dark"] .sidebar,
-:root[data-kit-appearance="dark"] .app-topbar,
-:root[data-kit-appearance="dark"] .module-card,
-:root[data-kit-appearance="dark"] .dashboard-card,
-:root[data-kit-appearance="dark"] .agenda-day,
-:root[data-kit-appearance="dark"] .notification-popover,
-:root[data-kit-appearance="dark"] .profile-popover,
-:root[data-kit-appearance="dark"] .family-tools,
-:root[data-kit-appearance="dark"] .family-tools-list article,
-:root[data-kit-appearance="dark"] .family-tools-preferences,
-:root[data-kit-appearance="dark"] .family-tools-form,
-:root[data-kit-appearance="dark"] .locale-preview,
-:root[data-kit-appearance="dark"] .modal,
-:root[data-kit-appearance="dark"] .dialog,
-:root[data-kit-appearance="dark"] .card,
-:root[data-kit-appearance="dark"] .auth-panel,
-:root[data-kit-appearance="dark"] .auth-tabs,
-:root[data-kit-appearance="dark"] .auth-card,
-:root[data-kit-appearance="dark"] .empty-state {
-  background: var(--theme-paper, #2a3036) !important;
-  color: var(--theme-ink, #f4f0e8) !important;
-  border-color: #4a535a !important;
-}
-
-:root[data-kit-appearance="dark"] input,
-:root[data-kit-appearance="dark"] textarea,
-:root[data-kit-appearance="dark"] select,
-:root[data-kit-appearance="dark"] .event-row,
-:root[data-kit-appearance="dark"] .task-check,
-:root[data-kit-appearance="dark"] .button--secondary,
-:root[data-kit-appearance="dark"] .icon-button {
-  background: #30373d !important;
-  color: #f4f0e8 !important;
-  border-color: #505a62 !important;
-}
-:root[data-kit-appearance="dark"] input::placeholder,
-:root[data-kit-appearance="dark"] textarea::placeholder { color: #9fa8ab; }
-
-:root[data-kit-appearance="dark"] p,
-:root[data-kit-appearance="dark"] small,
-:root[data-kit-appearance="dark"] .today-date,
-:root[data-kit-appearance="dark"] .card-heading p,
-:root[data-kit-appearance="dark"] .module-heading p { color: #c2c9ca; }
-:root[data-kit-appearance="dark"] h1,
-:root[data-kit-appearance="dark"] h2,
-:root[data-kit-appearance="dark"] h3,
-:root[data-kit-appearance="dark"] strong,
-:root[data-kit-appearance="dark"] label { color: var(--theme-ink, #f4f0e8); }
-
-:root[data-kit-appearance="dark"] .grocery-paper {
-  background-color: #292f34 !important;
-  background-image: repeating-linear-gradient(transparent,transparent 31px,rgba(180,200,215,.08) 32px)!important;
-}
-:root[data-kit-appearance="dark"] .home-note-card,
-:root[data-kit-appearance="dark"] .focus-counts,
-:root[data-kit-appearance="dark"] .task-row.is-urgent { background: color-mix(in srgb,var(--theme-accent) 12%,#2a3036 88%) !important; }
-
-/* Dark-mode readability fixes for dashboard and shared content. */
-:root[data-kit-appearance="dark"] .family-note-list article{background:#353b40!important;border-color:#596168!important;color:#f4f0e8!important}
-:root[data-kit-appearance="dark"] .family-note-list article .handwritten-note,
-:root[data-kit-appearance="dark"] .family-note-list article footer,
-:root[data-kit-appearance="dark"] .family-note-list article footer small{color:#f1ede5!important}
-:root[data-kit-appearance="dark"] .family-note-list article button{color:#dbe1e2!important}
-:root[data-kit-appearance="dark"] .shared-home-heading>div>span,
-:root[data-kit-appearance="dark"] .dashboard-meal-card header small{color:#c7cecf!important}
-:root[data-kit-appearance="dark"] .shared-home-heading button,
-:root[data-kit-appearance="dark"] .dashboard-meal-card>button,
-:root[data-kit-appearance="dark"] .dashboard-card a,
-:root[data-kit-appearance="dark"] .dashboard-card button:not(.button):not(.task-check){color:var(--theme-primary)!important}
-:root[data-kit-appearance="dark"] .widget-onboarding__grid>button{background:#2c3338!important;border-color:#505960!important;color:#f4f0e8!important}
-:root[data-kit-appearance="dark"] .widget-onboarding__grid>button.is-selected{background:color-mix(in srgb,var(--theme-primary) 12%,#2c3338 88%)!important;border-color:var(--theme-primary)!important}
-:root[data-kit-appearance="dark"] .widget-onboarding__grid>button small{color:#c8cecf!important}
-:root[data-kit-appearance="dark"] .widget-onboarding__grid>button em{background:#493b39!important;color:#ff9b84!important}
-:root[data-kit-appearance="dark"] .button--primary{background:var(--theme-primary)!important;color:#17211d!important}
-:root[data-kit-appearance="dark"] .button--primary svg{color:inherit!important}
-:root[data-kit-appearance="dark"] .mobile-nav{background:#272d32!important;border-top-color:#465058!important;box-shadow:0 -8px 28px rgba(0,0,0,.22)}
-:root[data-kit-appearance="dark"] .mobile-nav button{color:#bcc5c5!important}
-:root[data-kit-appearance="dark"] .mobile-nav button svg{color:#b7c0bf!important}
-:root[data-kit-appearance="dark"] .mobile-nav button.is-active{background:color-mix(in srgb,var(--theme-primary) 18%,#272d32 82%)!important;color:var(--theme-primary)!important}
-:root[data-kit-appearance="dark"] .mobile-nav button.is-active svg{color:var(--theme-primary)!important}
-:root[data-kit-appearance="dark"] .mobile-quick-add{border-color:#58626a!important;box-shadow:0 9px 28px rgba(0,0,0,.32)!important}
-
-@media(max-width:620px){
-  .family-tools-launcher,.feedback-launcher{display:none!important}
-  .mobile-nav{grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:1px!important;padding-left:4px!important;padding-right:4px!important}
-  .mobile-nav button{min-width:0!important;padding-left:2px!important;padding-right:2px!important}
-  .mobile-nav button span{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:10px!important;letter-spacing:-.15px!important}
-  .mobile-nav button svg{width:22px!important;height:22px!important}
-}
+/* Kit Hub dark appearance: each palette keeps its own identity. */
+:root[data-kit-appearance="dark"]{color-scheme:dark;--ink:#f4f0e8;--ink-soft:#c5cccd;--cream:var(--theme-bg,#20252a);--paper:var(--theme-paper,#2a3036);--white:var(--theme-raised,#30363d);--line:var(--theme-line,#4a535a);--shadow:0 18px 50px rgba(0,0,0,.3);--shadow-soft:0 8px 24px rgba(0,0,0,.23);--sage-soft:var(--theme-soft,#33433b);--mint:var(--theme-soft,#2f4139);--coral-soft:#4a302c;--gold-soft:#493e28;--blue-soft:var(--theme-soft,#2e4048)}
+:root[data-kit-appearance="dark"][data-kit-theme="meadow"]{--theme-bg:#17221d;--theme-paper:#223129;--theme-raised:#2a3a31;--theme-soft:#30483b;--theme-line:#496355;--theme-primary:#9fd3b9;--theme-secondary:#83a995;--theme-accent:#f39a84}
+:root[data-kit-appearance="dark"][data-kit-theme="coastal"]{--theme-bg:#152329;--theme-paper:#203139;--theme-raised:#293b43;--theme-soft:#29454c;--theme-line:#48636a;--theme-primary:#9bc8d0;--theme-secondary:#79b0b8;--theme-accent:#ed9870}
+:root[data-kit-appearance="dark"][data-kit-theme="urban"]{--theme-bg:#202124;--theme-paper:#2c2d31;--theme-raised:#35363b;--theme-soft:#3c3d43;--theme-line:#5a5c64;--theme-primary:#d7cfcb;--theme-secondary:#b8bcc5;--theme-accent:#aabbd5}
+:root[data-kit-appearance="dark"][data-kit-theme="seashell"]{--theme-bg:#16232c;--theme-paper:#22333e;--theme-raised:#2b3d49;--theme-soft:#294751;--theme-line:#496874;--theme-primary:#a9cce3;--theme-secondary:#6fd0cf;--theme-accent:#ff99aa}
+:root[data-kit-appearance="dark"][data-kit-theme="rose"]{--theme-bg:#291a1e;--theme-paper:#39252a;--theme-raised:#452d33;--theme-soft:#52333a;--theme-line:#714951;--theme-primary:#f2afb8;--theme-secondary:#da898d;--theme-accent:#ffa5a5}
+:root[data-kit-appearance="dark"][data-kit-theme="sapphire"]{--theme-bg:#111e2b;--theme-paper:#1b2b3b;--theme-raised:#233648;--theme-soft:#263f55;--theme-line:#405e78;--theme-primary:#91c5ef;--theme-secondary:#9bb7dc;--theme-accent:#69baf0}
+:root[data-kit-appearance="dark"][data-kit-theme="lapis"]{--theme-bg:#1b1b31;--theme-paper:#282842;--theme-raised:#32314e;--theme-soft:#393757;--theme-line:#56527a;--theme-primary:#a9baf4;--theme-secondary:#bd96cc;--theme-accent:#de8fc0}
+:root[data-kit-appearance="dark"][data-kit-theme="amethyst"]{--theme-bg:#24192c;--theme-paper:#33243d;--theme-raised:#3e2c49;--theme-soft:#493454;--theme-line:#684c76;--theme-primary:#cdb4f0;--theme-secondary:#ddb4c5;--theme-accent:#e8d86d}
+:root[data-kit-appearance="dark"] body,:root[data-kit-appearance="dark"] html,:root[data-kit-appearance="dark"] .app-main,:root[data-kit-appearance="dark"] .today-page,:root[data-kit-appearance="dark"] .module-page{background:var(--theme-bg)!important;color:var(--ink)}
+:root[data-kit-appearance="dark"] .sidebar,:root[data-kit-appearance="dark"] .app-topbar{background:color-mix(in srgb,var(--theme-bg) 70%,var(--theme-paper) 30%)!important;border-color:var(--theme-line)!important}
+:root[data-kit-appearance="dark"] .module-card,:root[data-kit-appearance="dark"] .dashboard-card,:root[data-kit-appearance="dark"] .dashboard-widget,:root[data-kit-appearance="dark"] .agenda-day,:root[data-kit-appearance="dark"] .notification-popover,:root[data-kit-appearance="dark"] .profile-popover,:root[data-kit-appearance="dark"] .family-tools,:root[data-kit-appearance="dark"] .family-tools-list article,:root[data-kit-appearance="dark"] .family-tools-preferences,:root[data-kit-appearance="dark"] .family-tools-form,:root[data-kit-appearance="dark"] .locale-preview,:root[data-kit-appearance="dark"] .modal,:root[data-kit-appearance="dark"] .dialog,:root[data-kit-appearance="dark"] .card,:root[data-kit-appearance="dark"] .empty-state,:root[data-kit-appearance="dark"] .meal-week-card,:root[data-kit-appearance="dark"] .meal-library-card,:root[data-kit-appearance="dark"] .meal-suggestions-card{background:var(--theme-paper)!important;color:var(--ink)!important;border-color:var(--theme-line)!important}
+:root[data-kit-appearance="dark"] input,:root[data-kit-appearance="dark"] textarea,:root[data-kit-appearance="dark"] select,:root[data-kit-appearance="dark"] .event-row,:root[data-kit-appearance="dark"] .task-check,:root[data-kit-appearance="dark"] .button--secondary,:root[data-kit-appearance="dark"] .icon-button,:root[data-kit-appearance="dark"] .meal-week-grid>article,:root[data-kit-appearance="dark"] .meal-slot.is-planned,:root[data-kit-appearance="dark"] .meal-suggestion-list>article{background:var(--theme-raised)!important;color:var(--ink)!important;border-color:var(--theme-line)!important}
+:root[data-kit-appearance="dark"] input::placeholder,:root[data-kit-appearance="dark"] textarea::placeholder{color:#aeb7b8}:root[data-kit-appearance="dark"] p,:root[data-kit-appearance="dark"] small,:root[data-kit-appearance="dark"] .today-date{color:var(--ink-soft)}:root[data-kit-appearance="dark"] h1,:root[data-kit-appearance="dark"] h2,:root[data-kit-appearance="dark"] h3,:root[data-kit-appearance="dark"] strong,:root[data-kit-appearance="dark"] label{color:var(--ink)}
+:root[data-kit-appearance="dark"] .family-note-list article{background:color-mix(in srgb,var(--theme-raised) 86%,var(--theme-accent) 14%)!important;border-color:var(--theme-line)!important;color:var(--ink)!important}:root[data-kit-appearance="dark"] .family-note-list article *{color:inherit}:root[data-kit-appearance="dark"] .button--primary{background:var(--theme-primary)!important;color:#17211d!important}:root[data-kit-appearance="dark"] .dashboard-card a,:root[data-kit-appearance="dark"] .dashboard-card button:not(.button):not(.task-check){color:var(--theme-primary)!important}
+:root[data-kit-appearance="dark"] .sidebar-nav button.is-active,:root[data-kit-appearance="dark"] .family-hub__tabs button.is-active{background:color-mix(in srgb,var(--theme-primary) 30%,var(--theme-paper) 70%)!important;color:var(--ink)!important}:root[data-kit-appearance="dark"] .mobile-nav{background:var(--theme-paper)!important;border-top-color:var(--theme-line)!important}:root[data-kit-appearance="dark"] .mobile-nav button.is-active{background:color-mix(in srgb,var(--theme-primary) 20%,var(--theme-paper) 80%)!important;color:var(--theme-primary)!important}
