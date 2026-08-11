@@ -19,6 +19,7 @@ import "./admin-polish-v2.css";
 import "./profile-menu-polish.css";
 import "./stability-consolidated.css";
 import "./stability-pass-2.css";
+import "./search-enhancements.css";
 
 const storedAppearance = localStorage.getItem("kit-hub-appearance");
 const appearance = storedAppearance === "light" || storedAppearance === "dark" || storedAppearance === "system" ? storedAppearance : "system";
