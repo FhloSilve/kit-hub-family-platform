@@ -1,0 +1,110 @@
+/* Final mobile layout and Admin dark-mode polish. */
+:root[data-kit-appearance="dark"] .admin-page,
+:root[data-kit-appearance="dark"] .admin-page h1,
+:root[data-kit-appearance="dark"] .admin-page h2,
+:root[data-kit-appearance="dark"] .admin-page h3,
+:root[data-kit-appearance="dark"] .admin-page strong,
+:root[data-kit-appearance="dark"] .admin-page label,
+:root[data-kit-appearance="dark"] .admin-page dt,
+:root[data-kit-appearance="dark"] .admin-page dd {
+  color: var(--admin-ink, #f2eee7) !important;
+}
+:root[data-kit-appearance="dark"] .admin-page p,
+:root[data-kit-appearance="dark"] .admin-page small,
+:root[data-kit-appearance="dark"] .admin-page .admin-title p,
+:root[data-kit-appearance="dark"] .admin-page .admin-card p,
+:root[data-kit-appearance="dark"] .admin-page .admin-hero p {
+  color: #cbd2d3 !important;
+}
+:root[data-kit-appearance="dark"] .admin-page .admin-title small,
+:root[data-kit-appearance="dark"] .admin-page .admin-card header small,
+:root[data-kit-appearance="dark"] .admin-page .admin-toolbar strong,
+:root[data-kit-appearance="dark"] .admin-page .admin-hero b {
+  color: #e2e7e7 !important;
+}
+:root[data-kit-appearance="dark"] .admin-page .admin-health.ready {
+  background: #29453a !important;
+  color: #d9f0e4 !important;
+  border: 1px solid #477461 !important;
+}
+:root[data-kit-appearance="dark"] .admin-page .admin-health.ready strong,
+:root[data-kit-appearance="dark"] .admin-page .admin-health.ready small {
+  color: #e4f4eb !important;
+}
+:root[data-kit-appearance="dark"] .admin-page .admin-health.setup {
+  background: #4a3d29 !important;
+  color: #f2d8a5 !important;
+}
+:root[data-kit-appearance="dark"] .admin-page .admin-primary {
+  color: #fff !important;
+}
+:root[data-kit-appearance="dark"] .admin-page .admin-secondary,
+:root[data-kit-appearance="dark"] .admin-page .admin-themes button,
+:root[data-kit-appearance="dark"] .admin-page input,
+:root[data-kit-appearance="dark"] .admin-page select,
+:root[data-kit-appearance="dark"] .admin-page textarea {
+  background: #30383e !important;
+  color: #f2eee7 !important;
+  border-color: #59656d !important;
+}
+:root[data-kit-appearance="dark"] .admin-page code,
+:root[data-kit-appearance="dark"] .admin-page a {
+  color: #8ecfe4 !important;
+}
+
+@media (max-width: 700px) {
+  .admin-page {
+    padding-top: max(76px, calc(env(safe-area-inset-top) + 62px)) !important;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+  .admin-header {
+    padding-right: 0 !important;
+  }
+  .admin-back {
+    width: max-content !important;
+    max-width: calc(100% - 64px) !important;
+    min-height: 44px !important;
+    margin: 0 0 24px !important;
+    padding: 0 14px !important;
+  }
+  .admin-title {
+    gap: 14px !important;
+  }
+  .admin-title > span {
+    width: 50px !important;
+    height: 50px !important;
+    flex: 0 0 50px !important;
+  }
+  .admin-title h1 {
+    margin-top: 4px !important;
+    font-size: clamp(30px, 9vw, 38px) !important;
+    line-height: 1.05 !important;
+  }
+  .admin-toolbar,
+  .admin-hero,
+  .admin-progress,
+  .admin-card,
+  .admin-feedback-board {
+    border-radius: 20px !important;
+  }
+  .admin-toolbar {
+    margin-top: 20px !important;
+  }
+  .silvi-launcher {
+    right: 14px !important;
+    bottom: calc(176px + env(safe-area-inset-bottom)) !important;
+  }
+  .mobile-quick-add {
+    right: 14px !important;
+    bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .app-topbar .topbar-actions {
+    gap: 6px !important;
+  }
+  .appearance-quick-toggle:not(.appearance-admin-toggle) {
+    right: 176px !important;
+  }
+}
