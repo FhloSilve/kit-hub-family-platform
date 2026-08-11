@@ -6,7 +6,6 @@
       <stop offset="1" stop-color="#b91324"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="240" height="240" rx="52" fill="#f6f3ee"/>
   <g fill="none" stroke="url(#silvi-gradient)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
     <path d="M52 48 96 88h64l44-40-7 70 17 29-45 15-41 54-41-54-45-15 17-29Z"/>
     <path d="M52 48 86 88 59 118"/>
