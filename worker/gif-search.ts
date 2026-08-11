@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppBindings } from "./http";
 import { apiError } from "./http";
+import { createAuth } from "./auth";
 
 const app = new Hono<AppBindings>();
 type Ctx = Parameters<typeof apiError>[0];
@@ -26,6 +27,14 @@ async function giphy(url: string) {
   const body = await response.json().catch(() => null) as any;
   return { response, body };
 }
+
+app.get("/api/v1/media/gifs/sdk-config", async c => {
+  const session=await createAuth(c.env,c.req.raw).api.getSession({headers:c.req.raw.headers});
+  if(!session?.user)return apiError(c,401,"AUTH_REQUIRED","Sign in to use GIF search.");
+  const apiKey=key(c);
+  if(!apiKey)return apiError(c,422,"gif_sdk_not_configured","The deployed Worker cannot see GIPHY_API_KEY yet.");
+  return c.json({provider:"GIPHY",mode:"web-sdk",apiKey},200,{"cache-control":"no-store, private"});
+});
 
 app.get("/api/v1/media/gifs/status", async c => {
   const apiKey = key(c);
