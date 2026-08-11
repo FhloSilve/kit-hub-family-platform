@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { House, MessageSquareWarning, Monitor, Moon, Rocket, Sun } from "lucide-react";
 import "../appearance-controls.css";
 
 type Appearance = "light" | "dark" | "system";
@@ -26,6 +26,7 @@ export function AppearanceControl() {
   const [settingsNav, setSettingsNav] = useState<HTMLElement | null>(null);
   const [settingsBody, setSettingsBody] = useState<HTMLElement | null>(null);
   const [showPanel, setShowPanel] = useState(false);
+  const isAdmin = window.location.pathname === "/admin" || window.location.pathname === "/admin/";
 
   useEffect(() => { applyAppearance(mode); setDark(resolvedDark(mode)); }, [mode]);
   useEffect(() => {
@@ -35,6 +36,7 @@ export function AppearanceControl() {
     return () => media.removeEventListener("change", sync);
   }, [mode]);
   useEffect(() => {
+    if (isAdmin) return;
     const locate = () => {
       setSettingsNav(document.querySelector<HTMLElement>(".family-tools > nav"));
       setSettingsBody(document.querySelector<HTMLElement>(".family-tools__body"));
@@ -43,7 +45,7 @@ export function AppearanceControl() {
     const observer = new MutationObserver(locate);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, []);
+  }, [isAdmin]);
   useEffect(() => {
     if (!settingsNav) return;
     const nativeClick = (event: Event) => {
@@ -66,11 +68,17 @@ export function AppearanceControl() {
   ], []);
   const change = (next: Appearance) => { setMode(next); setDark(resolvedDark(next)); };
   const quickToggle = () => change(dark ? "light" : "dark");
+  const scrollToFeedback = () => document.querySelector<HTMLElement>(".admin-feedback-board")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return <>
-    <button className="appearance-quick-toggle" type="button" onClick={quickToggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Switch to light mode" : "Switch to dark mode"}>
+    <button className={`appearance-quick-toggle ${isAdmin ? "appearance-admin-toggle" : ""}`} type="button" onClick={quickToggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Switch to light mode" : "Switch to dark mode"}>
       {dark ? <Sun /> : <Moon />}
     </button>
+    {isAdmin && <nav className="admin-mobile-nav" aria-label="Admin navigation">
+      <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Rocket/><span>Release</span></button>
+      <button type="button" onClick={scrollToFeedback}><MessageSquareWarning/><span>Feedback</span></button>
+      <button type="button" onClick={() => { window.location.href = "/"; }}><House/><span>Kit Hub</span></button>
+    </nav>}
     {settingsNav && createPortal(
       <button type="button" className={`appearance-settings-tab ${showPanel ? "is-active" : ""}`} onClick={() => setShowPanel(true)}>
         {dark ? <Moon /> : <Sun />}<span>Appearance</span>
