@@ -5,18 +5,17 @@
   .mobile-brand .brand__words{display:none!important}
   .mobile-brand .brand__mark{width:46px!important;height:46px!important;border-radius:14px!important}
   .topbar-search,.site-theme-picker,.mobile-search-button,.profile-button>div,.profile-button>svg{display:none!important}
-  .topbar-actions{margin-left:auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;min-width:0!important}
-  .topbar-actions .notification-button{width:42px!important;height:42px!important;min-width:42px!important;border-radius:13px!important;padding:0!important}
-  .mobile-profile-host{width:0!important;min-width:0!important;flex:0 0 0!important;overflow:visible!important}
-  .mobile-profile-host>.profile-button{position:absolute!important;width:1px!important;height:1px!important;min-width:1px!important;padding:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important}
+  .topbar-actions{margin-left:auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;min-width:0!important;overflow:visible!important}
+  .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button{width:42px!important;height:42px!important;min-width:42px!important;border-radius:13px!important;padding:0!important}
+  .topbar-actions>.profile-menu{position:relative!important;z-index:720!important;overflow:visible!important;flex:0 0 auto!important}
+  .topbar-actions>.profile-menu>.profile-button{display:grid!important;place-items:center!important;pointer-events:auto!important;touch-action:manipulation!important;opacity:1!important;position:relative!important;overflow:visible!important;border:1px solid transparent!important;background:var(--theme-accent,#e7816d)!important;color:#fff!important;-webkit-tap-highlight-color:transparent}
+  .topbar-actions>.profile-menu>.profile-button>span{display:grid!important;place-items:center!important;width:42px!important;height:42px!important;border-radius:13px!important;font-size:16px!important;line-height:1!important;font-weight:900!important;color:#fff!important;background:transparent!important}
   .mobile-topbar-utilities{display:flex;align-items:center;gap:8px;order:-1}
   .mobile-topbar-utility{display:grid;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--line);border-radius:13px;background:var(--theme-paper,var(--paper));color:var(--theme-ink,var(--ink));box-shadow:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   .mobile-topbar-utility svg{width:20px;height:20px}
   .mobile-topbar-utility--silvi{background:color-mix(in srgb,var(--theme-paper,var(--paper)) 86%,var(--theme-primary,#345c4b) 14%)}
   .mobile-topbar-utility--silvi img{width:25px;height:25px;display:block}
   .mobile-topbar-utility--add{background:var(--theme-primary,#345c4b);color:#17211d;border-color:transparent}
-  .mobile-topbar-profile-proxy{background:var(--theme-accent,#e7816d);color:#fff;border-color:transparent;font-weight:900}
-  .mobile-topbar-profile-proxy>span{display:grid;place-items:center;width:100%;height:100%;font-size:16px;line-height:1}
   .appearance-quick-toggle{display:none!important}
   .silvi-launcher,.routines-launcher,.family-tools-launcher,.mobile-quick-add{display:none!important}
   .mobile-profile-routines{display:flex!important;align-items:center;gap:9px;width:100%;border:0;background:transparent;color:inherit;font:inherit;text-align:left;padding:10px 12px;border-radius:10px}
@@ -27,8 +26,8 @@
   .app-topbar{padding-left:9px!important;padding-right:9px!important;gap:6px!important}
   .topbar-actions{gap:5px!important}
   .mobile-topbar-utilities{gap:5px}
-  .topbar-actions .notification-button,.mobile-topbar-utility{width:38px!important;height:38px!important;min-width:38px!important;border-radius:12px!important}
-  .mobile-topbar-profile-proxy>span{font-size:15px}
+  .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button,.mobile-topbar-utility{width:38px!important;height:38px!important;min-width:38px!important;border-radius:12px!important}
+  .topbar-actions>.profile-menu>.profile-button>span{width:38px!important;height:38px!important;border-radius:12px!important;font-size:15px!important}
   .mobile-topbar-utility svg{width:18px;height:18px}
   .mobile-topbar-utility--silvi img{width:22px;height:22px}
   .mobile-brand .brand__mark{width:42px!important;height:42px!important}
