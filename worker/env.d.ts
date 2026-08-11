@@ -4,4 +4,5 @@ interface Env {
   GITHUB_RELEASE_TOKEN?: string;
   GITHUB_REPOSITORY?: string;
   GITHUB_RELEASE_WORKFLOW?: string;
+  ASSETS: Fetcher;
 }
