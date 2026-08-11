@@ -2,7 +2,7 @@ CREATE TABLE silvi_action_proposals (
   id TEXT PRIMARY KEY,
   household_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  action_type TEXT NOT NULL CHECK (action_type IN ('task.create','task.complete','event.create','meal.plan','routine.create','routine.complete')),
+  action_type TEXT NOT NULL CHECK (action_type IN ('task.create','task.update','task.complete','event.create','event.update','meal.plan','meal.move','routine.create','routine.assign','routine.complete')),
   summary TEXT NOT NULL CHECK (length(summary) BETWEEN 1 AND 300),
   payload_json TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','executing','completed','cancelled','failed')),
