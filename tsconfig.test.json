@@ -8,7 +8,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node", "./worker-configuration.d.ts"]
+    "types": ["node", "vitest/globals", "./worker-configuration.d.ts"]
   },
-  "include": ["shared/**/*.test.ts", "worker/**/*.test.ts", "worker/env.d.ts"]
+  "include": ["shared/**/*.test.ts", "worker/**/*.test.ts", "tests/**/*.test.ts", "worker/env.d.ts"]
 }
