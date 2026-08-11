@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, ArrowRight, CalendarDays, ChefHat, CheckSquare2, Clock3, MapPin, RefreshCw, Repeat2, Scale, Settings2, Sparkles, UserRound, UsersRound, X } from "lucide-react";
 import "../family-coordination-hub.css";
+import "../family-coordination-actions.css";
 
 type Member={userId:string;name:string;role?:string};
 type Context={currentUserId:string;members:Member[];capabilities?:{tasks?:boolean;calendar?:boolean;meals?:boolean;routines?:boolean};summary:{openTasks:number;myOpenTasks:number;upcomingEvents:number;plannedMeals:number;activeRoutines:number;myRoutines:number;overdueRoutines:number};tasks:Array<{id:string;title:string;dueAt:string|null;priority:string;assigneeUserId:string|null;assigneeName:string|null}>;upcomingEvents:Array<{id:string;title:string;startsAt:string;endsAt:string|null;allDay:number|boolean}>;meals:Array<{id:string;mealDate:string;mealType:string;title:string;cookUserId:string|null;cookName:string|null}>;routines:Array<{id:string;title:string;nextDueAt:string|null;assigneeUserId:string|null;assigneeName:string|null;overdue:number|boolean}>};
