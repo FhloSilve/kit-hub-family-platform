@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { House, MessageSquareWarning, Monitor, Moon, Rocket, Sun } from "lucide-react";
+import { House, MessageSquareWarning, Monitor, Moon, Palette, Rocket, Sun } from "lucide-react";
 import "../appearance-controls.css";
 
 type Appearance = "light" | "dark" | "system";
@@ -77,6 +77,8 @@ export function AppearanceControl() {
     {isAdmin && <nav className="admin-mobile-nav" aria-label="Admin navigation">
       <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Rocket/><span>Release</span></button>
       <button type="button" onClick={scrollToFeedback}><MessageSquareWarning/><span>Feedback</span></button>
+      <button type="button" onClick={() => window.dispatchEvent(new Event("kit-hub-admin-colour"))}><Palette/><span>Colour</span></button>
+      <button className="admin-mobile-appearance" type="button" onClick={quickToggle}>{dark?<Sun/>:<Moon/>}<span>{dark?"Light":"Dark"}</span></button>
       <button type="button" onClick={() => { window.location.href = "/"; }}><House/><span>Kit Hub</span></button>
     </nav>}
     {settingsNav && createPortal(
