@@ -88,7 +88,7 @@ app.post("/api/v1/households/:householdId/silvi/ask", async c => {
   } catch (error) {
     const timedOut = error instanceof Error && error.message === "AI_TIMEOUT";
     console.error(JSON.stringify({level:"error",event:"silvi_ai_unavailable",requestId:requestId(c),message:error instanceof Error?error.message:"Unknown AI error"}));
-    return apiError(c,503,timedOut?"SILVI_TIMEOUT":"SILVI_UNAVAILABLE",timedOut?"Silvi took too long to answer. Please try again.":"Silvi could not reach the AI service right now. Please try again in a moment. Your household data was not changed.");
+    return apiError(c,500,timedOut?"SILVI_TIMEOUT":"SILVI_UNAVAILABLE",timedOut?"Silvi took too long to answer. Please try again.":"Silvi could not reach the AI service right now. Please try again in a moment. Your household data was not changed.");
   }
 });
 
