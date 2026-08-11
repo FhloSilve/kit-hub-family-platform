@@ -1,57 +1,6 @@
 /* Use the extra room available in the desktop app without changing phone/tablet layouts. */
-@media (min-width: 1180px) {
-  html { font-size: 18px; }
-  .app-shell { grid-template-columns: 275px minmax(0, 1fr) !important; }
-  .app-main, .main-content, .dashboard-main { max-width: none !important; }
-  .today-page.module-page { width:100%!important; max-width:none!important; padding-left:clamp(28px,3vw,60px)!important; padding-right:clamp(28px,3vw,60px)!important; }
-  .dashboard-content, .dashboard-page, .page-content { width: 100% !important; max-width: none !important; margin-inline: auto !important; }
-  .family-hub{max-width:none!important;width:100%!important;margin:0!important}
-  .family-hub__heading .today-date{font-size:0!important}.family-hub__heading .today-date::after{content:"Family Chat";font-size:.78rem;font-weight:900;letter-spacing:.12em}
-  .family-hub__heading h1{font-size:clamp(2.7rem,3.4vw,4.5rem)!important;line-height:1.02!important}
-  .family-hub__heading p{font-size:1.05rem!important;max-width:980px!important;line-height:1.55!important}
-  .family-hub__tabs button{font-size:.9rem!important;padding:12px 16px!important}.family-hub__tabs svg{width:19px!important;height:19px!important}
-  .family-hub__chat-top{padding:20px 24px!important}.family-hub__chat-top strong{font-size:1.05rem!important}.family-hub__chat-top small{font-size:.72rem!important}.family-hub__chat-top svg{width:22px!important;height:22px!important}
-  .family-hub__messages{min-height:460px!important;max-height:62vh!important;padding:28px 26px!important}.family-hub__messages p{font-size:.96rem!important}.family-hub__messages header strong{font-size:.78rem!important}.family-hub__messages time{font-size:.68rem!important}.family-hub__avatar{width:38px!important;height:38px!important;flex-basis:38px!important;font-size:.8rem!important}.family-hub__messages article>div{padding:13px 15px!important}
-  .family-hub__composer{padding:18px 20px!important}.family-hub__composer textarea{min-height:84px!important;padding:15px 17px!important;font-size:1rem!important}.family-hub__composer-tool{min-width:42px!important;min-height:42px!important}.family-hub__composer-tool svg{width:20px!important;height:20px!important}
-  .dashboard-widget-grid { gap: 26px !important; align-items:stretch !important; }
-  .dashboard-widget { padding: 25px !important; min-height:320px; }
-  .dashboard-widget-height--compact { min-height:240px !important; }
-  .dashboard-widget-height--normal { min-height:350px !important; }
-  .dashboard-widget-height--tall { min-height:500px !important; }
-  .dashboard-widget-height--compact .family-note-list,.dashboard-widget-height--compact .event-list,.dashboard-widget-height--compact .task-list,.dashboard-widget-height--compact .home-grocery-preview{max-height:160px!important}
-  .dashboard-widget-height--normal .family-note-list,.dashboard-widget-height--normal .event-list,.dashboard-widget-height--normal .task-list,.dashboard-widget-height--normal .home-grocery-preview{max-height:280px!important}
-  .dashboard-widget-height--tall .family-note-list,.dashboard-widget-height--tall .event-list,.dashboard-widget-height--tall .task-list,.dashboard-widget-height--tall .home-grocery-preview{max-height:430px!important}
-  .dashboard-widget--note .dashboard-widget__content,.dashboard-widget--focus .dashboard-widget__content,.dashboard-widget--occasions .dashboard-widget__content{padding:23px!important}
-  .sidebar-nav button { min-height: 52px; font-size: 1.02rem; }
-  .sidebar-nav button svg,.sidebar-settings svg,.household-switcher svg{width:21px!important;height:21px!important}
-  .topbar button, .button { min-height: 50px; font-size:.92rem; }
-  .module-heading h1,.today-heading h1{font-size:clamp(2.4rem,3vw,4rem)!important}.module-heading p,.today-heading p{font-size:1rem!important}.module-card{font-size:.94rem}
-  .empty-state.empty-state--clickable { min-height: 230px; }
-  .empty-state.empty-state--clickable > strong { font-size: .9rem; }
-  .empty-state.empty-state--clickable > span { min-height: 42px; padding-inline: 17px; font-size: .8rem; }
-  .dashboard-widget-add{min-height:46px!important;font-size:.8rem!important}
-  .calendar-v2-weekday { font-size: .8rem; }
-  .calendar-v2-day { min-height: 165px; padding: 14px; }
-  .calendar-v2-event, .calendar-v2-more { font-size: .78rem; }
-  .calendar-v2-toolbar button,.calendar-v2-discovery input,.calendar-v2-discovery button{font-size:.88rem!important}.calendar-v2-hour-label{font-size:.76rem!important}.calendar-v2-hour-event strong{font-size:.82rem!important}
-  .notification-popover article small { font-size: .82rem; }
-}
-@media (min-width: 1500px) {
-  html { font-size: 20px; }
-  .app-shell { grid-template-columns: 295px minmax(0, 1fr) !important; }
-  .today-page.module-page{padding-left:clamp(40px,3.5vw,78px)!important;padding-right:clamp(40px,3.5vw,78px)!important}
-  .dashboard-widget-grid { gap: 30px !important; }
-  .dashboard-widget { min-height:360px; padding:28px!important; }
-  .dashboard-widget-height--compact { min-height:270px !important; }
-  .dashboard-widget-height--normal { min-height:390px !important; }
-  .dashboard-widget-height--tall { min-height:550px !important; }
-}
-@media (min-width: 1900px) {
-  html { font-size: 21px; }
-  .app-shell { grid-template-columns: 315px minmax(0, 1fr) !important; }
-  .today-page.module-page{padding-left:72px!important;padding-right:72px!important}
-  .dashboard-widget-grid { gap: 32px !important; }
-  .dashboard-widget { min-height:390px; }
-  .dashboard-widget-height--normal { min-height:420px !important; }
-  .dashboard-widget-height--tall { min-height:590px !important; }
-}
+@media (min-width:1180px){html{font-size:18px}.app-shell{grid-template-columns:275px minmax(0,1fr)!important}.app-main,.main-content,.dashboard-main{max-width:none!important}.today-page.module-page{width:100%!important;max-width:none!important;padding-left:clamp(28px,3vw,60px)!important;padding-right:clamp(28px,3vw,60px)!important}.dashboard-content,.dashboard-page,.page-content{width:100%!important;max-width:none!important;margin-inline:auto!important}.family-hub{max-width:none!important;width:100%!important;margin:0!important}.family-hub__heading h1{font-size:clamp(2.7rem,3.4vw,4.5rem)!important}.family-hub__heading p{font-size:1.05rem!important;max-width:980px!important}.family-hub__messages{min-height:460px!important;max-height:62vh!important;padding:28px 26px!important}.family-hub__composer textarea{min-height:84px!important;font-size:1rem!important}.dashboard-widget-grid{gap:26px!important}.dashboard-widget{padding:25px!important;min-height:320px}.sidebar-nav button{min-height:52px;font-size:1.02rem}.sidebar-nav button svg{width:21px!important;height:21px!important}.topbar button,.button{min-height:50px;font-size:.92rem}.module-heading h1,.today-heading h1{font-size:clamp(2.4rem,3vw,4rem)!important}.module-heading p,.today-heading p{font-size:1rem!important}.calendar-v2-day{min-height:165px;padding:14px}.calendar-v2-event{font-size:.78rem}
+/* Meals was authored with unusually tiny fixed px type; scale it for desktop independently. */
+.meals-heading{margin-bottom:30px!important}.meal-sharing-card,.meal-dietary-card{padding:20px 22px!important;gap:18px!important}.meal-sharing-card small,.meal-dietary-card small{font-size:.72rem!important}.meal-sharing-card strong,.meal-dietary-card strong{font-size:1rem!important}.meal-sharing-card p{font-size:.76rem!important}.meal-sharing-card>span,.meal-dietary-card>span{width:58px!important;height:58px!important}.meal-sharing-card svg,.meal-dietary-card svg{width:25px!important}.meal-week-card,.meal-library-card,.meal-suggestions-card{padding:26px!important}.meal-week-toolbar{margin-bottom:22px!important}.meal-week-toolbar strong{font-size:1.45rem!important}.meal-week-toolbar small{font-size:.76rem!important}.meal-week-toolbar nav button{min-width:44px!important;height:44px!important;font-size:.82rem!important}.meal-week-grid{grid-template-columns:repeat(7,minmax(175px,1fr))!important;gap:12px!important}.meal-week-grid>article>header{padding:14px 15px!important}.meal-week-grid>article>header small{font-size:.72rem!important}.meal-week-grid>article>header strong{font-size:1.45rem!important}.meal-week-grid>article>div{gap:8px!important;padding:10px!important}.meal-slot{grid-template-columns:30px minmax(0,1fr)!important;min-height:76px!important;padding:10px!important}.meal-slot>span{font-size:1.25rem!important}.meal-slot>small{font-size:.66rem!important}.meal-slot>i,.meal-slot.is-planned>strong{font-size:.76rem!important}.meal-slot.is-planned>em{font-size:.66rem!important}.meal-lower-grid{gap:24px!important;margin-top:24px!important}.meal-library-card h2,.meal-suggestions-card h2{font-size:1.55rem!important}.meal-library-card header small,.meal-suggestions-card header small{font-size:.68rem!important}.meal-library-card>header>button,.meal-suggestions-card>header>button,.meal-dietary-card>button{min-height:44px!important;font-size:.78rem!important;padding:0 14px!important}.meal-empty,.meal-suggestions-empty{min-height:210px!important}.meal-empty strong,.meal-suggestions-empty strong{font-size:.9rem!important}.meal-empty small,.meal-suggestions-empty small{font-size:.72rem!important}.meal-recipe-list>article{padding:16px!important}.meal-recipe-list article>div strong{font-size:.9rem!important}.meal-recipe-list article>div small{font-size:.72rem!important}.meal-recipe-list article>footer button{min-height:40px!important;font-size:.72rem!important}.meal-suggestion-list>article{padding:15px!important}.meal-suggestion-list article p strong{font-size:.86rem!important}.meal-suggestion-list article p small{font-size:.7rem!important}.meal-suggestion-list>article>button{min-height:40px!important;font-size:.72rem!important}}
+@media(min-width:1500px){html{font-size:20px}.app-shell{grid-template-columns:295px minmax(0,1fr)!important}.today-page.module-page{padding-left:clamp(40px,3.5vw,78px)!important;padding-right:clamp(40px,3.5vw,78px)!important}.dashboard-widget-grid{gap:30px!important}.dashboard-widget{min-height:360px;padding:28px!important}.meal-week-grid{grid-template-columns:repeat(7,minmax(205px,1fr))!important}.meal-slot{min-height:86px!important}}
+@media(min-width:1900px){html{font-size:21px}.app-shell{grid-template-columns:315px minmax(0,1fr)!important}.today-page.module-page{padding-left:72px!important;padding-right:72px!important}.dashboard-widget-grid{gap:32px!important}.dashboard-widget{min-height:390px}.meal-week-grid{grid-template-columns:repeat(7,minmax(230px,1fr))!important}.meal-slot{min-height:94px!important}}
