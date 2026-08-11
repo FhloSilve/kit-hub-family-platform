@@ -1,0 +1,12 @@
+.silvi-backdrop{background:rgba(9,24,20,.58);backdrop-filter:blur(2px)}
+.silvi-panel{background:#fffdf8!important;color:#1f2d29!important;opacity:1!important;filter:none!important;isolation:isolate}
+.silvi-panel *{filter:none}
+.silvi-title small,.silvi-title p,.silvi-glance span,.silvi-suggestions>span,.silvi-empty p,.silvi-empty small,.silvi-panel footer{opacity:.72}
+.silvi-title h2,.silvi-glance strong,.silvi-empty strong,.silvi-answer p{color:#23312d}
+.silvi-glance>div,.silvi-suggestions button,.silvi-conversation{background:#fffdf9;border-color:rgba(36,58,51,.14)}
+.silvi-conversation{background:#fbfaf5}
+.silvi-answer{background:#fff;border:1px solid rgba(36,58,51,.12);border-radius:16px;padding:12px;max-width:94%}
+.silvi-answer svg{color:#d85f43}
+.silvi-composer textarea{background:#29363b;color:#fff;border-color:#44565c}.silvi-composer textarea::placeholder{color:#c7d0d2}
+.silvi-composer .button--primary{background:#b9dcf4;color:#203038}
+@media(max-width:700px){.silvi-panel{padding-top:max(22px,env(safe-area-inset-top));}.silvi-conversation{min-height:360px}}
