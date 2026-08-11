@@ -1,68 +1,84 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Monitor, Moon, Sun } from "lucide-react";
+import "../appearance-controls.css";
 
 type Appearance = "light" | "dark" | "system";
+const STORAGE_KEY = "kit-hub-appearance";
 
 function preferredAppearance(): Appearance {
-  const stored = localStorage.getItem("kit-hub-appearance");
+  const stored = localStorage.getItem(STORAGE_KEY);
   return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
 }
-
+function systemIsDark() { return window.matchMedia("(prefers-color-scheme: dark)").matches; }
+function resolvedDark(mode: Appearance) { return mode === "dark" || (mode === "system" && systemIsDark()); }
 function applyAppearance(mode: Appearance) {
-  const dark = mode === "dark" || (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const dark = resolvedDark(mode);
   document.documentElement.dataset.kitAppearance = dark ? "dark" : "light";
   document.documentElement.style.colorScheme = dark ? "dark" : "light";
-  localStorage.setItem("kit-hub-appearance", mode);
+  localStorage.setItem(STORAGE_KEY, mode);
+  window.dispatchEvent(new CustomEvent("kit-hub-appearance-changed", { detail: { appearance: mode, dark } }));
 }
 
 export function AppearanceControl() {
   const [mode, setMode] = useState<Appearance>(preferredAppearance);
-  const [desktopTarget, setDesktopTarget] = useState<Element | null>(null);
-  const [mobileTarget, setMobileTarget] = useState<Element | null>(null);
+  const [dark, setDark] = useState(() => resolvedDark(preferredAppearance()));
+  const [settingsNav, setSettingsNav] = useState<HTMLElement | null>(null);
+  const [settingsBody, setSettingsBody] = useState<HTMLElement | null>(null);
+  const [showPanel, setShowPanel] = useState(false);
 
+  useEffect(() => { applyAppearance(mode); setDark(resolvedDark(mode)); }, [mode]);
   useEffect(() => {
-    applyAppearance(mode);
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const sync = () => mode === "system" && applyAppearance("system");
+    const sync = () => { if (mode === "system") { applyAppearance("system"); setDark(media.matches); } };
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, [mode]);
-
   useEffect(() => {
     const locate = () => {
-      setDesktopTarget(document.querySelector(".site-theme-picker"));
-      setMobileTarget(document.querySelector(".mobile-account-menu"));
+      setSettingsNav(document.querySelector<HTMLElement>(".family-tools > nav"));
+      setSettingsBody(document.querySelector<HTMLElement>(".family-tools__body"));
     };
     locate();
     const observer = new MutationObserver(locate);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    if (!settingsNav) return;
+    const nativeClick = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("button:not(.appearance-settings-tab)")) setShowPanel(false);
+    };
+    settingsNav.addEventListener("click", nativeClick);
+    return () => settingsNav.removeEventListener("click", nativeClick);
+  }, [settingsNav]);
+  useEffect(() => {
+    if (!settingsBody) return;
+    settingsBody.classList.toggle("appearance-settings-active", showPanel);
+    return () => settingsBody.classList.remove("appearance-settings-active");
+  }, [settingsBody, showPanel]);
 
-  const change = (next: Appearance) => {
-    setMode(next);
-    applyAppearance(next);
-  };
-  const Icon = mode === "dark" ? Moon : mode === "light" ? Sun : Monitor;
+  const options = useMemo(() => [
+    { value: "system" as const, label: "Follow device", text: "Match your phone, tablet or computer automatically.", Icon: Monitor },
+    { value: "light" as const, label: "Light", text: "Always use the bright Kit Hub appearance.", Icon: Sun },
+    { value: "dark" as const, label: "Dark", text: "Use Kit Hub's softer charcoal dark appearance.", Icon: Moon },
+  ], []);
+  const change = (next: Appearance) => { setMode(next); setDark(resolvedDark(next)); };
+  const quickToggle = () => change(dark ? "light" : "dark");
 
   return <>
-    {desktopTarget && createPortal(
-      <span className="appearance-inline" title="Appearance">
-        <Icon />
-        <select aria-label="Appearance" value={mode} onChange={event => change(event.target.value as Appearance)}>
-          <option value="system">Follow device</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </span>,
-      desktopTarget,
-    )}
-    {mobileTarget && createPortal(
-      <button className="appearance-mobile-button" type="button" onClick={() => change(mode === "system" ? "dark" : mode === "dark" ? "light" : "system") }>
-        <Icon /> Appearance: {mode === "system" ? "Device" : mode === "dark" ? "Dark" : "Light"}
-      </button>,
-      mobileTarget,
-    )}
+    <button className="appearance-quick-toggle" type="button" onClick={quickToggle} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} title={dark ? "Switch to light mode" : "Switch to dark mode"}>
+      {dark ? <Sun /> : <Moon />}
+    </button>
+    {settingsNav && createPortal(
+      <button type="button" className={`appearance-settings-tab ${showPanel ? "is-active" : ""}`} onClick={() => setShowPanel(true)}>
+        {dark ? <Moon /> : <Sun />}<span>Appearance</span>
+      </button>, settingsNav)}
+    {settingsBody && showPanel && createPortal(
+      <section className="appearance-settings-panel">
+        <div className="appearance-settings-heading"><small>APPEARANCE</small><h3>Light, dark or device</h3><p>This choice belongs to you. Your household colour theme stays the same; Kit Hub simply adapts it for light or dark surfaces.</p></div>
+        <div className="appearance-settings-options">{options.map(({ value, label, text, Icon }) => <button key={value} type="button" className={mode === value ? "is-selected" : ""} onClick={() => change(value)}><span><Icon /></span><div><strong>{label}</strong><small>{text}</small></div><i aria-hidden="true" /></button>)}</div>
+      </section>, settingsBody)}
   </>;
 }
