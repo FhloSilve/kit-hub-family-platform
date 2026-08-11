@@ -1,63 +1,57 @@
 /* Use the extra room available in the desktop app without changing phone/tablet layouts. */
 @media (min-width: 1180px) {
   html { font-size: 18px; }
-  .app-shell { grid-template-columns: 270px minmax(0, 1fr) !important; }
+  .app-shell { grid-template-columns: 275px minmax(0, 1fr) !important; }
   .app-main, .main-content, .dashboard-main { max-width: none !important; }
-  .today-page.module-page,.admin-page,.dashboard-content,.dashboard-page,.page-content { width: calc(100% - 28px) !important; max-width: none !important; margin-inline: auto !important; }
-  .today-page.module-page { padding-inline: clamp(24px,2.2vw,44px) !important; }
-  .module-heading h1,.today-heading h1{font-size:clamp(2.2rem,3vw,3.6rem)!important}
-  .module-heading p,.today-heading p{font-size:1rem!important;line-height:1.55}
-  .dashboard-widget-grid { gap: 24px !important; align-items:stretch !important; }
-  .dashboard-widget { padding: 24px !important; min-height:310px; }
-  .dashboard-widget h2,.dashboard-widget h3{font-size:1.35rem!important}
-  .dashboard-widget p,.dashboard-widget strong,.dashboard-widget button,.dashboard-widget small{font-size:max(.82rem,inherit)}
-  .dashboard-widget-height--compact { min-height:230px !important; }
-  .dashboard-widget-height--normal { min-height:330px !important; }
-  .dashboard-widget-height--tall { min-height:470px !important; }
-  .dashboard-widget-height--compact .family-note-list,.dashboard-widget-height--compact .event-list,.dashboard-widget-height--compact .task-list,.dashboard-widget-height--compact .home-grocery-preview{max-height:150px!important}
-  .dashboard-widget-height--normal .family-note-list,.dashboard-widget-height--normal .event-list,.dashboard-widget-height--normal .task-list,.dashboard-widget-height--normal .home-grocery-preview{max-height:260px!important}
-  .dashboard-widget-height--tall .family-note-list,.dashboard-widget-height--tall .event-list,.dashboard-widget-height--tall .task-list,.dashboard-widget-height--tall .home-grocery-preview{max-height:400px!important}
-  .dashboard-widget--note .dashboard-widget__content,.dashboard-widget--focus .dashboard-widget__content,.dashboard-widget--occasions .dashboard-widget__content{padding:22px!important}
+  .today-page.module-page { width:100%!important; max-width:none!important; padding-left:clamp(28px,3vw,60px)!important; padding-right:clamp(28px,3vw,60px)!important; }
+  .dashboard-content, .dashboard-page, .page-content { width: 100% !important; max-width: none !important; margin-inline: auto !important; }
+  .family-hub{max-width:none!important;width:100%!important;margin:0!important}
+  .family-hub__heading .today-date{font-size:0!important}.family-hub__heading .today-date::after{content:"Family Chat";font-size:.78rem;font-weight:900;letter-spacing:.12em}
+  .family-hub__heading h1{font-size:clamp(2.7rem,3.4vw,4.5rem)!important;line-height:1.02!important}
+  .family-hub__heading p{font-size:1.05rem!important;max-width:980px!important;line-height:1.55!important}
+  .family-hub__tabs button{font-size:.9rem!important;padding:12px 16px!important}.family-hub__tabs svg{width:19px!important;height:19px!important}
+  .family-hub__chat-top{padding:20px 24px!important}.family-hub__chat-top strong{font-size:1.05rem!important}.family-hub__chat-top small{font-size:.72rem!important}.family-hub__chat-top svg{width:22px!important;height:22px!important}
+  .family-hub__messages{min-height:460px!important;max-height:62vh!important;padding:28px 26px!important}.family-hub__messages p{font-size:.96rem!important}.family-hub__messages header strong{font-size:.78rem!important}.family-hub__messages time{font-size:.68rem!important}.family-hub__avatar{width:38px!important;height:38px!important;flex-basis:38px!important;font-size:.8rem!important}.family-hub__messages article>div{padding:13px 15px!important}
+  .family-hub__composer{padding:18px 20px!important}.family-hub__composer textarea{min-height:84px!important;padding:15px 17px!important;font-size:1rem!important}.family-hub__composer-tool{min-width:42px!important;min-height:42px!important}.family-hub__composer-tool svg{width:20px!important;height:20px!important}
+  .dashboard-widget-grid { gap: 26px !important; align-items:stretch !important; }
+  .dashboard-widget { padding: 25px !important; min-height:320px; }
+  .dashboard-widget-height--compact { min-height:240px !important; }
+  .dashboard-widget-height--normal { min-height:350px !important; }
+  .dashboard-widget-height--tall { min-height:500px !important; }
+  .dashboard-widget-height--compact .family-note-list,.dashboard-widget-height--compact .event-list,.dashboard-widget-height--compact .task-list,.dashboard-widget-height--compact .home-grocery-preview{max-height:160px!important}
+  .dashboard-widget-height--normal .family-note-list,.dashboard-widget-height--normal .event-list,.dashboard-widget-height--normal .task-list,.dashboard-widget-height--normal .home-grocery-preview{max-height:280px!important}
+  .dashboard-widget-height--tall .family-note-list,.dashboard-widget-height--tall .event-list,.dashboard-widget-height--tall .task-list,.dashboard-widget-height--tall .home-grocery-preview{max-height:430px!important}
+  .dashboard-widget--note .dashboard-widget__content,.dashboard-widget--focus .dashboard-widget__content,.dashboard-widget--occasions .dashboard-widget__content{padding:23px!important}
   .sidebar-nav button { min-height: 52px; font-size: 1.02rem; }
-  .topbar button, .button { min-height: 50px; font-size:.95rem; }
-  .empty-state.empty-state--clickable { min-height: 220px; }
+  .sidebar-nav button svg,.sidebar-settings svg,.household-switcher svg{width:21px!important;height:21px!important}
+  .topbar button, .button { min-height: 50px; font-size:.92rem; }
+  .module-heading h1,.today-heading h1{font-size:clamp(2.4rem,3vw,4rem)!important}.module-heading p,.today-heading p{font-size:1rem!important}.module-card{font-size:.94rem}
+  .empty-state.empty-state--clickable { min-height: 230px; }
   .empty-state.empty-state--clickable > strong { font-size: .9rem; }
-  .empty-state.empty-state--clickable > span { min-height: 40px; padding-inline: 16px; font-size: .8rem; }
-  .dashboard-widget-add{min-height:44px!important;font-size:.8rem!important}
-  .module-card{padding:24px!important}
-  .task-row,.grocery-row{min-height:58px;font-size:1rem}
+  .empty-state.empty-state--clickable > span { min-height: 42px; padding-inline: 17px; font-size: .8rem; }
+  .dashboard-widget-add{min-height:46px!important;font-size:.8rem!important}
   .calendar-v2-weekday { font-size: .8rem; }
-  .calendar-v2-day { min-height: 170px; padding: 14px; }
+  .calendar-v2-day { min-height: 165px; padding: 14px; }
   .calendar-v2-event, .calendar-v2-more { font-size: .78rem; }
-  .calendar-v2-event span{font-weight:700;opacity:.75}
-  .calendar-v2-time-grid{display:grid;grid-template-columns:88px repeat(7,minmax(130px,1fr));border:1px solid var(--line);border-radius:20px;overflow:auto;background:var(--paper);box-shadow:var(--shadow)}
-  .calendar-v2-time-grid.is-day{grid-template-columns:88px minmax(520px,1fr)}
-  .calendar-v2-time-corner,.calendar-v2-time-dayhead,.calendar-v2-all-day-label,.calendar-v2-all-day-cell,.calendar-v2-hour-label,.calendar-v2-hour-cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .calendar-v2-time-corner,.calendar-v2-all-day-label,.calendar-v2-hour-label{padding:10px;color:var(--ink-soft);font-size:.75rem;font-weight:850;background:color-mix(in srgb,var(--paper) 90%,var(--sage) 10%)}
-  .calendar-v2-time-dayhead{display:grid;gap:2px;padding:12px;text-align:center;background:color-mix(in srgb,var(--paper) 86%,var(--sage) 14%)}
-  .calendar-v2-time-dayhead.is-today{background:color-mix(in srgb,var(--paper) 70%,var(--sage) 30%)}
-  .calendar-v2-time-dayhead strong{font-size:.9rem}.calendar-v2-time-dayhead span{font-size:.72rem;color:var(--ink-soft)}
-  .calendar-v2-all-day-cell{min-height:52px;padding:6px;display:grid;gap:5px}.calendar-v2-all-day-cell button{border:0;border-radius:8px;padding:7px 9px;background:color-mix(in srgb,var(--paper) 72%,var(--coral) 28%);color:var(--ink);text-align:left;font-weight:800}
-  .calendar-v2-hour-label{min-height:76px;text-align:right}.calendar-v2-hour-cell{position:relative;min-height:76px;padding:5px;background:var(--paper)}.calendar-v2-hour-cell.is-today{background:color-mix(in srgb,var(--paper) 94%,var(--sage) 6%)}
-  .calendar-v2-hour-event{width:100%;display:grid;gap:2px;border:0;border-left:4px solid var(--coral);border-radius:8px;padding:7px 9px;background:color-mix(in srgb,var(--paper) 70%,var(--coral) 30%);color:var(--ink);text-align:left}.calendar-v2-hour-event span,.calendar-v2-hour-event small{font-size:.7rem}.calendar-v2-hour-event strong{font-size:.82rem}
+  .calendar-v2-toolbar button,.calendar-v2-discovery input,.calendar-v2-discovery button{font-size:.88rem!important}.calendar-v2-hour-label{font-size:.76rem!important}.calendar-v2-hour-event strong{font-size:.82rem!important}
   .notification-popover article small { font-size: .82rem; }
 }
 @media (min-width: 1500px) {
-  html { font-size: 19px; }
-  .app-shell { grid-template-columns: 290px minmax(0, 1fr) !important; }
-  .today-page.module-page,.admin-page,.dashboard-content,.dashboard-page,.page-content { width: calc(100% - 36px) !important; }
-  .dashboard-widget-grid { gap: 28px !important; }
-  .dashboard-widget { min-height:340px; padding:26px!important; }
-  .dashboard-widget-height--compact { min-height:250px !important; }
-  .dashboard-widget-height--normal { min-height:360px !important; }
-  .dashboard-widget-height--tall { min-height:520px !important; }
+  html { font-size: 20px; }
+  .app-shell { grid-template-columns: 295px minmax(0, 1fr) !important; }
+  .today-page.module-page{padding-left:clamp(40px,3.5vw,78px)!important;padding-right:clamp(40px,3.5vw,78px)!important}
+  .dashboard-widget-grid { gap: 30px !important; }
+  .dashboard-widget { min-height:360px; padding:28px!important; }
+  .dashboard-widget-height--compact { min-height:270px !important; }
+  .dashboard-widget-height--normal { min-height:390px !important; }
+  .dashboard-widget-height--tall { min-height:550px !important; }
 }
 @media (min-width: 1900px) {
-  html { font-size: 20px; }
-  .app-shell { grid-template-columns: 310px minmax(0, 1fr) !important; }
-  .today-page.module-page,.admin-page,.dashboard-content,.dashboard-page,.page-content { width: calc(100% - 44px) !important; }
-  .dashboard-widget-grid { gap: 30px !important; }
-  .dashboard-widget { min-height:370px; }
-  .dashboard-widget-height--normal { min-height:390px !important; }
-  .dashboard-widget-height--tall { min-height:560px !important; }
+  html { font-size: 21px; }
+  .app-shell { grid-template-columns: 315px minmax(0, 1fr) !important; }
+  .today-page.module-page{padding-left:72px!important;padding-right:72px!important}
+  .dashboard-widget-grid { gap: 32px !important; }
+  .dashboard-widget { min-height:390px; }
+  .dashboard-widget-height--normal { min-height:420px !important; }
+  .dashboard-widget-height--tall { min-height:590px !important; }
 }
