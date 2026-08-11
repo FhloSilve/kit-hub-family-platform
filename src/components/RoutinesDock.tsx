@@ -1,271 +1,65 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { AlertTriangle, Check, Clock3, Plus, Repeat2, Sparkles, Trash2, UserRoundCog, X } from "lucide-react";
+import { AlertTriangle, Check, Clock3, Plus, Repeat2, RotateCw, Sparkles, Trash2, UserRoundCog, UsersRound, X } from "lucide-react";
 import "../routines.css";
 
 type Timing = "overdue" | "today" | "soon" | "later" | "unscheduled";
+type Member = { userId:string; name:string };
 type Routine = {
-  id: string;
-  title: string;
-  notes: string | null;
-  cadence: "daily" | "weekly" | "monthly";
-  assigneeUserId: string | null;
-  assigneeName: string | null;
-  nextDueAt: string | null;
-  reminderMinutes: number | null;
-  lastCompletedAt: string | null;
-  snoozedUntil?: string | null;
-  timingState: Timing;
-  assignedToMe: boolean;
+  id:string; title:string; notes:string|null; cadence:"daily"|"weekly"|"monthly";
+  assigneeUserId:string|null; assigneeName:string|null; nextDueAt:string|null; reminderMinutes:number|null;
+  lastCompletedAt:string|null; snoozedUntil?:string|null; timingState:Timing; assignedToMe:boolean;
+  rotationMode:"none"|"round_robin"; rotationMemberIds:string[]; rotationMembers?:Member[];
 };
-type Member = { userId: string; name: string };
-type Recent = { id: string; title: string; completedByName: string; completedAt: string };
-type Workload = { userId: string; name: string; open: number; overdue: number };
-type Summary = { active: number; overdue: number; dueToday: number; mine: number; completedThisWeek: number; workload: Workload[] };
-type Data = { routines: Routine[]; members: Member[]; recent: Recent[]; canManage: boolean; summary: Summary };
+type Recent = { id:string; title:string; completedByName:string; completedAt:string };
+type Workload = { userId:string; name:string; open:number; overdue:number };
+type Summary = { active:number; overdue:number; dueToday:number; mine:number; completedThisWeek:number; workload:Workload[] };
+type Data = { routines:Routine[]; members:Member[]; recent:Recent[]; canManage:boolean; summary:Summary };
 
-async function req<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, {
-    credentials: "include",
-    ...init,
-    headers: { "content-type": "application/json", ...init?.headers },
-  });
-  const body = await response.json().catch(() => ({})) as any;
-  if (!response.ok) throw new Error(body?.error?.message || "That routine action could not be completed.");
-  return body as T;
-}
+async function req<T>(url:string,init?:RequestInit){const response=await fetch(url,{credentials:"include",...init,headers:{"content-type":"application/json",...init?.headers}});const body=await response.json().catch(()=>({})) as any;if(!response.ok)throw new Error(body?.error?.message||"That routine action could not be completed.");return body as T}
 
-export function RoutinesDock({ householdId }: { householdId: string }) {
-  const [open, setOpen] = useState(false);
-  const [data, setData] = useState<Data | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [filter, setFilter] = useState<"all" | "mine" | "overdue">("all");
-
-  async function load() {
-    try {
-      setData(await req(`/api/v1/households/${encodeURIComponent(householdId)}/routines`));
-      setError("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Routines could not be loaded.");
-    }
-  }
-
-  useEffect(() => {
-    if (open) void load();
-  }, [open, householdId]);
-
-  async function act(work: () => Promise<unknown>) {
-    setBusy(true);
-    setError("");
-    try {
-      await work();
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "That change could not be saved.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const visible = useMemo(
-    () => !data ? [] : data.routines.filter(r =>
-      filter === "all" ||
-      (filter === "mine" && r.assignedToMe) ||
-      (filter === "overdue" && r.timingState === "overdue")
-    ),
-    [data, filter],
-  );
-
+export function RoutinesDock({householdId}:{householdId:string}){
+  const[open,setOpen]=useState(false),[data,setData]=useState<Data|null>(null),[creating,setCreating]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(""),[filter,setFilter]=useState<"all"|"mine"|"overdue">("all");
+  async function load(){try{setData(await req(`/api/v1/households/${encodeURIComponent(householdId)}/routines`));setError("")}catch(e){setError(e instanceof Error?e.message:"Routines could not be loaded.")}}
+  useEffect(()=>{if(open)void load()},[open,householdId]);
+  async function act(work:()=>Promise<unknown>){setBusy(true);setError("");try{await work();await load()}catch(e){setError(e instanceof Error?e.message:"That change could not be saved.")}finally{setBusy(false)}}
+  const visible=useMemo(()=>!data?[]:data.routines.filter(r=>filter==="all"||(filter==="mine"&&r.assignedToMe)||(filter==="overdue"&&r.timingState==="overdue")),[data,filter]);
   return <>
-    <button className="routines-launcher" onClick={() => setOpen(true)}>
-      <Repeat2 />
-      <span>Routines</span>
-      {data?.summary.overdue
-        ? <b className="is-warning">{data.summary.overdue}</b>
-        : data?.routines.length ? <b>{data.routines.length}</b> : null}
-    </button>
-
-    {open && <div className="routines-backdrop" onMouseDown={() => setOpen(false)}>
-      <section className="routines-panel" onMouseDown={e => e.stopPropagation()}>
-        <header>
-          <div>
-            <small>HOUSEHOLD RHYTHM</small>
-            <h2>Routines & recurring chores</h2>
-            <p>See what is due, who owns it, what is slipping, and what your household has already handled.</p>
-          </div>
-          <button className="icon-button" onClick={() => setOpen(false)}><X /></button>
-        </header>
-
-        {error && <p className="module-alert">{error}</p>}
-
-        {data && <section className="routine-summary">
-          <button className={filter === "all" ? "is-active" : ""} onClick={() => setFilter("all")}><strong>{data.summary.active}</strong><span>Active</span></button>
-          <button className={filter === "mine" ? "is-active" : ""} onClick={() => setFilter("mine")}><strong>{data.summary.mine}</strong><span>Mine</span></button>
-          <button className={`${filter === "overdue" ? "is-active" : ""} ${data.summary.overdue ? "has-alert" : ""}`} onClick={() => setFilter("overdue")}><strong>{data.summary.overdue}</strong><span>Overdue</span></button>
-          <div><strong>{data.summary.dueToday}</strong><span>Due today</span></div>
-          <div><strong>{data.summary.completedThisWeek}</strong><span>Done this week</span></div>
-        </section>}
-
-        <div className="routines-toolbar">
-          <div><strong>This household</strong><span>{visible.length} shown</span></div>
-          {data?.canManage && <button className="button button--primary button--compact" onClick={() => setCreating(v => !v)}><Plus />{creating ? "Cancel" : "New routine"}</button>}
-        </div>
-
-        {creating && data && <RoutineForm
-          members={data.members}
-          busy={busy}
-          onSubmit={body => act(() => req(`/api/v1/households/${encodeURIComponent(householdId)}/routines`, { method: "POST", body: JSON.stringify(body) })).then(() => setCreating(false))}
-        />}
-
-        <div className="routines-list">
-          {!data
-            ? <p>Loading routines…</p>
-            : visible.map(r => <RoutineRow
-                key={r.id}
-                routine={r}
-                members={data.members}
-                canManage={data.canManage}
-                busy={busy}
-                householdId={householdId}
-                act={act}
-              />)}
-          {data && !visible.length && <div className="routines-empty">
-            <Sparkles />
-            <strong>{filter === "overdue" ? "Nothing overdue" : "No routines here yet"}</strong>
-            <p>{filter === "overdue" ? "Your household is caught up on recurring chores." : "Add things that keep coming back: bins, pet care, laundry, plants, school bags or weekly cleaning."}</p>
-          </div>}
-        </div>
-
-        {data && data.summary.workload.length > 0 && <section className="routine-workload">
-          <h3><UserRoundCog /> Assignment balance</h3>
-          {data.summary.workload.map(w => <div key={w.userId}>
-            <span>{w.name}</span>
-            <b>{w.open} open</b>
-            {w.overdue > 0 && <em>{w.overdue} overdue</em>}
-          </div>)}
-        </section>}
-
-        {data && data.recent.length > 0 && <section className="routine-history">
-          <h3>Recently done</h3>
-          {data.recent.map(x => <p key={x.id}>
-            <Check />
-            <span><strong>{x.title}</strong> · {x.completedByName}</span>
-            <time>{new Date(x.completedAt).toLocaleString()}</time>
-          </p>)}
-        </section>}
-      </section>
-    </div>}
+    <button className="routines-launcher" onClick={()=>setOpen(true)}><Repeat2/><span>Routines</span>{data?.summary.overdue?<b className="is-warning">{data.summary.overdue}</b>:data?.routines.length?<b>{data.routines.length}</b>:null}</button>
+    {open&&<div className="routines-backdrop" onMouseDown={()=>setOpen(false)}><section className="routines-panel" onMouseDown={e=>e.stopPropagation()}>
+      <header><div><small>HOUSEHOLD ROUTINES</small><h2>Routines & recurring chores</h2><p>See who owns each recurring job, rotate responsibilities fairly, and keep overdue work visible.</p></div><button className="icon-button" onClick={()=>setOpen(false)} aria-label="Close routines"><X/></button></header>
+      {error&&<p className="module-alert">{error}</p>}
+      {data&&<section className="routine-summary"><button className={filter==="all"?"is-active":""} onClick={()=>setFilter("all")}><strong>{data.summary.active}</strong><span>Active</span></button><button className={filter==="mine"?"is-active":""} onClick={()=>setFilter("mine")}><strong>{data.summary.mine}</strong><span>Mine</span></button><button className={`${filter==="overdue"?"is-active":""} ${data.summary.overdue?"has-alert":""}`} onClick={()=>setFilter("overdue")}><strong>{data.summary.overdue}</strong><span>Overdue</span></button><div><strong>{data.summary.dueToday}</strong><span>Due today</span></div><div><strong>{data.summary.completedThisWeek}</strong><span>Done this week</span></div></section>}
+      <div className="routines-toolbar"><div><strong>This household</strong><span>{visible.length} shown</span></div>{data?.canManage&&<button className="button button--primary button--compact" onClick={()=>setCreating(v=>!v)}><Plus/>{creating?"Cancel":"New routine"}</button>}</div>
+      {creating&&data&&<RoutineForm members={data.members} busy={busy} onSubmit={body=>act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines`,{method:"POST",body:JSON.stringify(body)})).then(()=>setCreating(false))}/>} 
+      <div className="routines-list">{!data?<p>Loading routines…</p>:visible.map(r=><RoutineRow key={r.id} routine={r} members={data.members} canManage={data.canManage} busy={busy} householdId={householdId} act={act}/>)}{data&&!visible.length&&<div className="routines-empty"><Sparkles/><strong>{filter==="overdue"?"Nothing overdue":"No routines here yet"}</strong><p>{filter==="overdue"?"Your household is caught up on recurring chores.":"Add things that keep coming back: bins, pet care, laundry, plants, school bags or weekly cleaning."}</p></div>}</div>
+      {data&&data.summary.workload.length>0&&<section className="routine-workload"><h3><UserRoundCog/>Assignment balance</h3>{data.summary.workload.map(w=><div key={w.userId}><span>{w.name}</span><b>{w.open} open</b>{w.overdue>0&&<em>{w.overdue} overdue</em>}</div>)}</section>}
+      {data&&data.recent.length>0&&<section className="routine-history"><h3>Recently done</h3>{data.recent.map(x=><p key={x.id}><Check/><span><strong>{x.title}</strong> · {x.completedByName}</span><time>{new Date(x.completedAt).toLocaleString()}</time></p>)}</section>}
+    </section></div>}
   </>;
 }
 
-function RoutineRow({ routine: r, members, canManage, busy, householdId, act }: {
-  routine: Routine;
-  members: Member[];
-  canManage: boolean;
-  busy: boolean;
-  householdId: string;
-  act: (work: () => Promise<unknown>) => Promise<void>;
-}) {
-  const [state, setState] = useState(r.assigneeUserId ?? "");
-  useEffect(() => setState(r.assigneeUserId ?? ""), [r.assigneeUserId]);
-
+function RoutineRow({routine:r,members,canManage,busy,householdId,act}:{routine:Routine;members:Member[];canManage:boolean;busy:boolean;householdId:string;act:(work:()=>Promise<unknown>)=>Promise<void>}){
+  const[state,setState]=useState(r.assigneeUserId??""),[editingRotation,setEditingRotation]=useState(false),[rotationIds,setRotationIds]=useState<string[]>(r.rotationMemberIds??[]);
+  useEffect(()=>setState(r.assigneeUserId??""),[r.assigneeUserId]);useEffect(()=>setRotationIds(r.rotationMemberIds??[]),[r.rotationMemberIds]);
+  const toggleRotationMember=(id:string)=>setRotationIds(current=>current.includes(id)?current.filter(x=>x!==id):[...current,id]);
   return <article className={`routine-item is-${r.timingState}`}>
-    <button
-      className="routine-check"
-      disabled={busy}
-      onClick={() => void act(() => req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}/complete`, { method: "POST", body: "{}" }))}
-    >
-      <Check />
-    </button>
-
-    <div className="routine-copy">
-      <div>
-        <strong>{r.title}</strong>
-        <span className="routine-cadence"><Repeat2 />{r.cadence}</span>
-        {r.timingState === "overdue" && <span className="routine-state"><AlertTriangle />Overdue</span>}
-        {r.timingState === "today" && <span className="routine-state">Due today</span>}
-      </div>
-
-      {r.notes && <p>{r.notes}</p>}
-
-      <small>
-        {r.assigneeName ? `For ${r.assigneeName}` : "Anyone"}
-        {r.nextDueAt ? ` · ${new Date(r.nextDueAt).toLocaleString()}` : " · No due date"}
-        {r.reminderMinutes != null ? ` · Reminder ${formatReminder(r.reminderMinutes)}` : ""}
-      </small>
-
-      {(r.assignedToMe || canManage) && r.nextDueAt && <div className="routine-actions">
-        <button disabled={busy} onClick={() => void act(() => req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}/snooze`, { method: "POST", body: JSON.stringify({ minutes: 60 }) }))}>Snooze 1h</button>
-        <button disabled={busy} onClick={() => void act(() => req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}/snooze`, { method: "POST", body: JSON.stringify({ minutes: 1440 }) }))}>Tomorrow</button>
-      </div>}
-
-      {canManage && <label className="routine-assignee">
-        <span>Assign</span>
-        <select
-          value={state}
-          onChange={e => {
-            const value = e.target.value;
-            setState(value);
-            void act(() => req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}`, {
-              method: "PATCH",
-              body: JSON.stringify({ assigneeUserId: value || null }),
-            }));
-          }}
-        >
-          <option value="">Anyone</option>
-          {members.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}
-        </select>
-      </label>}
+    <button className="routine-check" disabled={busy} onClick={()=>void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}/complete`,{method:"POST",body:"{}"}))}><Check/></button>
+    <div className="routine-copy"><div><strong>{r.title}</strong><span className="routine-cadence"><Repeat2/>{r.cadence}</span>{r.rotationMode==="round_robin"&&<span className="routine-rotation-badge"><RotateCw/>Rotates</span>}{r.timingState==="overdue"&&<span className="routine-state"><AlertTriangle/>Overdue</span>}{r.timingState==="today"&&<span className="routine-state">Due today</span>}</div>
+      {r.notes&&<p>{r.notes}</p>}
+      <small>{r.assigneeName?`For ${r.assigneeName}`:"Anyone"}{r.nextDueAt?` · ${new Date(r.nextDueAt).toLocaleString()}`:" · No due date"}{r.reminderMinutes!=null?` · Reminder ${formatReminder(r.reminderMinutes)}`:""}</small>
+      {r.rotationMode==="round_robin"&&<div className="routine-rotation-summary"><UsersRound/><span>Rotates between {(r.rotationMembers??[]).map(x=>x.name).join(" → ")||"selected members"}. Completing it automatically hands the next occurrence to the next person.</span></div>}
+      {(r.assignedToMe||canManage)&&r.nextDueAt&&<div className="routine-actions"><button disabled={busy} onClick={()=>void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}/snooze`,{method:"POST",body:JSON.stringify({minutes:60})}))}>Snooze 1h</button><button disabled={busy} onClick={()=>void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}/snooze`,{method:"POST",body:JSON.stringify({minutes:1440})}))}>Tomorrow</button></div>}
+      {canManage&&<div className="routine-ownership-controls"><label className="routine-assignee"><span>Assigned to</span><select value={state} disabled={r.rotationMode==="round_robin"} onChange={e=>{const value=e.target.value;setState(value);void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}`,{method:"PATCH",body:JSON.stringify({assigneeUserId:value||null})}))}}><option value="">Anyone</option>{members.map(m=><option key={m.userId} value={m.userId}>{m.name}</option>)}</select></label><button type="button" className="routine-rotation-toggle" onClick={()=>setEditingRotation(v=>!v)}><RotateCw/>{r.rotationMode==="round_robin"?"Edit rotation":"Set rotation"}</button></div>}
+      {canManage&&editingRotation&&<div className="routine-rotation-editor"><strong>Recurring chore rotation</strong><p>Select at least two household members. Kit Hub will hand the next occurrence to the next person after each completion.</p><div>{members.map(m=><label key={m.userId}><input type="checkbox" checked={rotationIds.includes(m.userId)} onChange={()=>toggleRotationMember(m.userId)}/><span>{m.name}</span></label>)}</div><div className="routine-rotation-actions"><button className="button button--primary button--compact" disabled={busy||rotationIds.length<2} onClick={()=>void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}`,{method:"PATCH",body:JSON.stringify({rotationMode:"round_robin",rotationMemberIds:rotationIds})})).then(()=>setEditingRotation(false))}><RotateCw/>Save rotation</button>{r.rotationMode==="round_robin"&&<button className="button button--secondary button--compact" disabled={busy} onClick={()=>void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}`,{method:"PATCH",body:JSON.stringify({rotationMode:"none",rotationMemberIds:[]})})).then(()=>setEditingRotation(false))}>Stop rotation</button>}</div></div>}
     </div>
-
-    {canManage && <button
-      className="icon-button routine-delete"
-      aria-label={`Remove ${r.title}`}
-      onClick={() => void act(() => req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}`, { method: "DELETE" }))}
-    >
-      <Trash2 />
-    </button>}
+    {canManage&&<button className="icon-button routine-delete" aria-label={`Remove ${r.title}`} onClick={()=>void act(()=>req(`/api/v1/households/${encodeURIComponent(householdId)}/routines/${r.id}`,{method:"DELETE"}))}><Trash2/></button>}
   </article>;
 }
 
-function RoutineForm({ members, busy, onSubmit }: { members: Member[]; busy: boolean; onSubmit: (x: unknown) => Promise<void> }) {
-  const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
-  const [cadence, setCadence] = useState("weekly");
-  const [assignee, setAssignee] = useState("");
-  const [due, setDue] = useState("");
-  const [reminder, setReminder] = useState("60");
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    await onSubmit({
-      title,
-      notes,
-      cadence,
-      assigneeUserId: assignee || null,
-      nextDueAt: due ? new Date(due).toISOString() : null,
-      reminderMinutes: reminder === "" ? null : Number(reminder),
-    });
-  }
-
-  return <form className="routine-form" onSubmit={e => void submit(e)}>
-    <label>Routine<input required maxLength={160} value={title} onChange={e => setTitle(e.target.value)} placeholder="Take bins out" /></label>
-    <label>Notes<textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Anything useful to remember" /></label>
-    <div>
-      <label>Repeats<select value={cadence} onChange={e => setCadence(e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
-      <label>Assigned to<select value={assignee} onChange={e => setAssignee(e.target.value)}><option value="">Anyone</option>{members.map(m => <option key={m.userId} value={m.userId}>{m.name}</option>)}</select></label>
-    </div>
-    <div>
-      <label>Next due<input type="datetime-local" value={due} onChange={e => setDue(e.target.value)} /></label>
-      <label><Clock3 /> Reminder<select value={reminder} onChange={e => setReminder(e.target.value)}><option value="">None</option><option value="15">15 min before</option><option value="60">1 hour before</option><option value="180">3 hours before</option><option value="1440">1 day before</option></select></label>
-    </div>
-    <button className="button button--primary" disabled={busy || !title.trim()}>Create routine</button>
-  </form>;
+function RoutineForm({members,busy,onSubmit}:{members:Member[];busy:boolean;onSubmit:(x:unknown)=>Promise<void>}){
+  const[title,setTitle]=useState(""),[notes,setNotes]=useState(""),[cadence,setCadence]=useState("weekly"),[assignee,setAssignee]=useState(""),[due,setDue]=useState(""),[reminder,setReminder]=useState("60"),[rotate,setRotate]=useState(false),[rotationIds,setRotationIds]=useState<string[]>([]);
+  const toggle=(id:string)=>setRotationIds(current=>current.includes(id)?current.filter(x=>x!==id):[...current,id]);
+  async function submit(e:FormEvent){e.preventDefault();await onSubmit({title,notes,cadence,assigneeUserId:rotate?null:assignee||null,nextDueAt:due?new Date(due).toISOString():null,reminderMinutes:reminder===""?null:Number(reminder),rotationMode:rotate?"round_robin":"none",rotationMemberIds:rotate?rotationIds:[]})}
+  return <form className="routine-form" onSubmit={e=>void submit(e)}><label>Routine<input required maxLength={160} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Take bins out"/></label><label>Notes<textarea rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Anything useful to remember"/></label><div><label>Repeats<select value={cadence} onChange={e=>setCadence(e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label><label>Assigned to<select value={assignee} disabled={rotate} onChange={e=>setAssignee(e.target.value)}><option value="">Anyone</option>{members.map(m=><option key={m.userId} value={m.userId}>{m.name}</option>)}</select></label></div><div><label>Next due<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><label><Clock3/> Reminder<select value={reminder} onChange={e=>setReminder(e.target.value)}><option value="">None</option><option value="15">15 min before</option><option value="60">1 hour before</option><option value="180">3 hours before</option><option value="1440">1 day before</option></select></label></div><label className="routine-rotation-switch"><input type="checkbox" checked={rotate} onChange={e=>setRotate(e.target.checked)}/><span><strong>Rotate this chore</strong><small>Automatically assign each new occurrence to the next selected household member.</small></span></label>{rotate&&<div className="routine-rotation-picker">{members.map(m=><label key={m.userId}><input type="checkbox" checked={rotationIds.includes(m.userId)} onChange={()=>toggle(m.userId)}/><span>{m.name}</span></label>)}</div>}<button className="button button--primary" disabled={busy||!title.trim()||(rotate&&rotationIds.length<2)}>Create routine</button></form>;
 }
-
-function formatReminder(n: number) {
-  if (n >= 1440) return `${Math.round(n / 1440)} day before`;
-  if (n >= 60) return `${Math.round(n / 60)} hour before`;
-  return `${n} min before`;
-}
+function formatReminder(n:number){if(n>=1440)return`${Math.round(n/1440)} day before`;if(n>=60)return`${Math.round(n/60)} hour before`;return`${n} min before`}
