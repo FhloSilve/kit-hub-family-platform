@@ -18,6 +18,7 @@ import presence from "./presence";
 import coordinationActions from "./coordination-actions";
 import releaseState from "./release-state";
 import productOps, { markBetaTesterActive, privateBetaAccess } from "./product-ops";
+import adoptionInsights from "./adoption-insights";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import { apiError, type AppBindings } from "./http";
 
@@ -40,7 +41,7 @@ async function serveAdminShell(c: Context<AppBindings>) {
   const headers = new Headers(shellResponse.headers);headers.set("content-type", "text/html; charset=UTF-8");headers.set("cache-control", "no-store");return new Response(html, { status: 200, headers });
 }
 
-app.get("/admin", serveAdminShell);app.get("/admin/", serveAdminShell);
+app.get("/admin", serveAdminShell);app.get("/admin/", serveAdminShell);app.get("/admin/launch",serveAdminShell);app.get("/admin/launch/",serveAdminShell);app.get("/admin/feedback",serveAdminShell);app.get("/admin/feedback/",serveAdminShell);
 app.get("/api/v1/admin/releases/status", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return c.json(await fetchAdminReleaseStatus(c)); });
 app.post("/api/v1/admin/releases", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return dispatchAdminRelease(c); });
 app.post("/api/v1/admin/releases/:runId/cancel", async (c) => { const access = await requirePlatformAdmin(c); if (access.response) return access.response; return cancelAdminRelease(c, Number(c.req.param("runId"))); });
@@ -52,5 +53,5 @@ app.use("/api/v1/bootstrap", async (c, next) => {
   await next();
 });
 
-app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silviResponder);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
+app.route("/", releaseState);app.route("/", feedback);app.route("/", familyTools);app.route("/", presence);app.route("/", productOps);app.route("/", adoptionInsights);app.route("/", coordinationActions);app.route("/", gifSearch);app.route("/", chatMedia);app.route("/", communication);app.route("/", familyHome);app.route("/", meals);app.route("/", routines);app.route("/", silviInsights);app.route("/", silviResponder);app.route("/", silvi);app.route("/", calendarEnhancements);app.route("/", search);app.route("/", everydayV2);app.route("/", coreApp);
 export default app;
