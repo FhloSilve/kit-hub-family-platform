@@ -15,13 +15,15 @@
   .mobile-topbar-utility--silvi img{width:25px;height:25px;display:block}
   .mobile-topbar-utility--add{background:var(--theme-primary,#345c4b);color:#fff;border-color:transparent}
   .appearance-quick-toggle{display:none!important}
-  .silvi-launcher,.family-tools-launcher,.mobile-quick-add{display:none!important}
+  .silvi-launcher,.routines-launcher,.family-tools-launcher,.mobile-quick-add{display:none!important}
 }
 @media(max-width:430px){
-  .app-topbar{padding-left:10px!important;padding-right:10px!important;gap:6px!important}
-  .topbar-actions{gap:5px!important}
-  .mobile-topbar-utilities{gap:5px}
-  .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button,.mobile-topbar-utility{width:38px!important;height:38px!important;min-width:38px!important;border-radius:12px!important}
-  .topbar-actions>.profile-menu>.profile-button>span{width:38px!important;height:38px!important;border-radius:12px!important}
-  .mobile-brand .brand__mark{width:42px!important;height:42px!important}
+  .app-topbar{padding-left:8px!important;padding-right:8px!important;gap:5px!important}
+  .topbar-actions{gap:4px!important}
+  .mobile-topbar-utilities{gap:4px}
+  .topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button,.mobile-topbar-utility{width:36px!important;height:36px!important;min-width:36px!important;border-radius:11px!important}
+  .topbar-actions>.profile-menu>.profile-button>span{width:36px!important;height:36px!important;border-radius:11px!important;font-size:15px!important}
+  .mobile-topbar-utility svg{width:18px;height:18px}
+  .mobile-topbar-utility--silvi img{width:22px;height:22px}
+  .mobile-brand .brand__mark{width:40px!important;height:40px!important}
 }
