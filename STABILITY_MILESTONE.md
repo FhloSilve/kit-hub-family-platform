@@ -10,7 +10,8 @@ The milestone is complete when the production app passes the normal release work
 
 - `src/design-system.css` is the shared token layer for spacing, radii, tap targets, focus, motion, status colours, dark surfaces and typography.
 - `UiStabilityRuntime` centrally handles modal body scroll lock, desktop focus hand-off, Escape closing, visual viewport height and mobile keyboard inset tracking.
-- `stability-pass-2.css` is the authoritative visual audit layer while older feature styles are gradually consolidated.
+- `stability-consolidated.css` contains the retained desktop/navigation/dark rules from retired patch layers.
+- `stability-pass-2.css` is the authoritative full visual audit layer loaded last.
 - `tests/ui-stability.test.ts` protects the mobile profile trigger, design tokens, 16px Safari form controls, modal runtime, Admin routes/navigation and the dark-mode module audit.
 - The normal `npm test` / `npm run ci` path therefore now contains explicit UI stability guardrails.
 
@@ -39,25 +40,27 @@ The authoritative stability layer now covers Home, Calendar, Tasks, Groceries, M
 - [x] Task/grocery paper surfaces and controls.
 - [x] Meals planner/library/suggestion/modal surfaces.
 - [x] Family Tools and Admin feedback surfaces.
-- [ ] Final visual QA in every non-default theme before removing older contrast overrides.
+- [ ] Final visual QA in every non-default theme.
 
 ## 3. Navigation and account cleanup
 
-- [x] Profile menu is the home for Personal Settings, Household, Routines & recurring chores, Feedback and Sign out.
+- [x] Profile menu is the home for Personal Settings, Household, Household plan, Routines & recurring chores, Feedback and Sign out.
 - [x] Appearance is available as a fast top-bar action and inside Personal Settings.
+- [x] Silvi has one authoritative top-bar entry; the retired sidebar placeholder is suppressed.
 - [x] Admin entry is visually distinct and only shown to eligible users.
 - [x] Admin Release and Admin Feedback are separate routes with one shared Admin navigation bar.
-- [ ] After production verification, remove now-redundant legacy launcher selectors instead of retaining hidden duplicates.
 
 ## 4. CSS/component consolidation
 
 - [x] Shared design tokens documented in `src/design-system.css`.
 - [x] One authoritative stability audit layer loaded last.
-- [ ] After the current release is visually verified, fold useful rules from `stability-desktop.css` and `dark-mode-polish-v2.css` into the final layer and remove those imports.
+- [x] Useful desktop/navigation rules consolidated into `stability-consolidated.css`.
+- [x] `stability-desktop.css` is retired.
+- [x] `dark-mode-polish-v2.css` is retired and removed.
 - [ ] Continue replacing repeated feature-specific surface/button values with design tokens during normal maintenance.
 - [ ] Reduce remaining `!important` rules where selector ownership is now clear.
 
-The deliberate order here is important: visual verification comes before deleting legacy rules, so cleanup does not create a new regression while the baseline is still being established.
+The risky legacy-layer deletion is now complete. New product work should use the established token/navigation/modal infrastructure rather than adding new patch layers.
 
 ## 5. Regression coverage
 
@@ -72,7 +75,7 @@ Automated structural regression coverage now checks:
 - [x] Admin Release / Feedback navigation remains separated;
 - [x] dark-mode audit selectors remain present for Calendar, Tasks, Groceries, Meals, Family Tools and Admin Feedback.
 
-Next regression layer after production visual verification:
+Next regression layer:
 
 - interaction/browser tests for Quick Add open/close and profile actions;
 - screenshot baselines for Home, Calendar, Admin Release and Admin Feedback in light/dark;
@@ -90,21 +93,15 @@ Minimum manual verification targets:
 - at least two non-default color themes;
 - installed PWA and normal browser tab where possible.
 
-Priority verification surfaces for this release:
+Priority verification surfaces for the next release:
 
-1. Desktop Home
-2. Desktop Calendar
-3. Admin Release
-4. Admin Feedback
-5. Tasks / Groceries / Meals / Family Hub / Household in dark mode
-6. Mobile Quick Add, Meals modal, profile menu and keyboard/safe-area behavior
+1. Desktop Home top bar: Silvi is clearly labelled and no retired sidebar Silvi card is visible.
+2. Profile menu: Household plan and Routines & recurring chores both open correctly.
+3. Household plan: workload and seven-day timeline in light/dark, desktop/mobile.
+4. Desktop Calendar.
+5. Admin Release and Admin Feedback.
+6. Mobile Quick Add, Meals modal and keyboard/safe-area behavior.
 
-## After this milestone
+## Product work resumed
 
-Resume product expansion in this order:
-
-1. Household coordination: reminders, overdue states, assignment workflows, fair routine/chore balancing.
-2. Silvi: weekly household briefings, schedule conflicts, forgotten-task detection, meal/calendar coordination, and controlled multi-step proposals.
-3. Communication/media polish: GIF search, attachments, notifications, polls, and richer chat behavior.
-
-No new major feature area should be started before this milestone is green unless it is required to fix a stability or accessibility problem.
+The shell/navigation/responsive foundation is now treated as infrastructure. Product expansion has resumed under `HOUSEHOLD_COORDINATION_MILESTONE.md` with Household plan, assignments/workload, weekly coordination and Silvi-assisted planning as the active direction.
