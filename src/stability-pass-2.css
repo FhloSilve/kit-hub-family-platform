@@ -1,123 +1,157 @@
-/* Kit Hub UI/Stability milestone - pass 2. Keep this file loaded last. */
+/* Kit Hub UI/Stability milestone - authoritative final pass. Keep loaded last. */
 
-/* Shared control rhythm */
-button,input,select,textarea{transition:border-color .16s ease,background-color .16s ease,color .16s ease,box-shadow .16s ease}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid color-mix(in srgb,var(--theme-primary,#4f8f70) 42%,transparent)!important;outline-offset:2px}
+/* Shared controls */
+button,input,select,textarea{transition:border-color .16s ease,background-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid color-mix(in srgb,var(--theme-primary,#4f8f70) 45%,transparent)!important;outline-offset:2px}
+button:disabled{cursor:not-allowed}
 
-/* Mobile top bar: one compact, predictable action row. */
+/* Desktop Home: deliberate canvas, readable cards, consistent controls. */
+@media(min-width:1000px){
+  .today-page,.module-page{width:min(1480px,calc(100vw - 292px))!important;max-width:none!important;margin-inline:auto!important;padding:40px 38px 76px!important}
+  .today-heading,.module-heading{align-items:flex-end!important;gap:24px!important;margin-bottom:26px!important}
+  .today-heading>div,.module-heading>div{min-width:0}
+  .today-heading h1,.module-heading h1{font-size:clamp(42px,3.8vw,62px)!important;line-height:1.02!important;letter-spacing:-1.7px!important}
+  .today-heading p,.module-heading p{max-width:720px!important;font-size:15px!important;line-height:1.6!important}
+  .dashboard-custom-grid,.dashboard-widget-grid,.dashboard-grid{gap:18px!important}
+  .dashboard-widget,.dashboard-card,.module-card{border-radius:22px!important}
+  .dashboard-custom-card{min-height:210px!important}
+  .shared-home-heading h2,.card-heading h2{font-size:clamp(22px,1.8vw,30px)!important}
+}
+
+/* Desktop Calendar: fill the page and make navigation states unambiguous. */
+.calendar-v2-shell{width:100%;min-width:0}
+.calendar-v2-discovery{position:relative}
+.calendar-v2-discovery>label{min-width:0}
+.calendar-v2-discovery input{min-width:0;width:100%}
+.calendar-v2-toolbar button,.calendar-v2-discovery button{min-height:40px}
+.calendar-v2-day{min-width:0}
+.calendar-v2-day__events{min-width:0}
+.calendar-v2-event{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:1000px){
+  .calendar-v2-shell{font-size:14px}
+  .calendar-v2-grid{width:100%}
+  .calendar-v2-day{min-height:132px!important;padding:12px!important}
+  .calendar-v2-weekday{padding:13px 10px!important}
+  .calendar-v2-toolbar{gap:18px!important;margin:18px 0!important}
+  .calendar-v2-toolbar__label{font-size:18px!important}
+}
+
+/* Dark foundation: charcoal, not black. */
+:root[data-kit-appearance="dark"]{
+  --kh-bg:#20262b;--kh-surface:#293137;--kh-surface-raised:#30383e;--kh-surface-soft:#343d43;
+  --kh-text:#f4f1ea;--kh-muted:#c8d0d2;--kh-subtle:#aeb9bc;--kh-border:#4f5b63;--kh-link:#a7dec3;
+}
+:root[data-kit-appearance="dark"] body{background:var(--kh-bg)!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .app-main,:root[data-kit-appearance="dark"] .today-page,:root[data-kit-appearance="dark"] .module-page{background:var(--kh-bg)!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .dashboard-widget,:root[data-kit-appearance="dark"] .dashboard-card,:root[data-kit-appearance="dark"] .module-card,:root[data-kit-appearance="dark"] .home-note-card,:root[data-kit-appearance="dark"] .home-focus-card,:root[data-kit-appearance="dark"] .home-occasion-card{background:var(--kh-surface)!important;border-color:var(--kh-border)!important;color:var(--kh-text)!important;box-shadow:none!important}
+:root[data-kit-appearance="dark"] .today-page h1,:root[data-kit-appearance="dark"] .today-page h2,:root[data-kit-appearance="dark"] .today-page h3,:root[data-kit-appearance="dark"] .module-page h1,:root[data-kit-appearance="dark"] .module-page h2,:root[data-kit-appearance="dark"] .module-page h3,:root[data-kit-appearance="dark"] .module-page strong,:root[data-kit-appearance="dark"] .dashboard-card strong,:root[data-kit-appearance="dark"] .dashboard-widget strong{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .today-page p,:root[data-kit-appearance="dark"] .today-page small,:root[data-kit-appearance="dark"] .module-page p,:root[data-kit-appearance="dark"] .module-page small,:root[data-kit-appearance="dark"] .module-page label,:root[data-kit-appearance="dark"] .shared-home-heading span,:root[data-kit-appearance="dark"] .family-note-list footer small,:root[data-kit-appearance="dark"] .household-focus-content>small{color:var(--kh-muted)!important}
+:root[data-kit-appearance="dark"] .today-page a,:root[data-kit-appearance="dark"] .module-page a,:root[data-kit-appearance="dark"] .dashboard-widget a,:root[data-kit-appearance="dark"] .dashboard-card a{color:var(--kh-link)!important}
+
+/* Buttons and forms */
+:root[data-kit-appearance="dark"] .button:not(.button--primary),:root[data-kit-appearance="dark"] .icon-button{background:var(--kh-surface-raised)!important;color:var(--kh-text)!important;border-color:#5a6770!important}
+:root[data-kit-appearance="dark"] .button--primary{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 72%,white 28%)!important;color:#14221b!important;border-color:transparent!important}
+:root[data-kit-appearance="dark"] button:disabled{opacity:.5!important}
+:root[data-kit-appearance="dark"] input,:root[data-kit-appearance="dark"] textarea,:root[data-kit-appearance="dark"] select{background:#2f373d!important;color:var(--kh-text)!important;border-color:#5a6770!important}
+:root[data-kit-appearance="dark"] input::placeholder,:root[data-kit-appearance="dark"] textarea::placeholder{color:#a7b2b4!important;opacity:1!important}
+
+/* Home notes/focus/empty states */
+:root[data-kit-appearance="dark"] .family-note-list article{background:#3a3a34!important;border-color:#68665a!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .family-note-list .handwritten-note{color:#f2eee7!important}
+:root[data-kit-appearance="dark"] .household-focus-content{background:#303a37!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .shared-home-empty,:root[data-kit-appearance="dark"] .empty-state{background:#2c343a!important;border-color:#58656e!important;color:var(--kh-muted)!important}
+:root[data-kit-appearance="dark"] .shared-home-empty strong,:root[data-kit-appearance="dark"] .empty-state strong{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .shared-home-empty svg{color:#b7e0ca!important}
+:root[data-kit-appearance="dark"] .empty-state span{color:#c8ead9!important;background:#33473f!important}
+
+/* Calendar dark audit */
+:root[data-kit-appearance="dark"] .calendar-v2-shell,:root[data-kit-appearance="dark"] .calendar-v2-grid,:root[data-kit-appearance="dark"] .calendar-v2-agenda{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .calendar-v2-discovery>label,:root[data-kit-appearance="dark"] .calendar-v2-discovery>button,:root[data-kit-appearance="dark"] .calendar-v2-nav>button,:root[data-kit-appearance="dark"] .calendar-v2-modes>button{background:var(--kh-surface-raised)!important;color:var(--kh-text)!important;border-color:#5a6770!important}
+:root[data-kit-appearance="dark"] .calendar-v2-discovery>button.is-active,:root[data-kit-appearance="dark"] .calendar-v2-modes>button.is-active{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 48%,#30383e 52%)!important;color:#fff!important}
+:root[data-kit-appearance="dark"] .calendar-v2-filter-panel,:root[data-kit-appearance="dark"] .calendar-v2-results,:root[data-kit-appearance="dark"] .calendar-v2-agenda-day{background:var(--kh-surface)!important;border-color:var(--kh-border)!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .calendar-v2-filter-panel button{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .calendar-v2-filter-panel button.active{background:#3a4842!important;color:#dff4e8!important}
+:root[data-kit-appearance="dark"] .calendar-v2-weekday{background:#34404a!important;color:#e8edef!important;border-color:#5a6770!important}
+:root[data-kit-appearance="dark"] .calendar-v2-day{background:#293137!important;color:var(--kh-text)!important;border-color:#657078!important}
+:root[data-kit-appearance="dark"] .calendar-v2-day:hover{background:#333d43!important;box-shadow:inset 0 0 0 2px #7b8c95!important}
+:root[data-kit-appearance="dark"] .calendar-v2-day.is-outside{background:#252c31!important;color:#8f999c!important}
+:root[data-kit-appearance="dark"] .calendar-v2-day.is-today{background:#33404b!important;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--theme-primary,#4f8f70) 55%,#81939c)!important}
+:root[data-kit-appearance="dark"] .calendar-v2-day__number{color:inherit!important}
+:root[data-kit-appearance="dark"] .calendar-v2-event{background:#3b484f!important;border-color:#596971!important;color:#f3f1ea!important}
+:root[data-kit-appearance="dark"] .calendar-v2-more,:root[data-kit-appearance="dark"] .calendar-v2-agenda-event span{color:var(--kh-muted)!important}
+
+/* Tasks + Groceries dark audit */
+:root[data-kit-appearance="dark"] .task-list.module-list,:root[data-kit-appearance="dark"] .task-list,:root[data-kit-appearance="dark"] .grocery-list{background-color:#293137!important;background-image:linear-gradient(90deg,transparent 0 34px,rgba(210,110,110,.18) 34px 35px,transparent 35px),repeating-linear-gradient(0deg,transparent 0 35px,rgba(126,166,181,.14) 35px 36px)!important}
+:root[data-kit-appearance="dark"] .task-row,:root[data-kit-appearance="dark"] .grocery-row{color:var(--kh-text)!important;border-color:#46535b!important}
+:root[data-kit-appearance="dark"] .task-row small,:root[data-kit-appearance="dark"] .grocery-row>span{color:var(--kh-muted)!important}
+:root[data-kit-appearance="dark"] .task-check{background:#30383e!important;border-color:#91aaa0!important;color:#d9efe4!important}
+:root[data-kit-appearance="dark"] .task-row.is-urgent{background:#493832!important;border-left-color:#e68c78!important}
+:root[data-kit-appearance="dark"] .urgent-badge{background:#b85f4d!important;color:#fff!important}
+:root[data-kit-appearance="dark"] .grocery-paper{background-color:#293137!important;background-image:repeating-linear-gradient(transparent,transparent 31px,rgba(126,166,181,.13) 32px)!important}
+:root[data-kit-appearance="dark"] .grocery-row.is-important{background:linear-gradient(90deg,rgba(196,164,67,.23),transparent)!important}
+:root[data-kit-appearance="dark"] .grocery-star{color:#e6bd5b!important}
+
+/* Meals dark audit */
+:root[data-kit-appearance="dark"] .meal-sharing-card,:root[data-kit-appearance="dark"] .meal-dietary-card,:root[data-kit-appearance="dark"] .meal-week-card,:root[data-kit-appearance="dark"] .meal-library-card,:root[data-kit-appearance="dark"] .meal-suggestions-card,:root[data-kit-appearance="dark"] .meal-recipe-list>article,:root[data-kit-appearance="dark"] .meal-suggestion-list>article,:root[data-kit-appearance="dark"] .meal-week-grid>article{background:var(--kh-surface)!important;border-color:var(--kh-border)!important;color:var(--kh-text)!important;box-shadow:none!important}
+:root[data-kit-appearance="dark"] .meal-sharing-card p,:root[data-kit-appearance="dark"] .meal-sharing-card small,:root[data-kit-appearance="dark"] .meal-dietary-card small,:root[data-kit-appearance="dark"] .meal-week-toolbar small,:root[data-kit-appearance="dark"] .meal-recipe-list small,:root[data-kit-appearance="dark"] .meal-suggestion-list small,:root[data-kit-appearance="dark"] .meal-slot,:root[data-kit-appearance="dark"] .meal-slot em{color:var(--kh-muted)!important}
+:root[data-kit-appearance="dark"] .meal-slot.is-planned,:root[data-kit-appearance="dark"] .meal-week-toolbar nav button,:root[data-kit-appearance="dark"] .meal-dietary-card>button,:root[data-kit-appearance="dark"] .meal-library-card>header>button,:root[data-kit-appearance="dark"] .meal-suggestions-card>header>button,:root[data-kit-appearance="dark"] .meal-recipe-list footer button,:root[data-kit-appearance="dark"] .meal-suggestion-list>article>button,:root[data-kit-appearance="dark"] .recipe-favorite{background:var(--kh-surface-raised)!important;color:var(--kh-text)!important;border-color:#58656e!important}
+:root[data-kit-appearance="dark"] .meal-slot.is-planned strong{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .meal-modal{background:var(--kh-surface)!important;color:var(--kh-text)!important;border-color:var(--kh-border)!important}
+
+/* Family Hub + household/personal tools dark audit */
+:root[data-kit-appearance="dark"] .family-hub,:root[data-kit-appearance="dark"] .family-hub-panel,:root[data-kit-appearance="dark"] .family-tools{background:var(--kh-surface)!important;color:var(--kh-text)!important;border-color:var(--kh-border)!important}
+:root[data-kit-appearance="dark"] .family-tools>nav button,:root[data-kit-appearance="dark"] .family-tools-list article,:root[data-kit-appearance="dark"] .family-tools-preferences,:root[data-kit-appearance="dark"] .family-tools-form,:root[data-kit-appearance="dark"] .family-tools-upload,:root[data-kit-appearance="dark"] .locale-summary div{background:var(--kh-surface-raised)!important;color:var(--kh-text)!important;border-color:#58656e!important}
+:root[data-kit-appearance="dark"] .family-tools>nav button.is-active{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 48%,#30383e 52%)!important;color:#fff!important}
+:root[data-kit-appearance="dark"] .family-tools input,:root[data-kit-appearance="dark"] .family-tools textarea,:root[data-kit-appearance="dark"] .family-tools select{background:#273036!important;color:var(--kh-text)!important;border-color:#5a6770!important}
+:root[data-kit-appearance="dark"] .locale-preview{background:#334039!important;color:var(--kh-text)!important}
+
+/* Admin Release + Feedback: compact control-room hierarchy and readable states. */
+.admin-page:not(.admin-feedback-page) .admin-feedback-board{display:none!important}
+.admin-feedback-page .admin-feedback-board{margin-top:22px!important}
+@media(min-width:761px){
+  .admin-page{padding:42px 34px 126px!important}
+  .admin-header,.admin-toolbar,.admin-hero,.admin-progress,.admin-grid,.admin-alert,.admin-safety,.admin-feedback-board{width:min(1120px,100%)!important}
+  .admin-toolbar{padding:12px 15px!important}
+  .admin-card{padding:22px!important}
+  .admin-mobile-nav{max-width:650px!important}
+  .admin-mobile-nav button{min-height:60px!important;font-size:11px!important}
+}
+:root[data-kit-appearance="dark"] .admin-page{color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .admin-page .admin-card,:root[data-kit-appearance="dark"] .admin-page .admin-feedback-board,:root[data-kit-appearance="dark"] .admin-page .admin-feedback-section,:root[data-kit-appearance="dark"] .admin-page .admin-feedback-item,:root[data-kit-appearance="dark"] .admin-page .admin-toolbar,:root[data-kit-appearance="dark"] .admin-page .admin-progress{background:#2b3339!important;border-color:#515e66!important;color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .admin-page h1,:root[data-kit-appearance="dark"] .admin-page h2,:root[data-kit-appearance="dark"] .admin-page h3,:root[data-kit-appearance="dark"] .admin-page strong,:root[data-kit-appearance="dark"] .admin-page dt,:root[data-kit-appearance="dark"] .admin-page dd{color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .admin-page p,:root[data-kit-appearance="dark"] .admin-page small,:root[data-kit-appearance="dark"] .admin-page label{color:#cbd3d5!important}
+:root[data-kit-appearance="dark"] .admin-page .admin-title small,:root[data-kit-appearance="dark"] .admin-page .admin-card header small{color:#dce8eb!important}
+:root[data-kit-appearance="dark"] .admin-secondary,:root[data-kit-appearance="dark"] .admin-themes button{background:#343c42!important;color:#f4f1ea!important;border-color:#5a6770!important}
+:root[data-kit-appearance="dark"] .admin-primary{color:#fff!important}
+:root[data-kit-appearance="dark"] .admin-feedback-tools,:root[data-kit-appearance="dark"] .admin-feedback-details,:root[data-kit-appearance="dark"] .admin-feedback-kind-filter{background:#30383e!important;border-color:#56636b!important;color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .admin-feedback-kind-filter button{color:#e0e6e7!important}
+:root[data-kit-appearance="dark"] .admin-health.ready{background:#28523f!important;border-color:#4f8069!important;color:#effbf4!important}
+:root[data-kit-appearance="dark"] .admin-health.ready *{color:#effbf4!important}
+
+/* Mobile stability: safe areas, keyboard, sheets and scroll containment. */
 @media(max-width:760px){
+  html,body,#root{max-width:100%;overflow-x:hidden}
   .app-topbar{padding-top:max(10px,env(safe-area-inset-top))!important;min-height:74px!important}
   .site-theme-picker,.mobile-search-button,.topbar-search{display:none!important}
   .mobile-topbar-utilities,.topbar-actions{gap:7px!important}
   .mobile-topbar-utility,.notification-button,.profile-button{box-shadow:none!important}
   .mobile-topbar-utility--add{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 78%,white 22%)!important;color:#15231d!important}
-  .profile-popover{box-shadow:0 22px 60px rgba(0,0,0,.32)!important}
+  .profile-popover{max-width:calc(100vw - 24px)!important;max-height:calc(100dvh - 112px)!important;overflow:auto!important;overscroll-behavior:contain;box-shadow:0 22px 60px rgba(0,0,0,.32)!important}
+  .modal-backdrop,.shared-home-backdrop,.family-tools-backdrop,.admin-modal-backdrop{overscroll-behavior:contain}
+  .modal-card,.create-v2,.meal-modal,.shared-home-modal,.admin-completion{max-width:calc(100vw - 20px)!important;max-height:calc(100dvh - max(24px,env(safe-area-inset-top)) - max(20px,env(safe-area-inset-bottom)))!important;overflow:auto!important;overscroll-behavior:contain}
+  .meal-modal,.shared-home-modal{padding-bottom:max(22px,calc(16px + env(safe-area-inset-bottom)))!important}
+  input,textarea,select{font-size:16px!important}
+  input,select{min-height:46px}
+  textarea{min-height:96px}
+  .mobile-nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}
+  .today-page,.module-page{padding-bottom:calc(92px + env(safe-area-inset-bottom))!important}
+  .calendar-v2-shell{overflow-x:hidden}
+  .calendar-v2-toolbar{align-items:flex-start!important;gap:10px!important}
+  .calendar-v2-nav,.calendar-v2-modes{max-width:100%;flex-wrap:wrap!important}
+  .calendar-v2-grid{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .admin-page{padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
 }
 @media(max-width:420px){
   .mobile-topbar-utilities,.topbar-actions{gap:5px!important}
   .mobile-topbar-utility,.topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button{width:38px!important;height:38px!important;min-width:38px!important}
-}
-
-/* Desktop hierarchy: use the available canvas without making controls tiny. */
-@media(min-width:1000px){
-  .today-page,.module-page{width:min(1460px,calc(100vw - 300px))!important;padding-top:42px!important}
-  .today-heading h1,.module-heading h1{font-size:clamp(42px,4vw,64px)!important;line-height:1.02!important}
-  .today-heading p,.module-heading p{font-size:16px!important;line-height:1.55!important}
-  .dashboard-widget,.dashboard-card,.module-card{border-radius:22px!important}
-  .calendar-v2,.calendar-shell{font-size:15px}
-}
-
-/* Dark mode - readable surfaces, not just dark backgrounds. */
-:root[data-kit-appearance="dark"]{
-  --kh-bg:#20262b;
-  --kh-surface:#293137;
-  --kh-surface-raised:#30383e;
-  --kh-text:#f4f1ea;
-  --kh-muted:#c8d0d2;
-  --kh-subtle:#aeb9bc;
-  --kh-border:#4b575f;
-  --kh-link:#9fd9bd;
-}
-:root[data-kit-appearance="dark"] body{background:var(--kh-bg)!important;color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .today-page,
-:root[data-kit-appearance="dark"] .module-page{color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .dashboard-widget,
-:root[data-kit-appearance="dark"] .dashboard-card,
-:root[data-kit-appearance="dark"] .module-card,
-:root[data-kit-appearance="dark"] .calendar-v2,
-:root[data-kit-appearance="dark"] .calendar-shell,
-:root[data-kit-appearance="dark"] .meal-card,
-:root[data-kit-appearance="dark"] .family-hub-panel{background:var(--kh-surface)!important;border-color:var(--kh-border)!important;color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .today-page h1,
-:root[data-kit-appearance="dark"] .today-page h2,
-:root[data-kit-appearance="dark"] .today-page h3,
-:root[data-kit-appearance="dark"] .module-page h1,
-:root[data-kit-appearance="dark"] .module-page h2,
-:root[data-kit-appearance="dark"] .module-page h3,
-:root[data-kit-appearance="dark"] .module-page strong{color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .today-page p,
-:root[data-kit-appearance="dark"] .today-page small,
-:root[data-kit-appearance="dark"] .module-page p,
-:root[data-kit-appearance="dark"] .module-page small,
-:root[data-kit-appearance="dark"] .module-page label{color:var(--kh-muted)!important}
-:root[data-kit-appearance="dark"] .today-page a,
-:root[data-kit-appearance="dark"] .module-page a,
-:root[data-kit-appearance="dark"] .dashboard-widget a,
-:root[data-kit-appearance="dark"] .dashboard-card a{color:var(--kh-link)!important}
-
-/* Buttons need clear states in dark mode. */
-:root[data-kit-appearance="dark"] .button,
-:root[data-kit-appearance="dark"] .icon-button,
-:root[data-kit-appearance="dark"] .empty-state span,
-:root[data-kit-appearance="dark"] .calendar-v2 button,
-:root[data-kit-appearance="dark"] .calendar-shell button{border-color:#58656e!important}
-:root[data-kit-appearance="dark"] .button:not(.button--primary),
-:root[data-kit-appearance="dark"] .calendar-v2 button:not(.button--primary),
-:root[data-kit-appearance="dark"] .calendar-shell button:not(.button--primary){background:var(--kh-surface-raised)!important;color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .button--primary{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 74%,white 26%)!important;color:#14221b!important;border-color:transparent!important}
-:root[data-kit-appearance="dark"] button:disabled{opacity:.48!important}
-
-/* Empty states and low-contrast actions. */
-:root[data-kit-appearance="dark"] .empty-state{background:#2c343a!important;border-color:#55616a!important;color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .empty-state strong{color:var(--kh-text)!important}
-:root[data-kit-appearance="dark"] .empty-state span{color:#b8e1cc!important;background:#33473f!important}
-
-/* Forms */
-:root[data-kit-appearance="dark"] input,
-:root[data-kit-appearance="dark"] textarea,
-:root[data-kit-appearance="dark"] select{background:#2f373d!important;color:var(--kh-text)!important;border-color:#58656e!important}
-:root[data-kit-appearance="dark"] input::placeholder,
-:root[data-kit-appearance="dark"] textarea::placeholder{color:#9fabad!important;opacity:1!important}
-
-/* Calendar: stronger current/selected states. */
-:root[data-kit-appearance="dark"] .calendar-v2 .is-active,
-:root[data-kit-appearance="dark"] .calendar-shell .is-active{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 42%,#30383e 58%)!important;color:#fff!important}
-:root[data-kit-appearance="dark"] .calendar-v2 td,
-:root[data-kit-appearance="dark"] .calendar-v2 th,
-:root[data-kit-appearance="dark"] .calendar-shell td,
-:root[data-kit-appearance="dark"] .calendar-shell th{border-color:#58636a!important}
-
-/* Admin release + feedback: same dark visual language. */
-:root[data-kit-appearance="dark"] .admin-page{color:#f4f1ea!important}
-:root[data-kit-appearance="dark"] .admin-page .admin-card,
-:root[data-kit-appearance="dark"] .admin-page .admin-feedback-board,
-:root[data-kit-appearance="dark"] .admin-page .admin-feedback-section,
-:root[data-kit-appearance="dark"] .admin-page .admin-feedback-item{background:#2b3339!important;border-color:#4f5b63!important}
-:root[data-kit-appearance="dark"] .admin-page h1,
-:root[data-kit-appearance="dark"] .admin-page h2,
-:root[data-kit-appearance="dark"] .admin-page h3,
-:root[data-kit-appearance="dark"] .admin-page strong,
-:root[data-kit-appearance="dark"] .admin-page dt,
-:root[data-kit-appearance="dark"] .admin-page dd{color:#f4f1ea!important}
-:root[data-kit-appearance="dark"] .admin-page p,
-:root[data-kit-appearance="dark"] .admin-page small,
-:root[data-kit-appearance="dark"] .admin-page label{color:#c8d0d2!important}
-:root[data-kit-appearance="dark"] .admin-feedback-tools,
-:root[data-kit-appearance="dark"] .admin-feedback-details{background:#30383e!important;border-color:#536069!important}
-:root[data-kit-appearance="dark"] .admin-feedback-kind-filter button{color:#dde3e4!important}
-
-/* Desktop admin nav uses the same bottom-bar language as mobile. */
-@media(min-width:761px){
-  .admin-mobile-nav{max-width:650px!important}
-  .admin-mobile-nav button{min-height:60px!important;font-size:11px!important}
 }
