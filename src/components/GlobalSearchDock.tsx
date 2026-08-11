@@ -9,6 +9,7 @@ function icon(kind:string){if(kind==="event")return <CalendarDays/>;if(kind==="t
 export function GlobalSearchDock({householdId}:{householdId:string}){
  const[open,setOpen]=useState(false),[query,setQuery]=useState(""),[results,setResults]=useState<Result[]>([]),[loading,setLoading]=useState(false),[error,setError]=useState("");
  const desktopInput=useRef<HTMLInputElement|null>(null);
+ useEffect(()=>{const openSearch=()=>setOpen(true);window.addEventListener("kit-hub-open-search",openSearch);return()=>window.removeEventListener("kit-hub-open-search",openSearch)},[]);
  useEffect(()=>{
   const cleanups:Array<()=>void>=[];let observedInput:HTMLInputElement|null=null,observedButton:HTMLButtonElement|null=null;
   function bind(){
