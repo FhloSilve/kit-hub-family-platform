@@ -4,5 +4,6 @@ interface Env {
   GITHUB_RELEASE_TOKEN?: string;
   GITHUB_REPOSITORY?: string;
   GITHUB_RELEASE_WORKFLOW?: string;
+  GEOAPIFY_API_KEY?: string;
   ASSETS: Fetcher;
 }
