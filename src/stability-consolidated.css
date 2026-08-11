@@ -1,0 +1,65 @@
+/* Consolidated stability rules migrated from retired desktop/dark polish layers. */
+
+/* One authoritative Silvi location: the top action bar. */
+.silvi-card,.silvi-launcher,.routines-launcher,.family-tools-launcher,.feedback-launcher,.mobile-quick-add{display:none!important}
+
+@media(min-width:761px){
+  .app-topbar{min-height:76px!important;padding:12px 28px!important;gap:18px!important;background:color-mix(in srgb,var(--theme-paper,var(--paper)) 92%,transparent)!important;backdrop-filter:blur(18px);border-bottom:1px solid var(--line)!important}
+  .topbar-actions{display:flex!important;align-items:center!important;gap:9px!important;overflow:visible!important}
+  .mobile-topbar-utilities{display:flex!important;align-items:center;gap:9px;order:-1}
+  .mobile-topbar-utilities>.mobile-topbar-utility:first-child{display:none!important}
+  .mobile-topbar-utility{display:grid!important;place-items:center;width:42px;height:42px;min-width:42px;padding:0;border:1px solid var(--line);border-radius:13px;background:var(--theme-paper,var(--paper));color:var(--theme-ink,var(--ink));box-shadow:none;cursor:pointer}
+  .mobile-topbar-utility svg{width:20px;height:20px}
+  .mobile-topbar-utility--silvi{display:flex!important;width:auto!important;min-width:42px!important;padding:0 13px!important;gap:8px!important;background:color-mix(in srgb,var(--theme-paper,var(--paper)) 84%,var(--theme-primary) 16%)!important}
+  .mobile-topbar-utility--silvi img{width:24px;height:24px}
+  .mobile-topbar-utility--silvi .mobile-topbar-utility__label{display:inline!important;font-size:13px;font-weight:850;letter-spacing:.01em}
+  .mobile-topbar-utility--add{background:var(--theme-primary)!important;color:#fff!important;border-color:transparent!important}
+  .appearance-quick-toggle:not(.appearance-admin-toggle){position:static!important;width:42px;height:42px;min-width:42px;border-radius:13px;box-shadow:none!important;order:-2}
+  .profile-button{min-height:42px!important;border-radius:13px!important}
+  .profile-button>span{min-width:40px!important;height:40px!important;border-radius:12px!important}
+  .topbar-search{max-width:440px!important;min-width:260px!important}
+  .topbar-search input{font-size:15px!important}
+  .site-theme-picker{min-height:42px!important;border-radius:13px!important}
+  .mobile-profile-routines{display:flex!important;align-items:center;gap:11px;width:100%;min-height:48px;padding:10px 12px;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--theme-ink,var(--ink));font:inherit;font-weight:760;text-align:left;cursor:pointer}
+  .mobile-profile-routines:hover{background:color-mix(in srgb,var(--theme-primary) 10%,var(--theme-paper) 90%)}
+}
+
+@media(max-width:760px){
+  .mobile-topbar-utility--silvi .mobile-topbar-utility__label{display:none!important}
+}
+
+.profile-popover{overflow:hidden!important}
+.profile-popover button,.mobile-profile-routines{color:var(--theme-ink,var(--ink))!important}
+.profile-popover button svg,.mobile-profile-routines svg{color:var(--theme-primary)!important}
+
+/* Desktop sidebar + shared dark contrast formerly spread across polish files. */
+:root[data-kit-appearance="dark"] .app-topbar,:root[data-kit-appearance="dark"] .sidebar,:root[data-kit-appearance="dark"] .mobile-nav{background:#272e33!important;border-color:#4f5b63!important}
+:root[data-kit-appearance="dark"] .topbar-search,:root[data-kit-appearance="dark"] .site-theme-picker,:root[data-kit-appearance="dark"] .icon-button,:root[data-kit-appearance="dark"] .profile-button,:root[data-kit-appearance="dark"] .mobile-topbar-utility,:root[data-kit-appearance="dark"] .appearance-quick-toggle:not(.appearance-admin-toggle){background:#30383e!important;border-color:#4d5961!important;color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .mobile-topbar-utility--silvi{background:color-mix(in srgb,#30383e 76%,var(--theme-primary) 24%)!important;color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .mobile-topbar-utility--add{background:#9fd3b9!important;color:#17211d!important}
+:root[data-kit-appearance="dark"] .mobile-topbar-utility--add svg{color:#17211d!important}
+:root[data-kit-appearance="dark"] .sidebar-nav button,:root[data-kit-appearance="dark"] .sidebar-settings,:root[data-kit-appearance="dark"] .household-switcher small{color:#c8d0d2!important}
+:root[data-kit-appearance="dark"] .sidebar-nav button svg{color:#aebbb6!important}
+:root[data-kit-appearance="dark"] .sidebar-nav button.is-active{background:color-mix(in srgb,var(--theme-primary) 38%,#30383e 62%)!important;color:#fff!important}
+:root[data-kit-appearance="dark"] .sidebar-nav button.is-active svg{color:#d8f1e5!important}
+:root[data-kit-appearance="dark"] .empty-state--clickable span,:root[data-kit-appearance="dark"] .empty-state--clickable strong,:root[data-kit-appearance="dark"] .dashboard-card .empty-state span,:root[data-kit-appearance="dark"] .dashboard-card .empty-state strong{color:#f2eee7!important}
+:root[data-kit-appearance="dark"] .empty-state--clickable{border-color:#59646b!important}
+:root[data-kit-appearance="dark"] .empty-state--clickable:hover{background:#343c42!important}
+:root[data-kit-appearance="dark"] .dashboard-card>a,:root[data-kit-appearance="dark"] .dashboard-card>button:not(.task-check),:root[data-kit-appearance="dark"] .shared-home-heading button,:root[data-kit-appearance="dark"] .dashboard-meal-card>button{color:#a8d8bf!important}
+
+/* Admin navigation is shared by mobile and desktop. */
+body:has(.admin-page){padding-bottom:92px!important}
+.admin-mobile-nav{position:fixed!important;z-index:110!important;left:50%!important;right:auto!important;bottom:14px!important;transform:translateX(-50%)!important;display:grid!important;grid-template-columns:repeat(5,minmax(92px,1fr))!important;gap:6px!important;width:min(620px,calc(100vw - 24px))!important;padding:7px!important;border:1px solid color-mix(in srgb,var(--admin-accent,#19485f) 28%,#56636b)!important;border-radius:22px!important;background:color-mix(in srgb,var(--admin-card,#2c3338) 97%,transparent)!important;box-shadow:0 18px 50px rgba(0,0,0,.3)!important;backdrop-filter:blur(18px)!important}
+.admin-mobile-nav button{display:grid!important;place-items:center!important;gap:4px!important;min-width:0!important;min-height:58px!important;padding:6px 8px!important;border:0!important;border-radius:15px!important;background:transparent!important;color:var(--admin-ink,#f2eee7)!important;font:inherit!important;font-size:11px!important;font-weight:850!important;cursor:pointer!important}
+.admin-mobile-nav button.is-active{background:color-mix(in srgb,var(--admin-accent,#19485f) 28%,transparent)!important;color:#fff!important}
+.admin-mobile-nav .admin-mobile-colour{background:color-mix(in srgb,#b487d0 18%,transparent)!important}
+.admin-mobile-nav .admin-mobile-appearance{background:#d6b64b!important;color:#27251f!important}
+.admin-mobile-nav svg{width:20px!important;height:20px!important}
+.appearance-admin-toggle{display:none!important}
+.admin-page{padding-bottom:120px!important}
+
+@media(max-width:760px){
+  .admin-mobile-nav{bottom:calc(8px + env(safe-area-inset-bottom))!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:calc(100vw - 20px)!important}
+  .admin-mobile-nav button{min-height:54px!important;padding:5px 2px!important;font-size:9.5px!important}
+  .modal input,.modal textarea,.modal select,.dialog input,.dialog textarea,.dialog select,[role="dialog"] input,[role="dialog"] textarea,[role="dialog"] select{font-size:16px!important;line-height:1.35!important}
+}
