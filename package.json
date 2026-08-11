@@ -20,6 +20,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply kit-hub-db --remote"
   },
   "dependencies": {
+    "@giphy/js-fetch-api": "^5.8.0",
     "better-auth": "^1.6.26",
     "hono": "^4.13.1",
     "lucide-react": "^1.30.0",
