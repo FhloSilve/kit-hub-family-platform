@@ -30,7 +30,7 @@ export function MobileTopbarActions(){
   return <>
     {createPortal(<div className="mobile-topbar-utilities" aria-label="Quick actions">
       <button type="button" className="mobile-topbar-utility" onClick={toggleAppearance} aria-label={dark?"Switch to light mode":"Switch to dark mode"}>{dark?<Sun/>:<Moon/>}</button>
-      <button type="button" className="mobile-topbar-utility mobile-topbar-utility--silvi" onClick={openSilvi} aria-label="Open Silvi"><img src="/silvi-geometric.svg" alt=""/></button>
+      <button type="button" className="mobile-topbar-utility mobile-topbar-utility--silvi" onClick={openSilvi} aria-label="Open Silvi household assistant" title="Silvi — household assistant"><img src="/silvi-geometric.svg" alt=""/><span className="mobile-topbar-utility__label">Silvi</span></button>
       <button type="button" className="mobile-topbar-utility mobile-topbar-utility--add" onClick={quickAdd} aria-label="Quick add"><Plus/></button>
     </div>,target)}
     {profileTarget&&createPortal(<button type="button" className="mobile-profile-routines" onClick={openRoutines} title="Recurring chores, reminders and assignments"><Repeat2/><span>Routines & recurring chores</span></button>,profileTarget)}
