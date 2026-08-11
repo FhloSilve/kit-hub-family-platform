@@ -1,0 +1,123 @@
+/* Kit Hub UI/Stability milestone - pass 2. Keep this file loaded last. */
+
+/* Shared control rhythm */
+button,input,select,textarea{transition:border-color .16s ease,background-color .16s ease,color .16s ease,box-shadow .16s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid color-mix(in srgb,var(--theme-primary,#4f8f70) 42%,transparent)!important;outline-offset:2px}
+
+/* Mobile top bar: one compact, predictable action row. */
+@media(max-width:760px){
+  .app-topbar{padding-top:max(10px,env(safe-area-inset-top))!important;min-height:74px!important}
+  .site-theme-picker,.mobile-search-button,.topbar-search{display:none!important}
+  .mobile-topbar-utilities,.topbar-actions{gap:7px!important}
+  .mobile-topbar-utility,.notification-button,.profile-button{box-shadow:none!important}
+  .mobile-topbar-utility--add{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 78%,white 22%)!important;color:#15231d!important}
+  .profile-popover{box-shadow:0 22px 60px rgba(0,0,0,.32)!important}
+}
+@media(max-width:420px){
+  .mobile-topbar-utilities,.topbar-actions{gap:5px!important}
+  .mobile-topbar-utility,.topbar-actions .notification-button,.topbar-actions>.profile-menu>.profile-button{width:38px!important;height:38px!important;min-width:38px!important}
+}
+
+/* Desktop hierarchy: use the available canvas without making controls tiny. */
+@media(min-width:1000px){
+  .today-page,.module-page{width:min(1460px,calc(100vw - 300px))!important;padding-top:42px!important}
+  .today-heading h1,.module-heading h1{font-size:clamp(42px,4vw,64px)!important;line-height:1.02!important}
+  .today-heading p,.module-heading p{font-size:16px!important;line-height:1.55!important}
+  .dashboard-widget,.dashboard-card,.module-card{border-radius:22px!important}
+  .calendar-v2,.calendar-shell{font-size:15px}
+}
+
+/* Dark mode - readable surfaces, not just dark backgrounds. */
+:root[data-kit-appearance="dark"]{
+  --kh-bg:#20262b;
+  --kh-surface:#293137;
+  --kh-surface-raised:#30383e;
+  --kh-text:#f4f1ea;
+  --kh-muted:#c8d0d2;
+  --kh-subtle:#aeb9bc;
+  --kh-border:#4b575f;
+  --kh-link:#9fd9bd;
+}
+:root[data-kit-appearance="dark"] body{background:var(--kh-bg)!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .today-page,
+:root[data-kit-appearance="dark"] .module-page{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .dashboard-widget,
+:root[data-kit-appearance="dark"] .dashboard-card,
+:root[data-kit-appearance="dark"] .module-card,
+:root[data-kit-appearance="dark"] .calendar-v2,
+:root[data-kit-appearance="dark"] .calendar-shell,
+:root[data-kit-appearance="dark"] .meal-card,
+:root[data-kit-appearance="dark"] .family-hub-panel{background:var(--kh-surface)!important;border-color:var(--kh-border)!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .today-page h1,
+:root[data-kit-appearance="dark"] .today-page h2,
+:root[data-kit-appearance="dark"] .today-page h3,
+:root[data-kit-appearance="dark"] .module-page h1,
+:root[data-kit-appearance="dark"] .module-page h2,
+:root[data-kit-appearance="dark"] .module-page h3,
+:root[data-kit-appearance="dark"] .module-page strong{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .today-page p,
+:root[data-kit-appearance="dark"] .today-page small,
+:root[data-kit-appearance="dark"] .module-page p,
+:root[data-kit-appearance="dark"] .module-page small,
+:root[data-kit-appearance="dark"] .module-page label{color:var(--kh-muted)!important}
+:root[data-kit-appearance="dark"] .today-page a,
+:root[data-kit-appearance="dark"] .module-page a,
+:root[data-kit-appearance="dark"] .dashboard-widget a,
+:root[data-kit-appearance="dark"] .dashboard-card a{color:var(--kh-link)!important}
+
+/* Buttons need clear states in dark mode. */
+:root[data-kit-appearance="dark"] .button,
+:root[data-kit-appearance="dark"] .icon-button,
+:root[data-kit-appearance="dark"] .empty-state span,
+:root[data-kit-appearance="dark"] .calendar-v2 button,
+:root[data-kit-appearance="dark"] .calendar-shell button{border-color:#58656e!important}
+:root[data-kit-appearance="dark"] .button:not(.button--primary),
+:root[data-kit-appearance="dark"] .calendar-v2 button:not(.button--primary),
+:root[data-kit-appearance="dark"] .calendar-shell button:not(.button--primary){background:var(--kh-surface-raised)!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .button--primary{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 74%,white 26%)!important;color:#14221b!important;border-color:transparent!important}
+:root[data-kit-appearance="dark"] button:disabled{opacity:.48!important}
+
+/* Empty states and low-contrast actions. */
+:root[data-kit-appearance="dark"] .empty-state{background:#2c343a!important;border-color:#55616a!important;color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .empty-state strong{color:var(--kh-text)!important}
+:root[data-kit-appearance="dark"] .empty-state span{color:#b8e1cc!important;background:#33473f!important}
+
+/* Forms */
+:root[data-kit-appearance="dark"] input,
+:root[data-kit-appearance="dark"] textarea,
+:root[data-kit-appearance="dark"] select{background:#2f373d!important;color:var(--kh-text)!important;border-color:#58656e!important}
+:root[data-kit-appearance="dark"] input::placeholder,
+:root[data-kit-appearance="dark"] textarea::placeholder{color:#9fabad!important;opacity:1!important}
+
+/* Calendar: stronger current/selected states. */
+:root[data-kit-appearance="dark"] .calendar-v2 .is-active,
+:root[data-kit-appearance="dark"] .calendar-shell .is-active{background:color-mix(in srgb,var(--theme-primary,#4f8f70) 42%,#30383e 58%)!important;color:#fff!important}
+:root[data-kit-appearance="dark"] .calendar-v2 td,
+:root[data-kit-appearance="dark"] .calendar-v2 th,
+:root[data-kit-appearance="dark"] .calendar-shell td,
+:root[data-kit-appearance="dark"] .calendar-shell th{border-color:#58636a!important}
+
+/* Admin release + feedback: same dark visual language. */
+:root[data-kit-appearance="dark"] .admin-page{color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .admin-page .admin-card,
+:root[data-kit-appearance="dark"] .admin-page .admin-feedback-board,
+:root[data-kit-appearance="dark"] .admin-page .admin-feedback-section,
+:root[data-kit-appearance="dark"] .admin-page .admin-feedback-item{background:#2b3339!important;border-color:#4f5b63!important}
+:root[data-kit-appearance="dark"] .admin-page h1,
+:root[data-kit-appearance="dark"] .admin-page h2,
+:root[data-kit-appearance="dark"] .admin-page h3,
+:root[data-kit-appearance="dark"] .admin-page strong,
+:root[data-kit-appearance="dark"] .admin-page dt,
+:root[data-kit-appearance="dark"] .admin-page dd{color:#f4f1ea!important}
+:root[data-kit-appearance="dark"] .admin-page p,
+:root[data-kit-appearance="dark"] .admin-page small,
+:root[data-kit-appearance="dark"] .admin-page label{color:#c8d0d2!important}
+:root[data-kit-appearance="dark"] .admin-feedback-tools,
+:root[data-kit-appearance="dark"] .admin-feedback-details{background:#30383e!important;border-color:#536069!important}
+:root[data-kit-appearance="dark"] .admin-feedback-kind-filter button{color:#dde3e4!important}
+
+/* Desktop admin nav uses the same bottom-bar language as mobile. */
+@media(min-width:761px){
+  .admin-mobile-nav{max-width:650px!important}
+  .admin-mobile-nav button{min-height:60px!important;font-size:11px!important}
+}
