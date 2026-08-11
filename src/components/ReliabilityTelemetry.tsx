@@ -1,0 +1,5 @@
+import { useEffect } from "react";
+
+const sent=new Set<string>();
+function report(metricKey:string){const day=new Date().toISOString().slice(0,10),key=`${day}:${metricKey}`;if(sent.has(key))return;sent.add(key);void fetch("/api/v1/reliability",{method:"POST",credentials:"include",headers:{"content-type":"application/json"},body:JSON.stringify({metricKey})}).catch(()=>undefined)}
+export function ReliabilityTelemetry(){useEffect(()=>{const onError=()=>report("client_error"),onReject=()=>report("client_error");window.addEventListener("error",onError);window.addEventListener("unhandledrejection",onReject);const timer=window.setTimeout(()=>{const navigation=performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming|undefined;if(navigation&&navigation.loadEventEnd>0&&navigation.loadEventEnd-navigation.startTime>5000)report("slow_view")},1500);return()=>{window.removeEventListener("error",onError);window.removeEventListener("unhandledrejection",onReject);window.clearTimeout(timer)}},[]);return null}
