@@ -48,6 +48,20 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         return;
       }
 
+      const authData = result.data as { twoFactorRedirect?: boolean } | null;
+      if (mode === "sign-in" && authData?.twoFactorRedirect) {
+        const code = prompt("Enter the 6-digit code from your authenticator app.");
+        if (!code) {
+          setError("Two-factor verification is required to finish signing in.");
+          return;
+        }
+        const verified = await authClient.twoFactor.verifyTotp({ code: code.trim(), trustDevice: true });
+        if (verified.error) {
+          setError(verified.error.message ?? "That two-factor code could not be verified.");
+          return;
+        }
+      }
+
       await onAuthenticated();
     } catch {
       setError("We could not reach Kit Hub. Check your connection and try again.");
