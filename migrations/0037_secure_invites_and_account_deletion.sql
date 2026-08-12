@@ -1,13 +1,13 @@
 -- Security hardening for household invitations and account deletion.
 --
--- Production may contain an older household_invites table that predates the
--- hashed-token schema. CREATE TABLE IF NOT EXISTS in the baseline migrations
--- cannot add missing columns to that legacy table, so rebuild it here before
--- creating the new indexes. Existing pending invites are expired because their
--- original raw token cannot be safely reconstructed; accepted/revoked/expired
--- history is preserved.
+-- Production can contain several historical household_invites layouts. Some of
+-- those predate both email and hashed-token columns, so attempting to copy rows
+-- by column name is not portable. Old pending invitation tokens cannot be
+-- upgraded securely anyway because their raw token material is unavailable.
+-- Recreate only the invitation table; household/member data is untouched.
+-- Existing invitations must simply be re-issued after this migration.
 
-ALTER TABLE household_invites RENAME TO household_invites_legacy_0037;
+DROP TABLE IF EXISTS household_invites;
 
 CREATE TABLE household_invites (
   id TEXT PRIMARY KEY NOT NULL,
@@ -24,25 +24,6 @@ CREATE TABLE household_invites (
   FOREIGN KEY (role_key) REFERENCES roles(key) ON DELETE RESTRICT,
   FOREIGN KEY (invited_by) REFERENCES "user"(id) ON DELETE RESTRICT
 );
-
-INSERT INTO household_invites (
-  id, household_id, email, role_key, token_hash, status,
-  invited_by, expires_at, created_at, updated_at
-)
-SELECT
-  id,
-  household_id,
-  email,
-  role_key,
-  lower(hex(randomblob(32))),
-  CASE WHEN status='pending' THEN 'expired' ELSE status END,
-  invited_by,
-  expires_at,
-  created_at,
-  datetime('now')
-FROM household_invites_legacy_0037;
-
-DROP TABLE household_invites_legacy_0037;
 
 CREATE INDEX IF NOT EXISTS household_invites_household_idx ON household_invites(household_id,status);
 CREATE INDEX IF NOT EXISTS household_invites_email_idx ON household_invites(email,status);
