@@ -1,3 +1,6 @@
+import type { Context } from "hono";
+import { apiError, type AppBindings } from "./http";
+
 const textDecoder = new TextDecoder("utf-8", { fatal: true });
 
 function starts(bytes: Uint8Array, expected: number[]) {
@@ -6,6 +9,17 @@ function starts(bytes: Uint8Array, expected: number[]) {
 
 function ascii(bytes: Uint8Array, start: number, length: number) {
   return String.fromCharCode(...bytes.slice(start, start + length));
+}
+
+function decodeBase64(value: string) {
+  try {
+    const raw = atob(value);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
 }
 
 export function validateUploadedFile(bytes: Uint8Array, mimeType: string) {
@@ -25,4 +39,17 @@ export function validateUploadedFile(bytes: Uint8Array, mimeType: string) {
 export function safeUploadName(value: string) {
   const base = value.replace(/[\\/]/g, "_").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 180);
   return base || "upload";
+}
+
+export async function protectAttachmentUpload(c: Context<AppBindings>, next: () => Promise<void>) {
+  if (c.req.method.toUpperCase() !== "POST") return next();
+  const body = await c.req.raw.clone().json().catch(() => null) as { mimeType?: unknown; dataBase64?: unknown; fileName?: unknown } | null;
+  if (!body || typeof body.mimeType !== "string" || typeof body.dataBase64 !== "string") return next();
+  const bytes = decodeBase64(body.dataBase64);
+  if (!bytes) return apiError(c, 422, "FILE_ENCODING_INVALID", "That file could not be decoded safely.");
+  if (!validateUploadedFile(bytes, body.mimeType)) return apiError(c, 422, "FILE_SIGNATURE_MISMATCH", "The file contents do not match the selected file type.");
+  if (typeof body.fileName === "string" && safeUploadName(body.fileName) !== body.fileName) {
+    return apiError(c, 422, "FILE_NAME_INVALID", "Rename the file without path characters or control characters, then try again.");
+  }
+  await next();
 }
