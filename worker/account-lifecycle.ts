@@ -5,15 +5,35 @@ import { apiError, type AppBindings } from "./http";
 const app = new Hono<AppBindings>();
 type Ctx = Context<AppBindings>;
 const COOLING_OFF_HOURS = 48;
+const REAUTH_WINDOW_MINUTES = 15;
 
 type OwnedHousehold = { id: string; name: string };
 type MembershipRow = { householdId: string; householdName: string; role: string };
 type SuccessorRow = { userId: string; name: string; email: string; role: string };
+type SessionResult = Awaited<ReturnType<ReturnType<typeof createAuth>["api"]["getSession"]>>;
 
 async function current(c: Ctx) {
   const session = await createAuth(c.env, c.req.raw).api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) return null;
   return session;
+}
+
+function sessionCreatedAt(session: NonNullable<SessionResult>) {
+  const raw = session.session?.createdAt as Date | string | number | undefined;
+  if (!raw) return 0;
+  const value = raw instanceof Date ? raw.getTime() : typeof raw === "number" ? raw : Date.parse(raw);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function isRecentlyAuthenticated(session: NonNullable<SessionResult>) {
+  const createdAt = sessionCreatedAt(session);
+  return createdAt > 0 && Date.now() - createdAt <= REAUTH_WINDOW_MINUTES * 60_000;
+}
+
+async function requireRecentAuthentication(c: Ctx, session: NonNullable<SessionResult>, action: string) {
+  if (isRecentlyAuthenticated(session)) return null;
+  await audit(c, session.user.id, `${action}.reauth_required`, "denied");
+  return apiError(c, 401, "REAUTH_REQUIRED", `For your protection, confirm your password again before this action. Recent authentication lasts ${REAUTH_WINDOW_MINUTES} minutes.`);
 }
 
 async function audit(c: Ctx, userId: string, action: string, result: "success" | "denied" | "failure", householdId: string | null = null) {
@@ -23,7 +43,7 @@ async function audit(c: Ctx, userId: string, action: string, result: "success" |
     .catch(() => undefined);
 }
 
-async function status(c: Ctx, userId: string) {
+async function status(c: Ctx, userId: string, recentAuth = false) {
   const [owned, memberships, pending] = await Promise.all([
     c.env.DB.prepare("SELECT h.id,h.name FROM memberships m JOIN households h ON h.id=m.household_id WHERE m.user_id=? AND m.status='active' AND m.role_key='owner' AND h.deleted_at IS NULL ORDER BY h.name")
       .bind(userId)
@@ -74,6 +94,8 @@ async function status(c: Ctx, userId: string) {
     request,
     coolingOffHours: COOLING_OFF_HOURS,
     readyToFinalize,
+    requiresReauth: !recentAuth,
+    reauthWindowMinutes: REAUTH_WINDOW_MINUTES,
     note: "Kit Hub uses a 48-hour cooling-off period. Household ownership must be transferred first, and you must leave remaining households before permanent account anonymization can finish.",
   };
 }
@@ -81,12 +103,14 @@ async function status(c: Ctx, userId: string) {
 app.get("/api/v1/security/account-deletion", async c => {
   const session = await current(c);
   if (!session) return apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue.");
-  return c.json(await status(c, session.user.id));
+  return c.json(await status(c, session.user.id, isRecentlyAuthenticated(session)));
 });
 
 app.post("/api/v1/security/household-ownership/:householdId/transfer", async c => {
   const session = await current(c);
   if (!session) return apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue.");
+  const reauth = await requireRecentAuthentication(c, session, "household.ownership_transfer");
+  if (reauth) return reauth;
   const householdId = c.req.param("householdId");
   const body = await c.req.json().catch(() => null) as { targetUserId?: unknown } | null;
   const targetUserId = typeof body?.targetUserId === "string" ? body.targetUserId : "";
@@ -107,12 +131,14 @@ app.post("/api/v1/security/household-ownership/:householdId/transfer", async c =
     c.env.DB.prepare("UPDATE memberships SET role_key='owner',updated_at=datetime('now') WHERE household_id=? AND user_id=? AND status='active'").bind(householdId, targetUserId),
   ]);
   await audit(c, session.user.id, "household.ownership_transferred", "success", householdId);
-  return c.json(await status(c, session.user.id));
+  return c.json(await status(c, session.user.id, true));
 });
 
 app.post("/api/v1/security/households/:householdId/leave", async c => {
   const session = await current(c);
   if (!session) return apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue.");
+  const reauth = await requireRecentAuthentication(c, session, "household.leave");
+  if (reauth) return reauth;
   const householdId = c.req.param("householdId");
   const membership = await c.env.DB.prepare("SELECT role_key role FROM memberships WHERE household_id=? AND user_id=? AND status='active'")
     .bind(householdId, session.user.id).first<{ role: string }>();
@@ -121,17 +147,19 @@ app.post("/api/v1/security/households/:householdId/leave", async c => {
   await c.env.DB.prepare("UPDATE memberships SET status='left',updated_at=datetime('now') WHERE household_id=? AND user_id=? AND status='active'")
     .bind(householdId, session.user.id).run();
   await audit(c, session.user.id, "household.left_for_account_deletion", "success", householdId);
-  return c.json(await status(c, session.user.id));
+  return c.json(await status(c, session.user.id, true));
 });
 
 app.post("/api/v1/security/account-deletion", async c => {
   const session = await current(c);
   if (!session) return apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue.");
+  const reauth = await requireRecentAuthentication(c, session, "account.deletion_request");
+  if (reauth) return reauth;
   const body = await c.req.json().catch(() => null) as { confirmation?: unknown; email?: unknown } | null;
   if (body?.confirmation !== "DELETE MY ACCOUNT" || String(body?.email ?? "").toLowerCase() !== String(session.user.email).toLowerCase()) {
     return apiError(c, 422, "DELETION_CONFIRMATION_REQUIRED", "Type DELETE MY ACCOUNT and confirm your signed-in email address.");
   }
-  const currentStatus = await status(c, session.user.id);
+  const currentStatus = await status(c, session.user.id, true);
   if (!currentStatus.canRequest) {
     await audit(c, session.user.id, "account.deletion_blocked", "denied");
     return apiError(c, 409, "ACCOUNT_DELETION_BLOCKED", "Transfer households you own before requesting account deletion.");
@@ -142,7 +170,7 @@ app.post("/api/v1/security/account-deletion", async c => {
     .bind(session.user.id)
     .run();
   await audit(c, session.user.id, "account.deletion_requested", "success");
-  return c.json(await status(c, session.user.id));
+  return c.json(await status(c, session.user.id, true));
 });
 
 app.delete("/api/v1/security/account-deletion", async c => {
@@ -153,17 +181,19 @@ app.delete("/api/v1/security/account-deletion", async c => {
     .run();
   if (!result.meta.changes) return apiError(c, 404, "NO_DELETION_REQUEST", "There is no active deletion request to cancel.");
   await audit(c, session.user.id, "account.deletion_cancelled", "success");
-  return c.json(await status(c, session.user.id));
+  return c.json(await status(c, session.user.id, isRecentlyAuthenticated(session)));
 });
 
 app.post("/api/v1/security/account-deletion/finalize", async c => {
   const session = await current(c);
   if (!session) return apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue.");
+  const reauth = await requireRecentAuthentication(c, session, "account.deletion_finalize");
+  if (reauth) return reauth;
   const body = await c.req.json().catch(() => null) as { confirmation?: unknown; email?: unknown } | null;
   if (body?.confirmation !== "ERASE MY ACCOUNT" || String(body?.email ?? "").toLowerCase() !== String(session.user.email).toLowerCase()) {
     return apiError(c, 422, "FINAL_DELETION_CONFIRMATION_REQUIRED", "Type ERASE MY ACCOUNT and confirm your signed-in email address.");
   }
-  const currentStatus = await status(c, session.user.id);
+  const currentStatus = await status(c, session.user.id, true);
   if (!currentStatus.request || currentStatus.request.status !== "requested") return apiError(c, 409, "DELETION_NOT_REQUESTED", "Request account deletion first.");
   if (Date.parse(currentStatus.request.earliestDeleteAt) > Date.now()) return apiError(c, 409, "COOLING_OFF_ACTIVE", "The 48-hour cooling-off period has not finished yet.");
   if (currentStatus.activeMemberships > 0 || currentStatus.blockers.length > 0) return apiError(c, 409, "MEMBERSHIPS_REMAIN", "Leave all households before permanent deletion can finish.");
