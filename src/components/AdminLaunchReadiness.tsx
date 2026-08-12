@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { BarChart3, CheckCircle2, Circle, Mail, RefreshCw, Road, ShieldCheck, Sparkles, UserPlus, UsersRound } from "lucide-react";
+import { BarChart3, Check, CheckCircle2, Circle, Copy, ExternalLink, Mail, RefreshCw, Road, ShieldCheck, Sparkles, UserPlus, UsersRound } from "lucide-react";
 import "../admin-launch-readiness.css";
 
 type RoadmapStatus = "planned" | "building" | "testing" | "ready";
 type TesterStatus = "invited" | "active" | "paused";
 type LaunchSetting = "private_beta_enabled" | "public_landing_ready" | "legal_privacy_ready" | "email_communication_ready";
+type Tester={email:string;displayName:string|null;status:TesterStatus;notes:string|null;invitedAt:string;activatedAt:string|null;welcomeSentAt:string|null};
 type Ops = {
   roadmap: Array<{ id:string; title:string; description:string|null; status:RoadmapStatus; sortOrder:number; updatedAt:string }>;
-  testers: Array<{ email:string; displayName:string|null; status:TesterStatus; notes:string|null; invitedAt:string; activatedAt:string|null }>;
+  testers: Tester[];
+  invitationProgress:{total:number;invited:number;active:number;paused:number;welcomeSent:number;activated:number};
   settings: Record<LaunchSetting, boolean>;
   checklist: Array<{ key:string; label:string; done:boolean }>;
   readiness: { completed:number; total:number; percent:number };
@@ -28,7 +30,7 @@ type Ops = {
 };
 
 const statusLabels:Record<RoadmapStatus,string>={planned:"Planned",building:"Building",testing:"Testing",ready:"Ready"};
-const featureLabels:Record<string,string>={calendar_view:"Calendar",tasks_view:"Tasks",groceries_view:"Groceries",meals_view:"Meals",family_hub_view:"Family Hub",family_plan_view:"Family Plan",routines_view:"Routines",search_used:"Search",feedback_opened:"Feedback",silvi_opened:"Silvi"};
+const featureLabels:Record<string,string>={calendar_view:"Calendar",tasks_view:"Tasks",groceries_view:"Groceries",meals_view:"Meals",family_hub_view:"Family Chat",family_plan_view:"Family Plan",routines_view:"Routines",search_used:"Search",feedback_opened:"Feedback",silvi_opened:"Silvi"};
 const settingCopy:Record<LaunchSetting,{title:string;detail:string}>={
   private_beta_enabled:{title:"Private beta gate",detail:"When on, only platform admins and emails on the tester list can enter Kit Hub."},
   public_landing_ready:{title:"Public product page",detail:"Mark ready once positioning, screenshots and the product tour are prepared."},
@@ -37,15 +39,17 @@ const settingCopy:Record<LaunchSetting,{title:string;detail:string}>={
 };
 
 async function request<T>(url:string,init?:RequestInit){const response=await fetch(url,{credentials:"include",...init,headers:{"content-type":"application/json",...init?.headers}});const body=await response.json().catch(()=>({})) as any;if(!response.ok)throw new Error(body?.error?.message||"Admin launch data could not be updated.");return body as T}
+function inviteText(tester:Tester){const name=tester.displayName?.trim();return `${name?`Hi ${name},`:`Hi,`}\n\nYou have been invited to the Kit Hub private beta.\n\nOpen Kit Hub here:\n${window.location.origin}\n\nSign in or create your account with this exact email address:\n${tester.email}\n\nYour email is already on the private-beta access list. After signing in, Kit Hub will guide you through the first setup steps.\n\nPlease use the in-app feedback button whenever something feels confusing or does not work as expected.`}
 
 export function AdminLaunchReadiness(){
-  const[host,setHost]=useState<HTMLElement|null>(null),[data,setData]=useState<Ops|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[testerEmail,setTesterEmail]=useState(""),[testerName,setTesterName]=useState("");
+  const[host,setHost]=useState<HTMLElement|null>(null),[data,setData]=useState<Ops|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[testerEmail,setTesterEmail]=useState(""),[testerName,setTesterName]=useState(""),[copiedEmail,setCopiedEmail]=useState("");
   useEffect(()=>{const locate=()=>setHost(document.querySelector<HTMLElement>(".admin-page"));locate();const observer=new MutationObserver(locate);observer.observe(document.body,{childList:true,subtree:true});return()=>observer.disconnect()},[]);
   async function load(){setBusy(true);setError("");try{setData(await request<Ops>("/api/v1/admin/product-ops"))}catch(e){setError(e instanceof Error?e.message:"Launch readiness could not be loaded.")}finally{setBusy(false)}}
   useEffect(()=>{if(host)void load()},[host]);
   async function roadmapStatus(id:string,status:RoadmapStatus){setError("");try{await request(`/api/v1/admin/product-ops/roadmap/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({status})});await load()}catch(e){setError(e instanceof Error?e.message:"Roadmap status could not be saved.")}}
   async function testerStatus(email:string,status:TesterStatus){setError("");try{await request(`/api/v1/admin/product-ops/beta-testers/${encodeURIComponent(email)}`,{method:"PATCH",body:JSON.stringify({status})});await load()}catch(e){setError(e instanceof Error?e.message:"Tester status could not be saved.")}}
   async function addTester(event:FormEvent){event.preventDefault();if(!testerEmail.trim())return;setError("");try{await request("/api/v1/admin/product-ops/beta-testers",{method:"POST",body:JSON.stringify({email:testerEmail.trim(),displayName:testerName.trim()||null})});setTesterEmail("");setTesterName("");await load()}catch(e){setError(e instanceof Error?e.message:"Tester could not be added.")}}
+  async function copyInvite(tester:Tester){try{await navigator.clipboard.writeText(inviteText(tester));setCopiedEmail(tester.email);window.setTimeout(()=>setCopiedEmail(current=>current===tester.email?"":current),2200)}catch{setError("The invitation could not be copied. Your browser may have blocked clipboard access.")}}
   async function toggleSetting(key:LaunchSetting,value:boolean){setError("");try{await request(`/api/v1/admin/product-ops/settings/${key}`,{method:"PUT",body:JSON.stringify({value})});await load()}catch(e){setError(e instanceof Error?e.message:"Launch setting could not be saved.")}}
   const maxFeature=useMemo(()=>Math.max(1,...(data?.analytics.topFeatures.map(x=>x.count)??[1])),[data]);
   if(!host)return null;
@@ -64,12 +68,20 @@ export function AdminLaunchReadiness(){
       </div>
 
       <div className="admin-launch-grid">
-        <article className="admin-launch-card"><header><UserPlus/><div><small>PRIVATE BETA</small><h3>Invite households deliberately</h3></div></header><form className="admin-beta-add" onSubmit={event=>void addTester(event)}><input type="email" value={testerEmail} onChange={e=>setTesterEmail(e.target.value)} placeholder="tester@example.com" required/><input value={testerName} onChange={e=>setTesterName(e.target.value)} placeholder="Name / household (optional)"/><button type="submit">Add tester</button></form><p className="admin-launch-note">Adding an email places it on the access list. Email delivery is not faked: until an email provider is connected, share the beta invitation manually.</p><div className="admin-beta-list">{data.testers.length?data.testers.map(tester=><div key={tester.email}><span><strong>{tester.displayName||tester.email}</strong>{tester.displayName&&<small>{tester.email}</small>}<small>{tester.activatedAt?`Activated ${new Date(tester.activatedAt).toLocaleDateString()}`:`Invited ${new Date(tester.invitedAt).toLocaleDateString()}`}</small></span><select value={tester.status} onChange={e=>void testerStatus(tester.email,e.target.value as TesterStatus)}><option value="invited">Invited</option><option value="active">Active</option><option value="paused">Paused</option></select></div>):<p>No beta testers added yet.</p>}</div></article>
+        <article className="admin-launch-card admin-beta-operations"><header><UserPlus/><div><small>PRIVATE BETA</small><h3>Invite households deliberately</h3></div></header>
+          <div className="admin-beta-progress"><span><strong>{data.invitationProgress.invited}</strong><small>Waiting to enter</small></span><span><strong>{data.invitationProgress.activated}</strong><small>Activated</small></span><span><strong>{data.invitationProgress.welcomeSent}</strong><small>Welcome emails sent</small></span><span><strong>{data.invitationProgress.paused}</strong><small>Paused</small></span></div>
+          <form className="admin-beta-add" onSubmit={event=>void addTester(event)}><input type="email" value={testerEmail} onChange={e=>setTesterEmail(e.target.value)} placeholder="tester@example.com" required/><input value={testerName} onChange={e=>setTesterName(e.target.value)} placeholder="Name / household (optional)"/><button type="submit">Add tester</button></form>
+          <p className="admin-launch-note">Add the exact email the tester will use to sign in. Then copy the ready-made invite below. Their status changes to Active automatically after they successfully enter Kit Hub.</p>
+          <div className="admin-beta-list">{data.testers.length?data.testers.map(tester=><div className="admin-beta-tester" key={tester.email}>
+            <div className="admin-beta-tester__identity"><span className={`admin-beta-status is-${tester.status}`}>{tester.status==="active"?<Check/>:<Circle/>}{tester.status==="active"?"Activated":tester.status==="paused"?"Paused":"Invited"}</span><strong>{tester.displayName||tester.email}</strong>{tester.displayName&&<small>{tester.email}</small>}<small>{tester.activatedAt?`Entered Kit Hub ${new Date(tester.activatedAt).toLocaleString()}`:`Added ${new Date(tester.invitedAt).toLocaleString()}`}</small>{tester.welcomeSentAt&&<small className="admin-beta-email-state"><Mail/>Welcome email sent {new Date(tester.welcomeSentAt).toLocaleDateString()}</small>}</div>
+            <div className="admin-beta-tester__actions"><button type="button" className="admin-secondary" onClick={()=>void copyInvite(tester)}>{copiedEmail===tester.email?<Check/>:<Copy/>}{copiedEmail===tester.email?"Copied":"Copy invite"}</button><a className="admin-secondary" href={window.location.origin} target="_blank" rel="noreferrer"><ExternalLink/>Open Kit Hub</a><select value={tester.status} onChange={e=>void testerStatus(tester.email,e.target.value as TesterStatus)}><option value="invited">Invited</option><option value="active">Active</option><option value="paused">Paused</option></select></div>
+          </div>):<p>No beta testers added yet.</p>}</div>
+        </article>
 
         <article className="admin-launch-card"><header><ShieldCheck/><div><small>LAUNCH CONTROLS</small><h3>Only mark what is genuinely ready</h3></div></header><div className="admin-launch-switches">{(Object.keys(settingCopy) as LaunchSetting[]).map(key=><label key={key}><input type="checkbox" checked={Boolean(data.settings[key])} onChange={e=>void toggleSetting(key,e.target.checked)}/><span><strong>{settingCopy[key].title}</strong><small>{settingCopy[key].detail}</small></span></label>)}</div>{data.settings.private_beta_enabled&&<div className="admin-beta-warning"><ShieldCheck/><span><strong>Private beta gate is ON</strong><small>Only admins and tester emails marked Invited or Active can enter the app.</small></span></div>}</article>
       </div>
 
-      <article className="admin-launch-card admin-email-foundation"><header><Mail/><div><small>EMAIL COMMUNICATION FOUNDATION</small><h3>Prepare communication without spamming families</h3></div></header><p>Kit Hub should eventually support three opt-in email families: a short welcome/onboarding sequence, private-beta updates, and meaningful release notes. The application does not claim to send these until a real provider and unsubscribe flow are connected.</p><div className="admin-email-templates"><span><strong>Welcome</strong><small>Help a new household complete setup and discover one useful shared workflow.</small></span><span><strong>Beta update</strong><small>Ask focused questions, link to feedback and explain what changed.</small></span><span><strong>Release note</strong><small>Only send when an update is meaningful enough to bring a household back.</small></span></div></article>
+      <article className="admin-launch-card admin-email-foundation"><header><Mail/><div><small>EMAIL COMMUNICATION FOUNDATION</small><h3>Prepare communication without spamming families</h3></div></header><p>Kit Hub supports opt-in welcome, private-beta update and meaningful release-note email families. Production tester delivery stays locked until a verified sender is configured.</p><div className="admin-email-templates"><span><strong>Welcome</strong><small>Help a new household complete setup and discover one useful shared workflow.</small></span><span><strong>Beta update</strong><small>Ask focused questions, link to feedback and explain what changed.</small></span><span><strong>Release note</strong><small>Only send when an update is meaningful enough to bring a household back.</small></span></div></article>
     </>}
   </section>,host);
 }
