@@ -9,8 +9,10 @@ export interface AppVersionResponse { id:string;tag:string|null;timestamp:string
 export interface AdminReleaseStep { name:string;status:string;conclusion:string|null;number:number; }
 export interface AdminReleaseFailure { step:string;summary:string;excerpt:string|null; }
 export interface AdminReleaseRun { id:number;name:string;status:string;conclusion:string|null;headBranch:string;htmlUrl:string|null;createdAt:string|null;updatedAt:string|null;steps:AdminReleaseStep[];failure:AdminReleaseFailure|null; }
-export interface AdminReleaseStatusResponse { releaseConfigured:boolean;repository:string|null;workflow:string|null;deployedVersion:AppVersionResponse;latestRun:AdminReleaseRun|null; }
-export interface AdminReleaseDispatchResponse { accepted:boolean;message:string; }
+export interface AdminPublishPullRequest { number:number;title:string;headBranch:string;headSha:string;baseBranch:string;htmlUrl:string;author:string|null;updatedAt:string|null;draft:boolean;mergeable:boolean|null;checkState:"success"|"pending"|"failure"|"missing";checkSummary:string;ready:boolean;blockers:string[]; }
+export interface AdminReleaseStatusResponse { releaseConfigured:boolean;publishConfigured:boolean;publishStatus:"available"|"no_changes"|"unavailable";repository:string|null;workflow:string|null;deployedVersion:AppVersionResponse;latestRun:AdminReleaseRun|null;pullRequests:AdminPublishPullRequest[];publishStatusMessage:string|null; }
+export interface AdminReleaseDispatchInput { pullNumber?:number;headSha?:string; }
+export interface AdminReleaseDispatchResponse { accepted:boolean;message:string;published:{pullNumber:number;sha:string}|null; }
 export interface AdminReleaseCancelResponse { cancelled:boolean;message:string; }
 export interface HouseholdMemberSummary { id:string;userId:string;name:string;email:string;role:HouseholdRole;joinedAt:string|null; }
 export interface EverydayTask { id:string;title:string;notes:string|null;status:"todo"|"done";priority:"low"|"normal"|"high";dueAt:string|null;assigneeUserId:string|null;assigneeName:string|null;createdAt:string; }

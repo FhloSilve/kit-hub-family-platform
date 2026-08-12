@@ -1,0 +1,136 @@
+.admin-stage-list {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.admin-publish-picker {
+  display: grid;
+  gap: 7px;
+  margin: 18px 0 12px;
+  color: var(--admin-accent);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.admin-publish-picker select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--admin-accent) 24%, #ccc);
+  border-radius: 13px;
+  background: var(--admin-card);
+  color: var(--admin-ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.admin-publish-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 14px;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--admin-accent) 20%, #ddd);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--admin-soft) 20%, var(--admin-card));
+}
+
+.admin-publish-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-publish-summary > div small {
+  color: color-mix(in srgb, var(--admin-ink) 68%, transparent);
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-publish-summary > span {
+  display: flex;
+  align-items: center;
+  align-self: start;
+  gap: 5px;
+  color: #397058;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.admin-publish-summary.blocked > span {
+  color: #9a543f;
+}
+
+.admin-publish-summary > span svg {
+  width: 15px;
+  height: 15px;
+}
+
+.admin-publish-summary ul {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  padding-left: 18px;
+  color: #8a4938;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-publish-summary > a {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--admin-accent);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.admin-publish-summary > a svg {
+  width: 13px;
+  height: 13px;
+}
+
+.admin-publish-note {
+  display: block;
+  margin: 0 0 16px;
+  color: color-mix(in srgb, var(--admin-ink) 68%, transparent);
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+.admin-publish-note.blocked {
+  color: #9a543f;
+  font-weight: 800;
+}
+
+.admin-completion.confirm > svg {
+  color: var(--admin-accent);
+}
+
+.admin-completion code {
+  color: var(--admin-accent);
+  font-weight: 850;
+}
+
+.admin-confirm-impact {
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--admin-soft) 28%, var(--admin-card));
+  font-size: 13px;
+}
+
+:root[data-kit-appearance="dark"] .admin-publish-summary,
+:root[data-kit-appearance="dark"] .admin-publish-picker select {
+  border-color: #4b555c;
+}
+
+@media (max-width: 1000px) {
+  .admin-stage-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-stage-list {
+    grid-template-columns: 1fr;
+  }
+}

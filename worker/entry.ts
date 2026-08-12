@@ -51,7 +51,7 @@ app.use("/api/v1/households/:householdId/attachments", protectAttachmentUpload);
 function adminMutationAction(request: Request): PlatformAdminAction | undefined {
   if (request.method !== "POST") return undefined;
   const path = new URL(request.url).pathname;
-  if (path === "/api/v1/admin/releases") return "release.dispatch";
+  if (path === "/api/v1/admin/releases") return "release.publish";
   if (/^\/api\/v1\/admin\/releases\/[^/]+\/cancel$/.test(path)) return "release.cancel";
   return undefined;
 }
