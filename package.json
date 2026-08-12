@@ -14,8 +14,11 @@
     "release": "npm run db:migrate:remote && npm run deploy",
     "types": "wrangler types",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "npm run test:unit && npm run test:worker",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:worker": "vitest run --config vitest.worker.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "verify:production": "node scripts/verify-production.mjs",
     "db:migrate:local": "wrangler d1 migrations apply kit-hub-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply kit-hub-db --remote"
   },
@@ -29,6 +32,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.51.1",
+    "@cloudflare/vitest-pool-workers": "^0.21.1",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",

@@ -4,23 +4,19 @@ Your family's digital home: a warm, private household platform for shared plans,
 
 ## Current milestone
 
-Milestone 2 builds the Everyday Core on the Milestone 1 foundation:
+Kit Hub is in private-beta stabilization. The active platform includes:
 
-- Functional Today, Calendar, Tasks, Groceries, and Household views
-- Quick Add forms for tasks, grocery items, and calendar events
-- Task completion/reopen and grocery checked/unchecked interactions
-- Live household member directory from memberships
-- Cloudflare Worker API with household-scoped `/api/v1` Everyday Core routes
-- Better Auth email/password accounts and cookie sessions
-- D1 migration for identity, profiles, households, memberships, roles, permissions, invites, and audit records
-- Household onboarding with language and time-zone defaults
-- Development-only demo dashboard at `/?demo=1`
-- Mobile bottom navigation and accessible reduced-motion behavior
-- Server-enforced password strength with a readable account-creation meter
-- In-app update detection and one-click refresh when a new Worker version is live
-- TypeScript validation, unit tests, structured API errors, and request IDs
+- Today, Calendar, Tasks, Groceries, Meals, Notes, Routines, and Household views
+- Household chat, direct messages, reactions, announcements, notifications, and attachments
+- Household-scoped APIs with centralized membership, permission, and rate-limit guards
+- Better Auth email/password accounts, authenticator-app two-factor authentication, and session controls
+- Secure household invitations, ownership handoff, and protected account deletion
+- Silvi household assistance with explicit confirmation before any data-changing action
+- Privacy-first presence, account export, security telemetry, and platform-admin readiness tools
+- Protected GitHub Actions production releases with D1 migrations and post-deployment verification
+- Unit, security-regression, and Cloudflare Worker-runtime integration tests
 
-Chat, Notes, realtime, household invitations/role editing, meal planning, and the generated house remain intentionally deferred. Calendar, Tasks, Groceries, and the household member directory are active in Milestone 2.
+The generated interactive house remains a future product milestone. Current work should favor security, reliability, accessibility, and beta feedback over expanding the feature surface.
 
 ## Stack
 
@@ -62,36 +58,26 @@ npm run ci
 
 `wrangler.jsonc` binds production to the existing `kit-hub-db` database. Keep that database ID unchanged unless the application is intentionally moved to another D1 database.
 
-Confirm the production secret exists, apply pending migrations, and deploy:
+Apply pending migrations to the local D1 database before development:
 
 ```bash
-npx wrangler secret list
-npm run db:migrate:remote
-npm run deploy
+npm run db:migrate:local
 ```
 
-For a release that applies pending D1 migrations before building and deploying:
+Remote migrations and deployment are intentionally owned by the protected production workflow below.
 
-```bash
-npm run release
-```
+## Production deployments
 
-## Automatic deployments
+GitHub Actions is the sole production deployment path. Pull requests and pushes to `main` run the non-deploying `ci.yml` workflow. A platform administrator can then start the protected `production-release.yml` workflow from Kit Hub.
 
-Cloudflare Workers Builds can deploy every pushed production change automatically. Connect the existing Worker once in **Cloudflare → Workers & Pages → kit-hub-family-platform → Settings → Builds → Connect** and select:
+Configure the GitHub `production` environment with required reviewers and these secrets:
 
-- Repository: `FhloSilve/kit-hub-family-platform`
-- Production branch: `main`
-- Build command: `npm run ci`
-- Deploy command: `npm run deploy:ci`
+- `CLOUDFLARE_API_TOKEN`, scoped to deploy this Worker and apply migrations to its D1 database
+- `CLOUDFLARE_ACCOUNT_ID`
 
-The Worker name in Cloudflare and `wrangler.jsonc` must both stay `kit-hub-family-platform`. Cloudflare stores the build token; do not add an API token to this repository.
+The production workflow runs checks, applies pending D1 migrations, deploys the Worker, verifies `/api/health` and `/api/ready`, records the verified commit in D1, and confirms the release marker. Keep automatic production deployment from Cloudflare Workers Builds disabled so schema-dependent code cannot deploy before its migration.
 
-After this connection is active, pushing to `main` runs the checks and deploys the new Worker version. Kit Hub checks its version while open and shows **Update now** when that deployment is ready, so users do not need to close the browser.
-
-D1 migrations remain a deliberate release step through `npm run release`; Cloudflare's default Workers Builds token intentionally does not have D1-edit permission. This prevents database changes from running silently on every code push.
-
-Do not commit `.dev.vars`, production secrets, or Cloudflare credentials.
+The Worker name in Cloudflare and `wrangler.jsonc` must both stay `kit-hub-family-platform`. Do not commit `.dev.vars`, production secrets, GitHub tokens, or Cloudflare credentials.
 
 ## Repository map
 
@@ -100,6 +86,7 @@ src/             React application and design system
 worker/          Worker API and Better Auth integration
 shared/          Contracts and validation shared by UI/API
 migrations/      Versioned D1 schema
+scripts/         Release verification utilities
 wrangler.jsonc   Cloudflare bindings and deployment config
 ```
 

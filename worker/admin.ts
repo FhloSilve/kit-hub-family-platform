@@ -1,12 +1,42 @@
 import type { Context } from "hono";
 import type { AdminReleaseFailure, AdminReleaseRun, AdminReleaseStatusResponse, AdminReleaseStep } from "../shared/contracts";
-import { createAuth } from "./auth";
+import { createAuth, resolveAuthOrigins } from "./auth";
 import { apiError, type AppBindings } from "./http";
+import { auditSecurityEvent, protectAdminMutationRateLimit } from "./security";
 
 const GITHUB_API = "https://api.github.com";
+const ADMIN_FRESH_AGE_MS = 15 * 60_000;
+export type PlatformAdminAction = "release.dispatch" | "release.cancel";
 function adminEmails(env: Env) { return (env.KIT_HUB_ADMIN_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean); }
 export function isPlatformAdmin(env: Env, email: string) { return adminEmails(env).includes(email.trim().toLowerCase()); }
-export async function requirePlatformAdmin(c: Context<AppBindings>) { const auth = createAuth(c.env, c.req.raw); const session = await auth.api.getSession({ headers: c.req.raw.headers }); if (!session) return { response: apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue."), session: null }; if (!isPlatformAdmin(c.env, session.user.email)) return { response: apiError(c, 403, "PLATFORM_ADMIN_REQUIRED", "Kit Hub platform administrator access is required."), session: null }; return { response: null, session }; }
+export function isFreshAdminSession(createdAt: Date | string | number | null | undefined, now = Date.now()) { const value = createdAt instanceof Date ? createdAt.getTime() : typeof createdAt === "number" ? createdAt : typeof createdAt === "string" ? Date.parse(createdAt) : Number.NaN; const age = now - value; return Number.isFinite(age) && age >= 0 && age <= ADMIN_FRESH_AGE_MS; }
+export function isTrustedAdminOrigin(request: Request, configuredAuthURL: string) { const origin = request.headers.get("origin"); if (!origin) return false; try { return new URL(origin).origin === resolveAuthOrigins(request, configuredAuthURL).authOrigin; } catch { return false; } }
+async function denyAdminMutation(c: Context<AppBindings>, userId: string, action: PlatformAdminAction, reason: string) { await auditSecurityEvent(c, { userId, action: `admin.${action}`, resourceType: "production_release", result: "denied", metadata: { reason } }); }
+export async function requirePlatformAdmin(c: Context<AppBindings>, mutationAction?: PlatformAdminAction) {
+  const auth = createAuth(c.env, c.req.raw);
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return { response: apiError(c, 401, "AUTH_REQUIRED", "Sign in to continue."), session: null };
+  if (!isPlatformAdmin(c.env, session.user.email)) {
+    if (mutationAction) await denyAdminMutation(c, session.user.id, mutationAction, "platform_admin_required");
+    return { response: apiError(c, 403, "PLATFORM_ADMIN_REQUIRED", "Kit Hub platform administrator access is required."), session: null };
+  }
+  if (mutationAction) {
+    if (!isTrustedAdminOrigin(c.req.raw, c.env.BETTER_AUTH_URL)) {
+      await denyAdminMutation(c, session.user.id, mutationAction, "trusted_origin_required");
+      return { response: apiError(c, 403, "TRUSTED_ORIGIN_REQUIRED", "Production releases can only be controlled from the Kit Hub admin application."), session: null };
+    }
+    if (!isFreshAdminSession(session.session.createdAt)) {
+      await denyAdminMutation(c, session.user.id, mutationAction, "recent_authentication_required");
+      return { response: apiError(c, 401, "REAUTH_REQUIRED", "Confirm your password again before controlling a production release. Recent authentication lasts 15 minutes."), session: null };
+    }
+    const rateLimited = await protectAdminMutationRateLimit(c, session.user.id, mutationAction);
+    if (rateLimited) {
+      await denyAdminMutation(c, session.user.id, mutationAction, "rate_limited");
+      return { response: rateLimited, session: null };
+    }
+  }
+  return { response: null, session };
+}
 function releaseConfigured(env: Env) { return Boolean(env.GITHUB_RELEASE_TOKEN && env.GITHUB_REPOSITORY && env.GITHUB_RELEASE_WORKFLOW); }
 function githubHeaders(env: Env) { return { accept: "application/vnd.github+json", authorization: `Bearer ${env.GITHUB_RELEASE_TOKEN}`, "x-github-api-version": "2022-11-28", "user-agent": "kit-hub-family-platform" }; }
 function mapStep(step: Record<string, unknown>): AdminReleaseStep { return { name: typeof step.name === "string" ? step.name : "Release step", status: typeof step.status === "string" ? step.status : "unknown", conclusion: typeof step.conclusion === "string" ? step.conclusion : null, number: typeof step.number === "number" ? step.number : 0 }; }

@@ -19,6 +19,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 20
     steps:
       - name: Check out production source
         uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci
       - name: Run quality checks
         run: npm run ci
       - name: Apply pending D1 migrations
@@ -44,8 +45,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Verify production health
-        run: |
-          node -e "fetch('https://kit-hub-family-platform.scarletsilverfox.workers.dev/api/health', { cache: 'no-store' }).then(async r => { const body = await r.text(); if (!r.ok) throw new Error('Health check failed: ' + r.status + ' ' + body); console.log(body); })"
+        run: npm run verify:production
       - name: Mark verified production release
         shell: bash
         run: |
@@ -74,3 +74,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify production release marker
+        run: npm run verify:production
+        env:
+          EXPECTED_RELEASE_ID: ${{ github.sha }}

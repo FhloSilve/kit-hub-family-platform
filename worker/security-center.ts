@@ -78,10 +78,10 @@ app.get("/api/v1/admin/security-center", async c => {
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action='security.household_boundary' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action LIKE 'security.rate_limit.%' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action LIKE 'security.rate_limit.auth-%' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
-    c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action='admin.mutation' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
+    c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action LIKE 'admin.%' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM session WHERE expiresAt>?").bind(Date.now()).first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM \"user\" WHERE \"twoFactorEnabled\"=1").first<{count:number}>(),
-    c.env.DB.prepare("SELECT action,result,resource_type resourceType,created_at createdAt FROM audit_events WHERE action LIKE 'security.%' OR action='admin.mutation' OR action LIKE 'account.%' OR action LIKE 'household.%reauth_required' ORDER BY created_at DESC LIMIT 20").all<any>(),
+    c.env.DB.prepare("SELECT action,result,resource_type resourceType,created_at createdAt FROM audit_events WHERE action LIKE 'security.%' OR action LIKE 'admin.%' OR action LIKE 'account.%' OR action LIKE 'household.%reauth_required' ORDER BY created_at DESC LIMIT 20").all<any>(),
   ]);
   return c.json({
     windowDays: 7,
@@ -102,7 +102,7 @@ app.get("/api/v1/admin/security-center", async c => {
       { key: "rate-limit", label: "Server-side mutation throttling", enabled: true },
       { key: "auth-rate-limit", label: "Authentication abuse throttling with hashed client buckets", enabled: true },
       { key: "two-factor", label: "Authenticator-app two-factor authentication + recovery codes", enabled: true },
-      { key: "recent-auth", label: "Recent sign-in required for destructive account actions", enabled: true },
+      { key: "recent-auth", label: "Recent sign-in required for destructive account and production actions", enabled: true },
       { key: "upload-signature", label: "Attachment content-signature validation", enabled: true },
       { key: "audit", label: "Privacy-safe security audit trail", enabled: true },
       { key: "sessions", label: "Account session visibility + sign-out everywhere", enabled: true },
