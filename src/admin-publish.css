@@ -74,6 +74,12 @@
   line-height: 1.45;
 }
 
+.admin-publish-draft-note {
+  grid-column: 1 / -1;
+  color: color-mix(in srgb, var(--admin-ink) 72%, transparent);
+  letter-spacing: 0;
+}
+
 .admin-publish-summary > a {
   grid-column: 1 / -1;
   display: inline-flex;

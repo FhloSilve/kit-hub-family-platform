@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { evaluatePullRequestReadiness, isTrustedAdminOrigin } from "./admin";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { evaluatePullRequestReadiness, isTrustedAdminOrigin, markPullRequestReadyForReview } from "./admin";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("platform admin request security", () => {
   it("accepts only the configured production origin", () => {
@@ -29,7 +31,7 @@ describe("platform admin request security", () => {
     expect(isTrustedAdminOrigin(local, "https://kit-hub.example")).toBe(true);
   });
 
-  it("publishes only a non-draft, mergeable main pull request with successful checks", () => {
+  it("publishes a mergeable main pull request with successful checks", () => {
     const ready = evaluatePullRequestReadiness({
       draft: false,
       baseBranch: "main",
@@ -40,8 +42,22 @@ describe("platform admin request security", () => {
     expect(ready).toMatchObject({ ready: true, checkState: "success", blockers: [] });
   });
 
-  it("blocks drafts, conflicts, missing checks, pending checks, and failed checks", () => {
-    expect(evaluatePullRequestReadiness({ draft: true, baseBranch: "main", mergeable: true, checks: [] })).toMatchObject({ ready: false, checkState: "missing" });
+  it("allows a checked draft to become ready after admin confirmation", () => {
+    expect(evaluatePullRequestReadiness({ draft: true, baseBranch: "main", mergeable: true, checks: [{ status: "completed", conclusion: "success" }] })).toMatchObject({ ready: true, checkState: "success", blockers: [] });
+  });
+
+  it("marks the selected draft ready through GitHub GraphQL", async () => {
+    const request = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { markPullRequestReadyForReview: { pullRequest: { isDraft: false } } } }), { status: 200 }));
+    vi.stubGlobal("fetch", request);
+
+    await expect(markPullRequestReadyForReview({ GITHUB_RELEASE_TOKEN: "test-token" } as Env, { node_id: "PR_test", draft: true })).resolves.toBe(true);
+    expect(request).toHaveBeenCalledWith("https://api.github.com/graphql", expect.objectContaining({ method: "POST" }));
+    const init = request.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toMatchObject({ variables: { pullRequestId: "PR_test" } });
+  });
+
+  it("blocks conflicts, missing checks, pending checks, and failed checks", () => {
+    expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "main", mergeable: true, checks: [] })).toMatchObject({ ready: false, checkState: "missing" });
     expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "develop", mergeable: false, checks: [{ status: "completed", conclusion: "success" }] }).blockers).toHaveLength(2);
     expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "main", mergeable: true, checks: [{ status: "in_progress", conclusion: null }] })).toMatchObject({ ready: false, checkState: "pending" });
     expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "main", mergeable: true, checks: [{ status: "completed", conclusion: "failure" }] })).toMatchObject({ ready: false, checkState: "failure" });
