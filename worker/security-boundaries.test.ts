@@ -21,6 +21,7 @@ describe("private beta security boundaries",()=>{
     expect(admin).toContain('"TRUSTED_ORIGIN_REQUIRED"');
     expect(admin).not.toContain('"REAUTH_REQUIRED"');
     expect(admin).toContain("expectedHeadSha");
+    expect(admin).toContain("markPullRequestReadyForReview");
     expect(admin).toContain('merge_method: "squash"');
     expect(admin).toContain("protectAdminMutationRateLimit");
     const security=read("worker/security.ts");

@@ -19,6 +19,7 @@ export type PlatformAdminAction = "release.publish" | "release.cancel";
 type GitHubCheckRun = { status?: string; conclusion?: string | null };
 type GitHubPullRequest = {
   number?: number;
+  node_id?: string;
   title?: string;
   state?: string;
   draft?: boolean;
@@ -154,7 +155,6 @@ export function evaluatePullRequestReadiness(input: {
   checks: GitHubCheckRun[];
 }) {
   const blockers: string[] = [];
-  if (input.draft) blockers.push("Mark this pull request ready for review on GitHub first.");
   if (input.baseBranch !== "main") blockers.push("The pull request must target main.");
   if (input.mergeable === null) blockers.push("GitHub is still calculating whether this pull request can merge.");
   if (input.mergeable === false) blockers.push("Resolve the pull request's merge conflict first.");
@@ -178,6 +178,25 @@ export function evaluatePullRequestReadiness(input: {
   }
 
   return { ready: blockers.length === 0, blockers, checkState, checkSummary };
+}
+
+export async function markPullRequestReadyForReview(env: Env, pull: GitHubPullRequest) {
+  const pullRequestId = pull.node_id?.trim();
+  if (!pullRequestId) return false;
+  const response = await fetch(`${GITHUB_API}/graphql`, {
+    method: "POST",
+    headers: { ...githubHeaders(env), "content-type": "application/json" },
+    body: JSON.stringify({
+      query: "mutation MarkPullRequestReady($pullRequestId: ID!) { markPullRequestReadyForReview(input: { pullRequestId: $pullRequestId }) { pullRequest { isDraft } } }",
+      variables: { pullRequestId },
+    }),
+  });
+  if (!response.ok) return false;
+  const body = (await response.json().catch(() => ({}))) as {
+    data?: { markPullRequestReadyForReview?: { pullRequest?: { isDraft?: boolean } } };
+    errors?: Array<{ message?: string }>;
+  };
+  return !body.errors?.length && body.data?.markPullRequestReadyForReview?.pullRequest?.isDraft === false;
 }
 
 async function fetchCheckRuns(env: Env, repository: string, sha: string) {
@@ -303,6 +322,12 @@ async function publishPullRequest(c: Context<AppBindings>, repository: string, i
   });
   if (!readiness.ready) {
     return { response: apiError(c, 409, "PUBLISH_NOT_READY", readiness.blockers[0] ?? "The pull request is not ready to publish."), published: null };
+  }
+  if (pull.draft && !(await markPullRequestReadyForReview(c.env, pull))) {
+    return {
+      response: apiError(c, 500, "PUBLISH_READY_FAILED", "GitHub could not mark this draft ready for review. The release token needs Pull requests: write permission. Nothing was merged or released."),
+      published: null,
+    };
   }
 
   const mergeResponse = await fetch(`${GITHUB_API}/repos/${repository}/pulls/${pullNumber}/merge`, {
