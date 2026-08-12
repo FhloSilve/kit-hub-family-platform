@@ -11,3 +11,44 @@
 .silvi-composer textarea{background:#29363b;color:#fff;border-color:#44565c}.silvi-composer textarea::placeholder{color:#c7d0d2}
 .silvi-composer .button--primary{background:#b9dcf4;color:#203038}
 @media(max-width:700px){.silvi-panel{padding-top:max(22px,env(safe-area-inset-top));}.silvi-conversation{min-height:360px}.silvi-followups{margin-left:0}.silvi-followups>div{display:grid}.silvi-followups button{text-align:left}}
+
+/* Silvi follows the selected dark palette instead of mixing light cards with global dark text. */
+:root[data-kit-appearance="dark"] .silvi-panel{background:var(--theme-paper,#243138)!important;color:var(--ink,#f4f0e8)!important}
+:root[data-kit-appearance="dark"] .silvi-panel h2,
+:root[data-kit-appearance="dark"] .silvi-panel strong,
+:root[data-kit-appearance="dark"] .silvi-answer p{color:var(--ink,#f4f0e8)!important}
+:root[data-kit-appearance="dark"] .silvi-panel p,
+:root[data-kit-appearance="dark"] .silvi-panel small,
+:root[data-kit-appearance="dark"] .silvi-panel footer,
+:root[data-kit-appearance="dark"] .silvi-glance span,
+:root[data-kit-appearance="dark"] .silvi-suggestions>span{color:var(--ink-soft,#c5cccd)!important;opacity:1}
+:root[data-kit-appearance="dark"] .silvi-glance>div,
+:root[data-kit-appearance="dark"] .silvi-suggestions button,
+:root[data-kit-appearance="dark"] .silvi-insight,
+:root[data-kit-appearance="dark"] .silvi-plan button,
+:root[data-kit-appearance="dark"] .silvi-briefing__facts span,
+:root[data-kit-appearance="dark"] .silvi-briefing__actions button,
+:root[data-kit-appearance="dark"] .silvi-insight__actions button{background:var(--theme-raised,#30383e)!important;color:var(--ink,#f4f0e8)!important;border-color:var(--theme-line,#52606a)!important}
+:root[data-kit-appearance="dark"] .silvi-glance .has-alert{background:#49342f!important;border-color:#9d685c!important}
+:root[data-kit-appearance="dark"] .silvi-briefing{background:linear-gradient(135deg,color-mix(in srgb,var(--theme-primary,#9fd3b9) 12%,var(--theme-raised,#30383e)),var(--theme-raised,#30383e))!important;border-color:var(--theme-line,#52606a)!important}
+:root[data-kit-appearance="dark"] .silvi-insight.is-attention{background:#44332f!important}
+:root[data-kit-appearance="dark"] .silvi-insight.is-balance{background:#2d4038!important}
+:root[data-kit-appearance="dark"] .silvi-insight.is-planning{background:#393447!important}
+:root[data-kit-appearance="dark"] .silvi-priority,
+:root[data-kit-appearance="dark"] .silvi-personal{border-color:var(--theme-line,#52606a)!important}
+:root[data-kit-appearance="dark"] .silvi-conversation{background:color-mix(in srgb,var(--theme-bg,#172126) 76%,#111 24%)!important;border-color:var(--theme-line,#52606a)!important}
+:root[data-kit-appearance="dark"] .silvi-empty>svg{color:var(--theme-primary,#9fd3b9)!important}
+:root[data-kit-appearance="dark"] .silvi-answer{background:var(--theme-raised,#30383e)!important;border-color:var(--theme-line,#52606a)!important}
+:root[data-kit-appearance="dark"] .silvi-answer::before{box-shadow:0 2px 8px rgba(0,0,0,.35)}
+:root[data-kit-appearance="dark"] .silvi-followups>small{color:var(--ink-soft,#c5cccd)!important}
+:root[data-kit-appearance="dark"] .silvi-followups button{background:#30483d!important;color:#dff4e8!important;border-color:#587466!important}
+:root[data-kit-appearance="dark"] .silvi-proposal{background:#3b382f!important;color:var(--ink,#f4f0e8)!important;border-color:#756b4d!important}
+:root[data-kit-appearance="dark"] .silvi-proposal__heading small{color:#e2ca8a!important}
+:root[data-kit-appearance="dark"] .silvi-proposal__countdown{background:#47402e!important;border-color:#776a43!important;color:#f2dfad!important}
+:root[data-kit-appearance="dark"] .silvi-proposal.is-completed{background:#294338!important;border-color:#4f7965!important}
+:root[data-kit-appearance="dark"] .silvi-proposal.is-cancelled,
+:root[data-kit-appearance="dark"] .silvi-proposal.is-expired{background:#343a3d!important;border-color:#59646b!important}
+:root[data-kit-appearance="dark"] .silvi-proposal.is-failed{background:#49332f!important;border-color:#8e5b50!important}
+:root[data-kit-appearance="dark"] .silvi-composer{background:linear-gradient(to bottom,transparent,var(--theme-paper,#243138) 28%)!important;box-shadow:0 -12px 22px color-mix(in srgb,var(--theme-paper,#243138) 92%,transparent)!important}
+:root[data-kit-appearance="dark"] .silvi-composer textarea{background:var(--theme-raised,#30383e)!important;color:var(--ink,#f4f0e8)!important;border-color:var(--theme-line,#52606a)!important}
+:root[data-kit-appearance="dark"] .silvi-panel footer{background:var(--theme-paper,#243138)!important}
