@@ -1,5 +1,6 @@
 import { Activity, CheckCircle2, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
+import "../security-center.css";
 
 type Data={windowDays:number;metrics:{deniedRequests:number;crossOriginBlocks:number;householdBoundaryBlocks:number;rateLimitBlocks:number;adminMutations:number;activeSessions:number};controls:Array<{key:string;label:string;enabled:boolean}>;recent:Array<{action:string;result:string;resourceType:string;createdAt:string}>;privacyNote:string};
 async function request<T>(url:string){const response=await fetch(url,{credentials:"include"});const body=await response.json().catch(()=>({})) as any;if(!response.ok)throw new Error(body?.error?.message||"Security Center could not be loaded.");return body as T}
