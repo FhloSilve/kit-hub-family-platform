@@ -51,7 +51,7 @@ app.get("/api/v1/security/account-export", async c => {
   return c.json({
     generatedAt: new Date().toISOString(),
     scope: "Kit Hub account/security export. Shared household content is intentionally not duplicated into this export yet.",
-    account: { id:userId, name:access.session.user.name, email:access.session.user.email, createdAt:(access.session.user as any).createdAt ?? null },
+    account: { id:userId, name:access.session.user.name, email:access.session.user.email, createdAt:(access.session.user as any).createdAt ?? null, twoFactorEnabled:Boolean((access.session.user as any).twoFactorEnabled) },
     profile,
     memberships: memberships.results,
     betaEmailPreferences: emailPrefs ? { welcomeOptIn:Boolean(emailPrefs.welcomeOptIn), betaUpdatesOptIn:Boolean(emailPrefs.betaUpdatesOptIn), releaseNotesOptIn:Boolean(emailPrefs.releaseNotesOptIn), updatedAt:emailPrefs.updatedAt } : null,
@@ -72,7 +72,7 @@ app.post("/api/v1/security/sign-out-everywhere", async c => {
 
 app.get("/api/v1/admin/security-center", async c => {
   const admin = await requirePlatformAdmin(c); if (admin.response) return admin.response;
-  const [denied, originBlocks, householdBlocks, rateLimits, authRateLimits, adminMutations, activeSessions, recent] = await Promise.all([
+  const [denied, originBlocks, householdBlocks, rateLimits, authRateLimits, adminMutations, activeSessions, twoFactorUsers, recent] = await Promise.all([
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE result='denied' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action='security.cross_origin_block' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action='security.household_boundary' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
@@ -80,7 +80,8 @@ app.get("/api/v1/admin/security-center", async c => {
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action LIKE 'security.rate_limit.auth-%' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM audit_events WHERE action='admin.mutation' AND created_at>=datetime('now','-7 day')").first<{count:number}>(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM session WHERE expiresAt>?").bind(Date.now()).first<{count:number}>(),
-    c.env.DB.prepare("SELECT action,result,resource_type resourceType,created_at createdAt FROM audit_events WHERE action LIKE 'security.%' OR action='admin.mutation' OR action LIKE 'account.%' ORDER BY created_at DESC LIMIT 20").all<any>(),
+    c.env.DB.prepare("SELECT COUNT(*) count FROM \"user\" WHERE \"twoFactorEnabled\"=1").first<{count:number}>(),
+    c.env.DB.prepare("SELECT action,result,resource_type resourceType,created_at createdAt FROM audit_events WHERE action LIKE 'security.%' OR action='admin.mutation' OR action LIKE 'account.%' OR action LIKE 'household.%reauth_required' ORDER BY created_at DESC LIMIT 20").all<any>(),
   ]);
   return c.json({
     windowDays: 7,
@@ -92,6 +93,7 @@ app.get("/api/v1/admin/security-center", async c => {
       authRateLimitBlocks: Number(authRateLimits?.count ?? 0),
       adminMutations: Number(adminMutations?.count ?? 0),
       activeSessions: Number(activeSessions?.count ?? 0),
+      twoFactorUsers: Number(twoFactorUsers?.count ?? 0),
     },
     controls: [
       { key: "origin", label: "Same-origin mutation protection", enabled: true },
@@ -99,13 +101,15 @@ app.get("/api/v1/admin/security-center", async c => {
       { key: "isolation", label: "Cross-household access guard", enabled: true },
       { key: "rate-limit", label: "Server-side mutation throttling", enabled: true },
       { key: "auth-rate-limit", label: "Authentication abuse throttling with hashed client buckets", enabled: true },
+      { key: "two-factor", label: "Authenticator-app two-factor authentication + recovery codes", enabled: true },
+      { key: "recent-auth", label: "Recent sign-in required for destructive account actions", enabled: true },
       { key: "upload-signature", label: "Attachment content-signature validation", enabled: true },
       { key: "audit", label: "Privacy-safe security audit trail", enabled: true },
       { key: "sessions", label: "Account session visibility + sign-out everywhere", enabled: true },
       { key: "account-export", label: "Account/security data export", enabled: true },
     ],
     recent: recent.results,
-    privacyNote: "Security telemetry records event type, result, time, request reference and account/household identifiers where required for investigation. Authentication rate buckets use a one-way truncated SHA-256 client hash rather than storing the client IP in the bucket key. Passwords, tokens and family content are never placed in security telemetry.",
+    privacyNote: "Security telemetry records event type, result, time, request reference and account/household identifiers where required for investigation. Authentication rate buckets use a one-way truncated SHA-256 client hash rather than storing the client IP in the bucket key. Passwords, two-factor secrets, backup codes, tokens and family content are never placed in security telemetry.",
   });
 });
 
