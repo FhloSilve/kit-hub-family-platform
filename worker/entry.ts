@@ -29,6 +29,7 @@ import securityCenter from "./security-center";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import { apiError, type AppBindings } from "./http";
 import { applySecurityHeaders, auditAdminMutation, protectAuthRoute, protectHouseholdRoute, protectUnsafeOrigin } from "./security";
+import { protectAttachmentUpload } from "./upload-security";
 
 export { HouseholdRealtime };
 const app = new Hono<AppBindings>();
@@ -44,6 +45,7 @@ app.use("*", protectUnsafeOrigin);
 app.use("/api/auth/*", protectAuthRoute);
 
 app.use("/api/v1/households/:householdId/*", protectHouseholdRoute);
+app.use("/api/v1/households/:householdId/attachments", protectAttachmentUpload);
 app.use("/api/v1/admin/*", async (c, next) => {
   const access = await requirePlatformAdmin(c);
   if (access.response) return access.response;
