@@ -25,7 +25,8 @@ async function journeyFor(c: Ctx, email: string, userId: string) {
       SELECT created_by actor FROM everyday_tasks WHERE created_by=?
       UNION ALL SELECT added_by actor FROM everyday_grocery_items WHERE added_by=?
       UNION ALL SELECT created_by actor FROM everyday_events WHERE created_by=?
-    ) LIMIT 1`).bind(userId,userId,userId).first().catch(()=>null),
+      UNION ALL SELECT created_by actor FROM meal_plans WHERE created_by=?
+    ) LIMIT 1`).bind(userId,userId,userId,userId).first().catch(()=>null),
     c.env.DB.prepare("SELECT 1 found FROM silvi_action_proposals WHERE user_id=? LIMIT 1").bind(userId).first().catch(()=>null),
     c.env.DB.prepare("SELECT 1 found FROM product_usage_daily p JOIN memberships m ON m.household_id=p.household_id WHERE m.user_id=? AND m.status='active' AND p.event_key='silvi_opened' LIMIT 1").bind(userId).first().catch(()=>null),
     c.env.DB.prepare("SELECT 1 found FROM tester_feedback WHERE user_id=? LIMIT 1").bind(userId).first().catch(()=>null),
@@ -79,7 +80,8 @@ app.get("/api/v1/admin/beta-journey", async c => {
       EXISTS(SELECT 1 FROM memberships m WHERE m.user_id=u.id AND m.status='active') householdReady,
       (EXISTS(SELECT 1 FROM everyday_tasks t WHERE t.created_by=u.id)
         OR EXISTS(SELECT 1 FROM everyday_grocery_items g WHERE g.added_by=u.id)
-        OR EXISTS(SELECT 1 FROM everyday_events e WHERE e.created_by=u.id)) sharedActionDone,
+        OR EXISTS(SELECT 1 FROM everyday_events e WHERE e.created_by=u.id)
+        OR EXISTS(SELECT 1 FROM meal_plans mp WHERE mp.created_by=u.id)) sharedActionDone,
       EXISTS(SELECT 1 FROM silvi_action_proposals s WHERE s.user_id=u.id) silviProposal,
       EXISTS(SELECT 1 FROM product_usage_daily p JOIN memberships m2 ON m2.household_id=p.household_id WHERE m2.user_id=u.id AND m2.status='active' AND p.event_key='silvi_opened') silviUsage,
       EXISTS(SELECT 1 FROM tester_feedback f WHERE f.user_id=u.id) feedbackSubmitted
