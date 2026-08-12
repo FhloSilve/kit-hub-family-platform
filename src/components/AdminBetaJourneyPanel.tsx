@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, RefreshCw, Route, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import "../admin-beta-journey.css";
 
 type Tester={email:string;displayName:string|null;status:string;invitedAt:string;activatedAt:string|null;signedIn:boolean;householdReady:boolean;sharedActionDone:boolean;silviTried:boolean;feedbackSubmitted:boolean;welcomeSeen:boolean;completed:number;total:number;percent:number};
 type Data={testers:Tester[];summary:{invited:number;activated:number;householdReady:number;firstAction:number;silviTried:number;feedback:number}};
