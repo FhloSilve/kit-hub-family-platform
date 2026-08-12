@@ -78,4 +78,22 @@ describe("private beta security boundaries",()=>{
     expect(ui).toContain("Confirm password");
     expect(ui).toContain("authClient.signIn.email");
   });
+
+  it("supports authenticator-app two-factor authentication",()=>{
+    const auth=read("worker/auth.ts");
+    expect(auth).toContain('import { twoFactor } from "better-auth/plugins"');
+    expect(auth).toContain('twoFactor({');
+    expect(auth).toContain('issuer: "Kit Hub"');
+    const client=read("src/lib/auth-client.ts");
+    expect(client).toContain("twoFactorClient()");
+    const login=read("src/components/AuthScreen.tsx");
+    expect(login).toContain("authClient.twoFactor.verifyTotp");
+    const securityUi=read("src/components/AccountSecurityDock.tsx");
+    expect(securityUi).toContain("authClient.twoFactor.enable");
+    expect(securityUi).toContain("authClient.twoFactor.disable");
+    expect(securityUi).toContain("backupCodes");
+    const migration=read("migrations/0038_two_factor_authentication.sql");
+    expect(migration).toContain('"twoFactorEnabled"');
+    expect(migration).toContain('CREATE TABLE IF NOT EXISTS "twoFactor"');
+  });
 });
