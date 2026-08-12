@@ -1,4 +1,4 @@
-import { Download, KeyRound, LogOut, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Trash2, UserRoundCog, X } from "lucide-react";
+import { ChevronDown, Download, KeyRound, LogOut, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Trash2, UserRoundCog, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { authClient } from "../lib/auth-client";
 import "../account-security.css";
@@ -307,7 +307,13 @@ export function AccountSecurityDock() {
         </section>
 
         {!data ? <p>Loading sessions…</p> : <>
-          <div className="account-security-sessions">{data.sessions.map(item => <article key={item.id}><Smartphone/><div><strong>{item.device}</strong><small>Last active {when(item.updatedAt)}</small><small>Session expires {when(item.expiresAt)}</small></div></article>)}{!data.sessions.length && <p>No active sessions were found.</p>}</div>
+          <details className="account-security-session-disclosure">
+            <summary>
+              <span><Smartphone/><strong>Signed-in devices</strong><small>{data.sessions.length} active session{data.sessions.length === 1 ? "" : "s"}</small></span>
+              <span className="account-security-session-toggle"><span className="when-closed">Show devices</span><span className="when-open">Hide devices</span><ChevronDown/></span>
+            </summary>
+            <div className="account-security-sessions">{data.sessions.map(item => <article key={item.id}><Smartphone/><div><strong>{item.device}</strong><small>Last active {when(item.updatedAt)}</small><small>Session expires {when(item.expiresAt)}</small></div></article>)}{!data.sessions.length && <p>No active sessions were found.</p>}</div>
+          </details>
           <p className="account-security-note"><ShieldCheck/>{data.note}</p>
           <p className="account-security-note"><ShieldCheck/>The current export contains your account, profile, household memberships, beta-email choices, coarse session details and security events. Shared family content is not duplicated into this personal export.</p>
         </>}
