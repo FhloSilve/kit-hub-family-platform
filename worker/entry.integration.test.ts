@@ -57,7 +57,7 @@ describe("Worker integration", () => {
     });
   });
 
-  it("requires origin, recent authentication, throttling, and audit for release mutations", async () => {
+  it("requires origin, throttling, and audit for release mutations", async () => {
     const adminCookie = await signUp("admin@example.com", "Admin Example");
     const missingOrigin = await SELF.fetch(`${origin}/api/v1/admin/releases`, {
       method: "POST",
@@ -87,9 +87,9 @@ describe("Worker integration", () => {
     });
 
     const audit = await env.DB.prepare(
-      "SELECT action,result,metadata_json metadata FROM audit_events WHERE actor_user_id=(SELECT id FROM user WHERE email=?) AND action='admin.release.dispatch' AND result='denied' AND metadata_json LIKE '%rate_limited%' LIMIT 1",
+      "SELECT action,result,metadata_json metadata FROM audit_events WHERE actor_user_id=(SELECT id FROM user WHERE email=?) AND action='admin.release.publish' AND result='denied' AND metadata_json LIKE '%rate_limited%' LIMIT 1",
     ).bind("admin@example.com").first<{ action: string; result: string; metadata: string }>();
-    expect(audit).toMatchObject({ action: "admin.release.dispatch", result: "denied" });
+    expect(audit).toMatchObject({ action: "admin.release.publish", result: "denied" });
     expect(JSON.parse(audit?.metadata ?? "{}")).toMatchObject({ reason: "rate_limited" });
   });
 });

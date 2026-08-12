@@ -1,15 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { isFreshAdminSession, isTrustedAdminOrigin } from "./admin";
+import { evaluatePullRequestReadiness, isTrustedAdminOrigin } from "./admin";
 
 describe("platform admin request security", () => {
-  it("requires sessions created within the fifteen-minute freshness window", () => {
-    const now = Date.parse("2026-08-12T09:00:00.000Z");
-
-    expect(isFreshAdminSession(new Date("2026-08-12T08:46:00.000Z"), now)).toBe(true);
-    expect(isFreshAdminSession("2026-08-12T08:44:00.000Z", now)).toBe(false);
-    expect(isFreshAdminSession(new Date("2026-08-12T09:01:00.000Z"), now)).toBe(false);
-  });
-
   it("accepts only the configured production origin", () => {
     const trusted = new Request("https://kit-hub.example/api/v1/admin/releases", {
       method: "POST",
@@ -35,5 +27,23 @@ describe("platform admin request security", () => {
     });
 
     expect(isTrustedAdminOrigin(local, "https://kit-hub.example")).toBe(true);
+  });
+
+  it("publishes only a non-draft, mergeable main pull request with successful checks", () => {
+    const ready = evaluatePullRequestReadiness({
+      draft: false,
+      baseBranch: "main",
+      mergeable: true,
+      checks: [{ status: "completed", conclusion: "success" }],
+    });
+
+    expect(ready).toMatchObject({ ready: true, checkState: "success", blockers: [] });
+  });
+
+  it("blocks drafts, conflicts, missing checks, pending checks, and failed checks", () => {
+    expect(evaluatePullRequestReadiness({ draft: true, baseBranch: "main", mergeable: true, checks: [] })).toMatchObject({ ready: false, checkState: "missing" });
+    expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "develop", mergeable: false, checks: [{ status: "completed", conclusion: "success" }] }).blockers).toHaveLength(2);
+    expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "main", mergeable: true, checks: [{ status: "in_progress", conclusion: null }] })).toMatchObject({ ready: false, checkState: "pending" });
+    expect(evaluatePullRequestReadiness({ draft: false, baseBranch: "main", mergeable: true, checks: [{ status: "completed", conclusion: "failure" }] })).toMatchObject({ ready: false, checkState: "failure" });
   });
 });
