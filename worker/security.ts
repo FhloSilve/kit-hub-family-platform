@@ -27,6 +27,15 @@ function routeLimit(path: string, method: string): Limit | null {
   return { key: "household-write", max: 240, windowMs: 10 * 60_000 };
 }
 
+function authLimit(path: string, method: string): Limit | null {
+  if (!isUnsafe(method)) return null;
+  const p = path.toLowerCase();
+  if (p.includes("/sign-up/")) return { key: "auth-sign-up", max: 8, windowMs: 60 * 60_000 };
+  if (p.includes("/sign-in/")) return { key: "auth-sign-in", max: 20, windowMs: 15 * 60_000 };
+  if (p.includes("password") || p.includes("reset")) return { key: "auth-recovery", max: 10, windowMs: 60 * 60_000 };
+  return { key: "auth-write", max: 30, windowMs: 15 * 60_000 };
+}
+
 function routePermission(path: string, method: string): HouseholdPermission | null {
   if (!isUnsafe(method)) return null;
   if (/\/members(?:\/|$)/.test(path)) return "members.manage";
@@ -45,6 +54,16 @@ async function audit(c: SecurityContext, input: { householdId?: string | null; u
   ).bind(crypto.randomUUID(), input.householdId ?? null, input.userId ?? null, input.action, input.resourceType, input.result, c.get("requestId") ?? null).run().catch(() => undefined);
 }
 
+async function digest(value: string) {
+  const data = new TextEncoder().encode(value);
+  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
+  return Array.from(bytes.slice(0, 16)).map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function clientAddress(c: SecurityContext) {
+  return c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
 export async function protectUnsafeOrigin(c: SecurityContext, next: () => Promise<void>) {
   if (!isUnsafe(c.req.method) || !new URL(c.req.url).pathname.startsWith("/api/")) return next();
   const requestUrl = new URL(c.req.url);
@@ -59,9 +78,9 @@ export async function protectUnsafeOrigin(c: SecurityContext, next: () => Promis
   await next();
 }
 
-async function consumeLimit(c: SecurityContext, userId: string, householdId: string, limit: Limit) {
+async function consumeLimit(c: SecurityContext, subject: string, limit: Limit, householdId?: string | null, userId?: string | null) {
   const windowStart = Math.floor(Date.now() / limit.windowMs);
-  const bucketKey = `${limit.key}:${householdId}:${userId}`;
+  const bucketKey = `${limit.key}:${subject}`;
   await c.env.DB.prepare(
     "INSERT INTO api_security_rate_limits(bucket_key,window_start,request_count,updated_at) VALUES(?,?,1,datetime('now')) ON CONFLICT(bucket_key,window_start) DO UPDATE SET request_count=api_security_rate_limits.request_count+1,updated_at=datetime('now')",
   ).bind(bucketKey, windowStart).run();
@@ -73,10 +92,20 @@ async function consumeLimit(c: SecurityContext, userId: string, householdId: str
     const retrySeconds = Math.max(1, Math.ceil(((windowStart + 1) * limit.windowMs - Date.now()) / 1000));
     c.header("retry-after", String(retrySeconds));
     await audit(c, { householdId, userId, action: `security.rate_limit.${limit.key}`, resourceType: "request", result: "denied" });
-    return apiError(c, 429, "RATE_LIMITED", "Too many changes were requested in a short period. Please wait a moment and try again.");
+    return apiError(c, 429, "RATE_LIMITED", "Too many requests were made in a short period. Please wait and try again.");
   }
   if (Math.random() < 0.02) void c.env.DB.prepare("DELETE FROM api_security_rate_limits WHERE updated_at<datetime('now','-2 day')").run().catch(() => undefined);
   return null;
+}
+
+export async function protectAuthRoute(c: SecurityContext, next: () => Promise<void>) {
+  const path = new URL(c.req.url).pathname;
+  const limit = authLimit(path, c.req.method);
+  if (!limit) return next();
+  const addressHash = await digest(clientAddress(c));
+  const blocked = await consumeLimit(c, `client:${addressHash}`, limit);
+  if (blocked) return blocked;
+  await next();
 }
 
 export async function hasHouseholdPermission(c: SecurityContext, householdId: string, userId: string, permission: HouseholdPermission) {
@@ -111,7 +140,7 @@ export async function protectHouseholdRoute(c: SecurityContext, next: () => Prom
   }
   const limit = routeLimit(path, c.req.method);
   if (limit) {
-    const blocked = await consumeLimit(c, session.user.id, householdId, limit);
+    const blocked = await consumeLimit(c, `${householdId}:${session.user.id}`, limit, householdId, session.user.id);
     if (blocked) return blocked;
   }
   await next();
