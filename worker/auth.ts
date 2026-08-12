@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { twoFactor } from "better-auth/plugins";
 import { assessPassword } from "../shared/password";
 
 export interface AuthOrigins {
@@ -28,6 +29,11 @@ export function createAuth(env: Env, request: Request) {
     database: env.DB,
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins,
+    plugins: [
+      twoFactor({
+        issuer: "Kit Hub",
+      }),
+    ],
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 10,
