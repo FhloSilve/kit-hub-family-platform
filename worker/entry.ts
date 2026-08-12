@@ -28,7 +28,7 @@ import securityReadiness from "./security-readiness";
 import securityCenter from "./security-center";
 import invites from "./invites";
 import accountLifecycle from "./account-lifecycle";
-import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
+import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin, type PlatformAdminAction } from "./admin";
 import { apiError, type AppBindings } from "./http";
 import { applySecurityHeaders, auditAdminMutation, protectAuthRoute, protectHouseholdRoute, protectUnsafeOrigin } from "./security";
 import { protectAttachmentUpload } from "./upload-security";
@@ -48,10 +48,18 @@ app.use("/api/auth/*", protectAuthRoute);
 
 app.use("/api/v1/households/:householdId/*", protectHouseholdRoute);
 app.use("/api/v1/households/:householdId/attachments", protectAttachmentUpload);
+function adminMutationAction(request: Request): PlatformAdminAction | undefined {
+  if (request.method !== "POST") return undefined;
+  const path = new URL(request.url).pathname;
+  if (path === "/api/v1/admin/releases") return "release.dispatch";
+  if (/^\/api\/v1\/admin\/releases\/[^/]+\/cancel$/.test(path)) return "release.cancel";
+  return undefined;
+}
 app.use("/api/v1/admin/*", async (c, next) => {
-  const access = await requirePlatformAdmin(c);
+  const action = adminMutationAction(c.req.raw);
+  const access = await requirePlatformAdmin(c, action);
   if (access.response) return access.response;
-  await auditAdminMutation(c, next);
+  await auditAdminMutation(c, next, action, access.session?.user.id);
 });
 
 async function serveAdminShell(c: Context<AppBindings>) {

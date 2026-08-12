@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "kit-hub-family-platform-test",
+  "main": "worker/entry.ts",
+  "compatibility_date": "2026-08-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kit-hub-db-test",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "vars": {
+    "APP_ENV": "production",
+    "BETTER_AUTH_URL": "https://kit-hub-family-platform.scarletsilverfox.workers.dev",
+    "GITHUB_REPOSITORY": "FhloSilve/kit-hub-family-platform",
+    "GITHUB_RELEASE_WORKFLOW": "production-release.yml"
+  }
+}

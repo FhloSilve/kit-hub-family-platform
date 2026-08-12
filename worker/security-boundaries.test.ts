@@ -16,7 +16,14 @@ describe("private beta security boundaries",()=>{
   it("puts every admin API behind the platform-admin allowlist",()=>{
     const entry=read("worker/entry.ts");
     expect(entry).toContain('app.use("/api/v1/admin/*"');
-    expect(entry).toContain("requirePlatformAdmin(c)");
+    expect(entry).toContain("requirePlatformAdmin(c, action)");
+    const admin=read("worker/admin.ts");
+    expect(admin).toContain('"TRUSTED_ORIGIN_REQUIRED"');
+    expect(admin).toContain('"REAUTH_REQUIRED"');
+    expect(admin).toContain("protectAdminMutationRateLimit");
+    const security=read("worker/security.ts");
+    expect(security).toContain('key: `admin-${action}`');
+    expect(security).toContain('code: "ADMIN_RATE_LIMITED"');
   });
 
   it("keeps Silvi changes behind explicit, scoped confirmation",()=>{
@@ -36,7 +43,7 @@ describe("private beta security boundaries",()=>{
     expect(security).toContain('key: "silvi-action"');
     expect(security).toContain('key: "household-write"');
     expect(security).toContain("api_security_rate_limits");
-    expect(security).toContain('apiError(c, 429, "RATE_LIMITED"');
+    expect(security).toContain('error?.code ?? "RATE_LIMITED"');
   });
 
   it("applies baseline response security headers",()=>{

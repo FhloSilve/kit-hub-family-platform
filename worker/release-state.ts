@@ -24,6 +24,28 @@ app.get("/api/release-state", async (c) => {
   });
 });
 
+app.get("/api/ready", async (c) => {
+  c.header("cache-control", "no-store, no-cache, must-revalidate");
+  const schema = await c.env.DB.prepare(
+    "SELECT COUNT(*) count FROM sqlite_master WHERE type='table' AND name IN ('production_release_state','api_security_rate_limits','twoFactor')",
+  ).first<{ count: number }>().catch(() => null);
+  const ready = Number(schema?.count ?? 0) === 3;
+  const version = c.env.CF_VERSION_METADATA;
+
+  return c.json(
+    {
+      status: ready ? "ready" : "not_ready",
+      environment: c.env.APP_ENV,
+      version: {
+        id: version.id,
+        tag: version.tag ?? null,
+        timestamp: version.timestamp ?? null,
+      },
+    },
+    ready ? 200 : 503,
+  );
+});
+
 // Backward compatibility for browser tabs that still run the older update
 // prompt. The old client polls /api/version and expects { id, tag, timestamp }.
 // Return the last *verified Admin Release Center* marker here instead of the

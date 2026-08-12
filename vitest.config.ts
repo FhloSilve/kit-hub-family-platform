@@ -4,5 +4,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["shared/**/*.test.ts", "worker/**/*.test.ts"],
+    exclude: ["worker/**/*.integration.test.ts"],
   },
 });

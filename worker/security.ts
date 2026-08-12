@@ -48,10 +48,10 @@ function routePermission(path: string, method: string): HouseholdPermission | nu
   return null;
 }
 
-async function audit(c: SecurityContext, input: { householdId?: string | null; userId?: string | null; action: string; resourceType: string; result: "success" | "denied" | "failure" }) {
+export async function auditSecurityEvent(c: SecurityContext, input: { householdId?: string | null; userId?: string | null; action: string; resourceType: string; result: "success" | "denied" | "failure"; metadata?: Record<string, unknown> }) {
   await c.env.DB.prepare(
-    "INSERT INTO audit_events(id,household_id,actor_user_id,action,resource_type,result,request_id,created_at) VALUES(?,?,?,?,?,?,?,datetime('now'))",
-  ).bind(crypto.randomUUID(), input.householdId ?? null, input.userId ?? null, input.action, input.resourceType, input.result, c.get("requestId") ?? null).run().catch(() => undefined);
+    "INSERT INTO audit_events(id,household_id,actor_user_id,action,resource_type,result,request_id,metadata_json,created_at) VALUES(?,?,?,?,?,?,?,?,datetime('now'))",
+  ).bind(crypto.randomUUID(), input.householdId ?? null, input.userId ?? null, input.action, input.resourceType, input.result, c.get("requestId") ?? null, input.metadata ? JSON.stringify(input.metadata) : null).run().catch(() => undefined);
 }
 
 async function digest(value: string) {
@@ -72,13 +72,13 @@ export async function protectUnsafeOrigin(c: SecurityContext, next: () => Promis
   const originMatches = !origin || origin === requestUrl.origin;
   const fetchSiteAllowed = !fetchSite || fetchSite === "same-origin" || fetchSite === "same-site" || fetchSite === "none";
   if (!originMatches || !fetchSiteAllowed) {
-    await audit(c, { action: "security.cross_origin_block", resourceType: "request", result: "denied" });
+    await auditSecurityEvent(c, { action: "security.cross_origin_block", resourceType: "request", result: "denied" });
     return apiError(c, 403, "ORIGIN_NOT_ALLOWED", "This request did not come from the Kit Hub application.");
   }
   await next();
 }
 
-async function consumeLimit(c: SecurityContext, subject: string, limit: Limit, householdId?: string | null, userId?: string | null) {
+async function consumeLimit(c: SecurityContext, subject: string, limit: Limit, householdId?: string | null, userId?: string | null, error?: { code: string; message: string }) {
   const windowStart = Math.floor(Date.now() / limit.windowMs);
   const bucketKey = `${limit.key}:${subject}`;
   await c.env.DB.prepare(
@@ -91,8 +91,8 @@ async function consumeLimit(c: SecurityContext, subject: string, limit: Limit, h
   if (count > limit.max) {
     const retrySeconds = Math.max(1, Math.ceil(((windowStart + 1) * limit.windowMs - Date.now()) / 1000));
     c.header("retry-after", String(retrySeconds));
-    await audit(c, { householdId, userId, action: `security.rate_limit.${limit.key}`, resourceType: "request", result: "denied" });
-    return apiError(c, 429, "RATE_LIMITED", "Too many requests were made in a short period. Please wait and try again.");
+    await auditSecurityEvent(c, { householdId, userId, action: `security.rate_limit.${limit.key}`, resourceType: "request", result: "denied" });
+    return apiError(c, 429, error?.code ?? "RATE_LIMITED", error?.message ?? "Too many requests were made in a short period. Please wait and try again.");
   }
   if (Math.random() < 0.02) void c.env.DB.prepare("DELETE FROM api_security_rate_limits WHERE updated_at<datetime('now','-2 day')").run().catch(() => undefined);
   return null;
@@ -106,6 +106,10 @@ export async function protectAuthRoute(c: SecurityContext, next: () => Promise<v
   const blocked = await consumeLimit(c, `client:${addressHash}`, limit);
   if (blocked) return blocked;
   await next();
+}
+
+export async function protectAdminMutationRateLimit(c: SecurityContext, userId: string, action: string) {
+  return consumeLimit(c, `user:${userId}`, { key: `admin-${action}`, max: 5, windowMs: 60_000 }, null, userId, { code: "ADMIN_RATE_LIMITED", message: "Too many production release requests. Wait a minute and try again." });
 }
 
 export async function hasHouseholdPermission(c: SecurityContext, householdId: string, userId: string, permission: HouseholdPermission) {
@@ -129,13 +133,13 @@ export async function protectHouseholdRoute(c: SecurityContext, next: () => Prom
     "SELECT role_key roleKey FROM memberships WHERE household_id=? AND user_id=? AND status='active' LIMIT 1",
   ).bind(householdId, session.user.id).first<{ roleKey: string }>();
   if (!membership) {
-    await audit(c, { householdId, userId: session.user.id, action: "security.household_boundary", resourceType: "household", result: "denied" });
+    await auditSecurityEvent(c, { householdId, userId: session.user.id, action: "security.household_boundary", resourceType: "household", result: "denied" });
     return apiError(c, 403, "HOUSEHOLD_VIEW_REQUIRED", "You do not have access to this household.");
   }
   const path = new URL(c.req.url).pathname;
   const required = routePermission(path, c.req.method);
   if (required && !(await hasHouseholdPermission(c, householdId, session.user.id, required))) {
-    await audit(c, { householdId, userId: session.user.id, action: `permission.denied.${required}`, resourceType: "household", result: "denied" });
+    await auditSecurityEvent(c, { householdId, userId: session.user.id, action: `permission.denied.${required}`, resourceType: "household", result: "denied" });
     return apiError(c, 403, "HOUSEHOLD_PERMISSION_REQUIRED", "Your household role does not allow that change.");
   }
   const limit = routeLimit(path, c.req.method);
@@ -146,11 +150,11 @@ export async function protectHouseholdRoute(c: SecurityContext, next: () => Prom
   await next();
 }
 
-export async function auditAdminMutation(c: SecurityContext, next: () => Promise<void>) {
+export async function auditAdminMutation(c: SecurityContext, next: () => Promise<void>, action?: string, userId?: string | null) {
   await next();
-  if (!isUnsafe(c.req.method)) return;
-  const session = await createAuth(c.env, c.req.raw).api.getSession({ headers: c.req.raw.headers }).catch(() => null);
-  await audit(c, { userId: session?.user?.id ?? null, action: "admin.mutation", resourceType: "platform_admin", result: c.res.status < 400 ? "success" : "failure" });
+  if (!action || !isUnsafe(c.req.method)) return;
+  const result = c.res.status < 400 ? "success" : [401, 403, 429].includes(c.res.status) ? "denied" : "failure";
+  await auditSecurityEvent(c, { userId: userId ?? null, action: `admin.${action}`, resourceType: "production_release", result });
 }
 
 export function applySecurityHeaders(c: SecurityContext) {
