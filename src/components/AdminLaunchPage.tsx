@@ -3,6 +3,7 @@ import { AdminAdoptionPanel } from "./AdminAdoptionPanel";
 import { AdminBetaJourneyPanel } from "./AdminBetaJourneyPanel";
 import { AdminBetaReadinessPanel } from "./AdminBetaReadinessPanel";
 import { AdminLaunchReadiness } from "./AdminLaunchReadiness";
+import { AdminSecurityCenterPanel } from "./AdminSecurityCenterPanel";
 import { AdminSecurityReadinessPanel } from "./AdminSecurityReadinessPanel";
 import "../admin-launch-readiness.css";
 
@@ -18,6 +19,7 @@ export function AdminLaunchPage({onBack}:{onBack:()=>void}){
     </header>
     <AdminLaunchReadiness/>
     <AdminSecurityReadinessPanel/>
+    <AdminSecurityCenterPanel/>
     <AdminBetaJourneyPanel/>
     <AdminAdoptionPanel/>
     <AdminBetaReadinessPanel/>
