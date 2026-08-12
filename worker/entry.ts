@@ -28,7 +28,7 @@ import securityReadiness from "./security-readiness";
 import securityCenter from "./security-center";
 import { cancelAdminRelease, dispatchAdminRelease, fetchAdminReleaseStatus, requirePlatformAdmin } from "./admin";
 import { apiError, type AppBindings } from "./http";
-import { applySecurityHeaders, auditAdminMutation, protectHouseholdRoute, protectUnsafeOrigin } from "./security";
+import { applySecurityHeaders, auditAdminMutation, protectAuthRoute, protectHouseholdRoute, protectUnsafeOrigin } from "./security";
 
 export { HouseholdRealtime };
 const app = new Hono<AppBindings>();
@@ -41,6 +41,7 @@ app.use("*", async (c, next) => {
   applySecurityHeaders(c);
 });
 app.use("*", protectUnsafeOrigin);
+app.use("/api/auth/*", protectAuthRoute);
 
 app.use("/api/v1/households/:householdId/*", protectHouseholdRoute);
 app.use("/api/v1/admin/*", async (c, next) => {
