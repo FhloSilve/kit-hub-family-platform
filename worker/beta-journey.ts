@@ -18,7 +18,7 @@ async function currentTester(c: Ctx) {
 }
 
 async function journeyFor(c: Ctx, email: string, userId: string) {
-  const [row, membership, sharedAction, silviProposal, feedback] = await Promise.all([
+  const [row, membership, sharedAction, silviProposal, silviUsage, feedback] = await Promise.all([
     c.env.DB.prepare("SELECT welcome_seen_at welcomeSeenAt,silvi_tried_at silviTriedAt,feedback_prompt_dismissed_at feedbackPromptDismissedAt FROM beta_tester_journey WHERE lower(email)=lower(?)").bind(email).first<any>().catch(()=>null),
     c.env.DB.prepare("SELECT household_id householdId FROM memberships WHERE user_id=? AND status='active' ORDER BY created_at ASC LIMIT 1").bind(userId).first<{householdId:string}>().catch(()=>null),
     c.env.DB.prepare(`SELECT 1 found FROM (
@@ -27,12 +27,13 @@ async function journeyFor(c: Ctx, email: string, userId: string) {
       UNION ALL SELECT created_by actor FROM everyday_events WHERE created_by=?
     ) LIMIT 1`).bind(userId,userId,userId).first().catch(()=>null),
     c.env.DB.prepare("SELECT 1 found FROM silvi_action_proposals WHERE user_id=? LIMIT 1").bind(userId).first().catch(()=>null),
+    c.env.DB.prepare("SELECT 1 found FROM product_usage_daily p JOIN memberships m ON m.household_id=p.household_id WHERE m.user_id=? AND m.status='active' AND p.event_key='silvi_opened' LIMIT 1").bind(userId).first().catch(()=>null),
     c.env.DB.prepare("SELECT 1 found FROM tester_feedback WHERE user_id=? LIMIT 1").bind(userId).first().catch(()=>null),
   ]);
   const welcomeSeen = Boolean(row?.welcomeSeenAt);
   const householdReady = Boolean(membership?.householdId);
   const sharedActionDone = Boolean(sharedAction);
-  const silviTried = Boolean(row?.silviTriedAt || silviProposal);
+  const silviTried = Boolean(row?.silviTriedAt || silviProposal || silviUsage);
   const feedbackSubmitted = Boolean(feedback);
   const completed = [true,householdReady,sharedActionDone,silviTried,feedbackSubmitted].filter(Boolean).length;
   return {
@@ -76,21 +77,22 @@ app.get("/api/v1/admin/beta-journey", async c => {
       j.welcome_seen_at welcomeSeenAt,j.silvi_tried_at silviTriedAt,j.feedback_prompt_dismissed_at feedbackPromptDismissedAt,
       u.id userId,
       EXISTS(SELECT 1 FROM memberships m WHERE m.user_id=u.id AND m.status='active') householdReady,
-      EXISTS(SELECT 1 FROM everyday_tasks t WHERE t.created_by=u.id)
+      (EXISTS(SELECT 1 FROM everyday_tasks t WHERE t.created_by=u.id)
         OR EXISTS(SELECT 1 FROM everyday_grocery_items g WHERE g.added_by=u.id)
-        OR EXISTS(SELECT 1 FROM everyday_events e WHERE e.created_by=u.id) sharedActionDone,
+        OR EXISTS(SELECT 1 FROM everyday_events e WHERE e.created_by=u.id)) sharedActionDone,
       EXISTS(SELECT 1 FROM silvi_action_proposals s WHERE s.user_id=u.id) silviProposal,
+      EXISTS(SELECT 1 FROM product_usage_daily p JOIN memberships m2 ON m2.household_id=p.household_id WHERE m2.user_id=u.id AND m2.status='active' AND p.event_key='silvi_opened') silviUsage,
       EXISTS(SELECT 1 FROM tester_feedback f WHERE f.user_id=u.id) feedbackSubmitted
     FROM beta_tester_allowlist b
     LEFT JOIN beta_tester_journey j ON lower(j.email)=lower(b.email)
     LEFT JOIN "user" u ON lower(u.email)=lower(b.email)
     ORDER BY b.invited_at DESC`).all<any>();
   const testers = rows.results.map((r:any)=>{
-    const signedIn=Boolean(r.userId),householdReady=Boolean(r.householdReady),sharedActionDone=Boolean(r.sharedActionDone),silviTried=Boolean(r.silviTriedAt||r.silviProposal),feedbackSubmitted=Boolean(r.feedbackSubmitted),welcomeSeen=Boolean(r.welcomeSeenAt);
+    const signedIn=Boolean(r.activatedAt),householdReady=Boolean(r.householdReady),sharedActionDone=Boolean(r.sharedActionDone),silviTried=Boolean(r.silviTriedAt||r.silviProposal||r.silviUsage),feedbackSubmitted=Boolean(r.feedbackSubmitted),welcomeSeen=Boolean(r.welcomeSeenAt);
     const completed=[signedIn,householdReady,sharedActionDone,silviTried,feedbackSubmitted].filter(Boolean).length;
     return {...r,signedIn,householdReady,sharedActionDone,silviTried,feedbackSubmitted,welcomeSeen,completed,total:5,percent:Math.round((completed/5)*100)};
   });
-  return c.json({testers,summary:{invited:testers.length,activated:testers.filter((t:any)=>t.activatedAt).length,householdReady:testers.filter((t:any)=>t.householdReady).length,firstAction:testers.filter((t:any)=>t.sharedActionDone).length,silviTried:testers.filter((t:any)=>t.silviTried).length,feedback:testers.filter((t:any)=>t.feedbackSubmitted).length}});
+  return c.json({testers,summary:{invited:testers.length,activated:testers.filter((t:any)=>t.signedIn).length,householdReady:testers.filter((t:any)=>t.householdReady).length,firstAction:testers.filter((t:any)=>t.sharedActionDone).length,silviTried:testers.filter((t:any)=>t.silviTried).length,feedback:testers.filter((t:any)=>t.feedbackSubmitted).length}});
 });
 
 export default app;
