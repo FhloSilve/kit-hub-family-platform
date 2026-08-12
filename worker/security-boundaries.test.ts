@@ -52,4 +52,17 @@ describe("private beta security boundaries",()=>{
     expect(refresh).toContain("kit-hub-household-data-changed");
     expect(refresh).toContain("successful-api-mutation");
   });
+
+  it("protects permanent deletion with ownership handoff and a 48-hour cooling-off period",()=>{
+    const lifecycle=read("worker/account-lifecycle.ts");
+    expect(lifecycle).toContain("const COOLING_OFF_HOURS = 48");
+    expect(lifecycle).toContain("datetime('now','+48 hour')");
+    expect(lifecycle).toContain('household-ownership/:householdId/transfer');
+    expect(lifecycle).toContain("role_key IN ('admin','adult')");
+    expect(lifecycle).toContain('account-deletion/finalize');
+    expect(lifecycle).toContain('body?.confirmation !== "ERASE MY ACCOUNT"');
+    expect(lifecycle).toContain("currentStatus.activeMemberships > 0");
+    expect(lifecycle).toContain("Deleted member");
+    expect(lifecycle).toContain("kit-hub.invalid");
+  });
 });
