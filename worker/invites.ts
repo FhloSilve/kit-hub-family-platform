@@ -58,7 +58,7 @@ app.post("/api/v1/invites/accept",async c=>{
  const tokenHash=await hashToken(token);
  const invite=await c.env.DB.prepare("SELECT id,household_id householdId,email,role_key role,status,expires_at expiresAt FROM household_invites WHERE token_hash=? LIMIT 1").bind(tokenHash).first<any>();
  if(!invite||invite.status!=="pending")return apiError(c,404,"INVITE_INVALID","This invitation is invalid or already used.");
- if(new Date(invite.expiresAt)<=new Date()){await c.env.DB.prepare("UPDATE household_invites SET status='expired',updated_at=datetime('now') WHERE id=?").bind(invite.id).run();return apiError(c,410,"INVITE_EXPIRED","This invitation has expired.");}
+ if(new Date(invite.expiresAt)<=new Date()){await c.env.DB.prepare("UPDATE household_invites SET status='expired',updated_at=datetime('now') WHERE id=?").bind(invite.id).run();return apiError(c,409,"INVITE_EXPIRED","This invitation has expired.");}
  if(String(current.user.email).toLowerCase()!==String(invite.email).toLowerCase()){await audit(c,current.user.id,invite.householdId,"invite.email_mismatch","denied");return apiError(c,403,"INVITE_EMAIL_MISMATCH","Sign in with the exact email address this invitation was sent to.");}
  const existing=await c.env.DB.prepare("SELECT 1 found FROM memberships WHERE household_id=? AND user_id=? AND status='active' LIMIT 1").bind(invite.householdId,current.user.id).first();
  if(existing)return apiError(c,409,"ALREADY_A_MEMBER","This account is already an active member of that household.");
