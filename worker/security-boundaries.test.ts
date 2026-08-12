@@ -65,4 +65,17 @@ describe("private beta security boundaries",()=>{
     expect(lifecycle).toContain("Deleted member");
     expect(lifecycle).toContain("kit-hub.invalid");
   });
+
+  it("requires recent authentication for destructive account and household actions",()=>{
+    const lifecycle=read("worker/account-lifecycle.ts");
+    expect(lifecycle).toContain("const REAUTH_WINDOW_MINUTES = 15");
+    expect(lifecycle).toContain('"REAUTH_REQUIRED"');
+    expect(lifecycle).toContain('requireRecentAuthentication(c, session, "household.ownership_transfer")');
+    expect(lifecycle).toContain('requireRecentAuthentication(c, session, "household.leave")');
+    expect(lifecycle).toContain('requireRecentAuthentication(c, session, "account.deletion_request")');
+    expect(lifecycle).toContain('requireRecentAuthentication(c, session, "account.deletion_finalize")');
+    const ui=read("src/components/AccountSecurityDock.tsx");
+    expect(ui).toContain("Confirm password");
+    expect(ui).toContain("authClient.signIn.email");
+  });
 });
