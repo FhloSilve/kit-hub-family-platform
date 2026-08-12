@@ -82,7 +82,9 @@ app.get("/api/v1/admin/product-ops", async (c) => {
   const admin = await requirePlatformAdmin(c); if (admin.response) return admin.response;
   const [roadmap, testers, settings, totalHouseholds, activeToday, active7, featureRows, feedbackCount, retention, activityCount] = await Promise.all([
     c.env.DB.prepare("SELECT id,title,description,status,sort_order sortOrder,updated_at updatedAt FROM launch_roadmap_items ORDER BY sort_order,title").all(),
-    c.env.DB.prepare("SELECT email,display_name displayName,status,notes,invited_at invitedAt,activated_at activatedAt,updated_at updatedAt FROM beta_tester_allowlist ORDER BY invited_at DESC").all(),
+    c.env.DB.prepare(`SELECT t.email,t.display_name displayName,t.status,t.notes,t.invited_at invitedAt,t.activated_at activatedAt,t.updated_at updatedAt,
+      (SELECT MAX(l.created_at) FROM beta_email_delivery_log l WHERE lower(l.email)=lower(t.email) AND l.template_key='welcome' AND l.status='sent') welcomeSentAt
+      FROM beta_tester_allowlist t ORDER BY t.invited_at DESC`).all(),
     c.env.DB.prepare("SELECT key,value,updated_at updatedAt FROM launch_settings ORDER BY key").all(),
     c.env.DB.prepare("SELECT COUNT(*) count FROM households WHERE deleted_at IS NULL").first<{ count: number }>(),
     c.env.DB.prepare("SELECT COUNT(DISTINCT household_id) count FROM product_usage_daily WHERE usage_date=date('now')").first<{ count: number }>(),
@@ -106,6 +108,15 @@ app.get("/api/v1/admin/product-ops", async (c) => {
   const betaListReady = testers.results.length > 0;
   const retentionEligible = Number(retention?.eligible ?? 0);
   const retained = Number(retention?.retained ?? 0);
+  const testerRows = testers.results as Array<{ status:string; activatedAt:string|null; welcomeSentAt:string|null }>;
+  const invitationProgress = {
+    total: testerRows.length,
+    invited: testerRows.filter((row) => row.status === "invited").length,
+    active: testerRows.filter((row) => row.status === "active").length,
+    paused: testerRows.filter((row) => row.status === "paused").length,
+    welcomeSent: testerRows.filter((row) => Boolean(row.welcomeSentAt)).length,
+    activated: testerRows.filter((row) => Boolean(row.activatedAt)).length,
+  };
   const checklist = [
     { key: "roadmap", label: "Product roadmap is visible in Admin", done: roadmap.results.length >= 4 },
     { key: "analytics", label: "Privacy-safe product analytics are installed", done: true },
@@ -120,6 +131,7 @@ app.get("/api/v1/admin/product-ops", async (c) => {
   return c.json({
     roadmap: roadmap.results,
     testers: testers.results,
+    invitationProgress,
     settings: settingMap,
     checklist,
     readiness: { completed, total: checklist.length, percent: Math.round((completed / checklist.length) * 100) },
